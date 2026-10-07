@@ -7,10 +7,10 @@ require (
 	github.com/evanw/esbuild v0.28.2
 	github.com/go-pdf/fpdf v0.9.0
 	github.com/go-routeros/routeros/v3 v3.0.1
-	github.com/oschwald/maxminddb-golang/v2 v2.6.0
+	github.com/oschwald/maxminddb-golang/v2 v2.7.0
 	golang.org/x/crypto v0.57.0
-	golang.zx2c4.com/wireguard v0.0.0-20260522210424-ecfc5a8d5446
-	modernc.org/sqlite v1.59.0
+	golang.zx2c4.com/wireguard v0.0.0-20261006164505-2631ce99a06f
+	modernc.org/sqlite v1.60.1
 )
 
 require (
@@ -25,7 +25,7 @@ require (
 	golang.org/x/time v0.7.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	gvisor.dev/gvisor v0.0.0-20250503011706-39ed1f5ac29c // indirect
-	modernc.org/libc v1.75.7 // indirect
+	modernc.org/libc v1.77.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
 )
