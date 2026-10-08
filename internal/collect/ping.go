@@ -21,12 +21,12 @@ package collect
 // replaces. Recorded here because no fixture will ever contain it: it needs a
 // multicast target.
 //
-// ── AND A DURATION CAN CARRY TWO UNITS ──────────────────────────────────────
+// ── AND A DURATION CAN CARRY SEVERAL UNITS ──────────────────────────────────
 //
-// The docs show `max-rtt=1ms438us`. The original's regex takes the FIRST number
-// and the FIRST unit, so `1ms438us` parses as 1 and the 438µs is dropped. Also
-// reproduced. A tidier parser would report 1.438 and disagree with the live
-// card on every sub-millisecond hop.
+// The docs show `max-rtt=1ms438us`, and a slow reply reads `1s23ms`. The
+// original's regex took the FIRST number and the FIRST unit, so `1ms438us` was
+// 1, and `1s` - a one-second reply - was ONE MILLISECOND. Every number-and-unit
+// pair is summed now, so those are 1.438 and 1000.
 //
 // ── PERMISSION DENIED LATCHES ───────────────────────────────────────────────
 //
@@ -71,31 +71,52 @@ func pingRefused(err error) bool {
 		strings.Contains(strings.ToLower(err.Error()), "cannot run")
 }
 
-// pingRTTRe is the original's regex, character for character: a number, then an
-// OPTIONAL unit. Anything after the first unit is ignored — see the header.
-var pingRTTRe = regexp.MustCompile(`([\d.]+)(us|ms)?`)
+// pingRTTPart is one number-and-unit pair of a RouterOS duration. `ms` is listed
+// before `m`: Go's alternation is leftmost-first, and `m` is MINUTES.
+var pingRTTPart = regexp.MustCompile(`(\d*\.?\d+)(us|ms|s|m|h|d|w)`)
 
-// ParsePingRTT turns a RouterOS duration into milliseconds.
+// pingRTTBare is a number with no unit at all, which is read as milliseconds.
+var pingRTTBare = regexp.MustCompile(`^\d*\.?\d+$`)
+
+// pingRTTUs is how many microseconds one of each unit is.
+var pingRTTUs = map[string]float64{
+	"us": 1, "ms": 1e3, "s": 1e6, "m": 60e6, "h": 3600e6, "d": 86400e6, "w": 604800e6,
+}
+
+// ParsePingRTT turns a RouterOS duration into milliseconds, to the microsecond.
 //
 // Returns nil for an absent or unparseable value, which is what the card renders
-// as an em dash. Exported for the differential gate.
+// as a dash. A value is parseable only if its pairs cover all of it: `1ms438`
+// has a trailing number with no unit, and guessing what it meant is how the
+// first-unit parser got `1s` wrong.
 func ParsePingRTT(val string) *float64 {
+	val = strings.TrimSpace(val)
 	if val == "" {
 		return nil
 	}
-	m := pingRTTRe.FindStringSubmatch(val)
-	if m == nil {
+	if pingRTTBare.MatchString(val) {
+		v, err := strconv.ParseFloat(val, 64)
+		if err != nil {
+			return nil
+		}
+		return &v
+	}
+	us, covered := 0.0, 0
+	for _, m := range pingRTTPart.FindAllStringSubmatchIndex(val, -1) {
+		if m[0] != covered {
+			return nil
+		}
+		n, err := strconv.ParseFloat(val[m[2]:m[3]], 64)
+		if err != nil {
+			return nil
+		}
+		us += n * pingRTTUs[val[m[4]:m[5]]]
+		covered = m[1]
+	}
+	if covered == 0 || covered != len(val) {
 		return nil
 	}
-	v, err := strconv.ParseFloat(m[1], 64)
-	if err != nil {
-		return nil
-	}
-	if m[2] == "us" {
-		// `+(v/1000).toFixed(3)` over there: three decimals, then back to a
-		// number so a trailing zero does not reach the payload as a string.
-		v = math.Round(v/1000*1000) / 1000
-	}
+	v := math.Round(us) / 1000
 	return &v
 }
 

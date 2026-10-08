@@ -45,11 +45,11 @@
     },
     {
       "in": "1ms438us",
-      "out": 1
+      "out": 1.438
     },
     {
       "in": "2ms999us",
-      "out": 2
+      "out": 2.999
     },
     {
       "in": "0.5ms",
@@ -85,15 +85,15 @@
     },
     {
       "in": "1m",
-      "out": 1
+      "out": 60000
     },
     {
       "in": "1s",
-      "out": 1
+      "out": 1000
     },
     {
       "in": "100ms200us",
-      "out": 100
+      "out": 100.2
     },
     {
       "in": "999999us",
@@ -101,7 +101,7 @@
     },
     {
       "in": "1ms438",
-      "out": 1
+      "out": null
     },
     {
       "in": "  7ms",
@@ -232,7 +232,7 @@
       ]
     },
     {
-      "name": "a COMPOUND duration keeps only its first unit",
+      "name": "a COMPOUND duration sums its units",
       "packets": [
         {
           "time": "1ms438us"
@@ -251,7 +251,7 @@
           "packet": {
             "time": "1ms438us"
           },
-          "rtt": 1,
+          "rtt": 1.438,
           "loss": 0,
           "minRtt": null,
           "maxRtt": null,
@@ -261,7 +261,7 @@
           "packet": {
             "time": "2ms999us"
           },
-          "rtt": 2,
+          "rtt": 2.999,
           "loss": 0,
           "minRtt": null,
           "maxRtt": null,
@@ -276,18 +276,18 @@
           "rtt": 1,
           "loss": 0,
           "minRtt": 0.783,
-          "maxRtt": 1,
+          "maxRtt": 1.438,
           "emitted": true
         }
       ],
       "historyLen": 3,
       "history": [
         {
-          "rtt": 1,
+          "rtt": 1.438,
           "loss": 0
         },
         {
-          "rtt": 2,
+          "rtt": 2.999,
           "loss": 0
         },
         {
@@ -1243,7 +1243,7 @@
           "rtt": 12,
           "loss": 0,
           "minRtt": 0.783,
-          "maxRtt": 1,
+          "maxRtt": 1.438,
           "emitted": false
         }
       ],
