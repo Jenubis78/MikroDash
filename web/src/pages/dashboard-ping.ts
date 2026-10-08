@@ -49,6 +49,17 @@ const MAX_PING_HIST = 60;
 let pingHistory: PingPoint[] = [];
 let pingChart: ChartLike | null = null;
 
+/**
+ * A round-trip figure as the card shows it: whole milliseconds, rounded.
+ *
+ * The collector keeps the microseconds (`15ms97us` is 15.097), and they stay in
+ * the payload and drive the colour; only the text is rounded. ROUNDED, not
+ * truncated: truncation reads every figure low, and a 0.9ms LAN reply as 0.
+ */
+export function fmtRtt(rtt: number | null | undefined): string {
+  return rtt != null ? String(Math.round(rtt)) : '-';
+}
+
 /** The CSS class for a round-trip figure. Absent is unclassified, not bad. */
 export function rttClass(rtt: number | null | undefined): string {
   if (rtt == null) return '';
@@ -80,7 +91,7 @@ export function pingChartConfig(): unknown {
           callbacks: {
             // `raw == null` is a TIMEOUT, and it says so rather than showing
             // "null ms" or an empty tooltip.
-            label: (c: { raw: number | null }) => (c.raw == null ? 'timeout' : c.raw + 'ms'),
+            label: (c: { raw: number | null }) => (c.raw == null ? 'timeout' : fmtRtt(c.raw) + 'ms'),
           },
         },
       },
@@ -165,7 +176,7 @@ export function renderPingUI(
 ): void {
   const rttEl = el('ndPingRtt'), lossEl = el('ndPingLoss');
   if (rttEl) {
-    rttEl.textContent = rtt != null ? String(rtt) : '-';
+    rttEl.textContent = fmtRtt(rtt);
     rttEl.className = 'ping-val ' + rttClass(rtt);
   }
   if (lossEl) {
@@ -175,11 +186,11 @@ export function renderPingUI(
   }
   const minEl = el('ndPingMin'), maxEl = el('ndPingMax');
   if (minEl) {
-    minEl.textContent = minRtt != null ? String(minRtt) : '-';
+    minEl.textContent = fmtRtt(minRtt);
     minEl.className = 'ping-val ' + rttClass(minRtt);
   }
   if (maxEl) {
-    maxEl.textContent = maxRtt != null ? String(maxRtt) : '-';
+    maxEl.textContent = fmtRtt(maxRtt);
     maxEl.className = 'ping-val ' + rttClass(maxRtt);
   }
   if (!pingChart) pingChart = makePingChart('pingChartNet');

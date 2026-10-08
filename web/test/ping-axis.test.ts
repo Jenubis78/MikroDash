@@ -26,7 +26,7 @@ import { makeDoc } from './dom-shim.js';
 const ROOT = process.env.MIKRODASH_ROOT || path.join(__dirname, '..', '..');
 const ENTRY = path.join(ROOT, 'testdata', '.ping-axis-entry.ts');
 fs.writeFileSync(ENTRY,
-  "export { pingAxisMax, updatePingChart, PING_AXIS_FLOOR } from '../web/src/pages/dashboard-ping.js';\n");
+  "export { pingAxisMax, updatePingChart, PING_AXIS_FLOOR, fmtRtt, renderPingUI } from '../web/src/pages/dashboard-ping.js';\n");
 const OUT = path.join(ROOT, 'testdata', '.ping-axis.cjs');
 execFileSync(path.join(ROOT, 'web', 'node_modules', '.bin', 'esbuild'),
   [ENTRY, '--bundle', '--format=cjs', '--platform=node', '--outfile=' + OUT, '--log-level=warning'],
@@ -40,10 +40,12 @@ const mod = require(OUT);
 fs.rmSync(OUT, { force: true });
 
 interface Pt { ts: number; rtt: number | null; loss: number }
-const { pingAxisMax, updatePingChart, PING_AXIS_FLOOR } = mod as {
+const { pingAxisMax, updatePingChart, PING_AXIS_FLOOR, fmtRtt, renderPingUI } = mod as {
   pingAxisMax(pts: Pt[]): number;
   updatePingChart(chart: unknown, history: Pt[]): void;
   PING_AXIS_FLOOR: number;
+  fmtRtt(rtt: number | null | undefined): string;
+  renderPingUI(rtt: number | null, loss: number | null, minRtt: number | null, maxRtt: number | null): void;
 };
 
 const pt = (rtt: number | null): Pt => ({ ts: 0, rtt, loss: 0 });
@@ -136,3 +138,25 @@ const fakeChart = () => ({
 }
 
 console.log('ping-axis: ok');
+
+// ── THE FIGURES ARE WHOLE MILLISECONDS, ROUNDED ─────────────────────────────
+//
+// The collector keeps microseconds (`57ms592us` is 57.592) and the card showed
+// them all. Rounded rather than truncated, so a 0.9ms reply is not 0 - the case
+// a truncating formatter would pass the others with.
+{
+  assert.strictEqual(fmtRtt(57.592), '58');
+  assert.strictEqual(fmtRtt(15.097), '15');
+  assert.strictEqual(fmtRtt(0.9), '1', 'truncated: a sub-millisecond reply reads 0');
+  assert.strictEqual(fmtRtt(1000), '1000');
+  assert.strictEqual(fmtRtt(null), '-');
+
+  // AND THE CARD USES IT: a formatter nobody calls leaves 57.592 on screen.
+  const doc = makeDoc(['ndPingRtt', 'ndPingLoss', 'ndPingMin', 'ndPingMax'], { allowUnknown: ['*'] }) as
+    unknown as { nodes: Record<string, { textContent: string }> };
+  (global as unknown as { document: unknown }).document = doc;
+  renderPingUI(15.097, 0, 10.377, 57.592);
+  assert.deepStrictEqual(
+    ['ndPingRtt', 'ndPingMin', 'ndPingMax'].map((id) => doc.nodes[id]!.textContent),
+    ['15', '10', '58'], 'the card shows the figures unrounded');
+}
