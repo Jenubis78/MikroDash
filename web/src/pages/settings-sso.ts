@@ -96,9 +96,9 @@ function rowHtml(p: ProviderView): string {
     + '<td style="padding:.4rem .5rem">' + status + '</td>'
     + '<td style="padding:.4rem .5rem">' + maps + '</td>'
     + '<td style="padding:.4rem .5rem;text-align:right;white-space:nowrap">'
-    + '<button class="sbtn sbtn-outline is-sm" data-sso-edit="' + esc(p.id)
+    + '<button class="sbtn sbtn-outline" data-sso-edit="' + esc(p.id)
     + '">Edit</button> '
-    + '<button class="sbtn sbtn-danger is-sm" data-sso-del="' + esc(p.id)
+    + '<button class="sbtn sbtn-danger" data-sso-del="' + esc(p.id)
     + '">Delete</button>'
     + '</td></tr>';
 }

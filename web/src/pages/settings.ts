@@ -609,8 +609,8 @@ export function userRowHtml(u: UserView, look: PrincipalLookups): string {
   return '<td style="padding:.45rem .5rem;font-size:.82rem">' + esc(u.username) + '</td>'
     + '<td style="padding:.45rem .5rem" colspan="2">' + accessSummary(u.grants, look) + '</td>'
     + '<td style="padding:.45rem .5rem;text-align:right;white-space:nowrap">'
-    + '<button class="sbtn sbtn-ghost is-sm" style="margin-right:.3rem" data-action="edit">Edit</button>'
-    + '<button class="sbtn sbtn-danger is-sm" data-action="del">Delete</button>'
+    + '<button class="sbtn sbtn-ghost" style="margin-right:.3rem" data-action="edit">Edit</button>'
+    + '<button class="sbtn sbtn-danger" data-action="del">Delete</button>'
     + '</td>';
 }
 
@@ -656,8 +656,8 @@ export function groupTableHtml(groups: GroupView[], look: PrincipalLookups): str
       + '<td style="' + td + ';font-family:var(--font-mono);font-size:.72rem">' + (g.memberUserIds || []).length + '</td>'
       + '<td style="' + td + ';font-size:.72rem">' + access + '</td>'
       + '<td style="' + td + ';text-align:right;white-space:nowrap">'
-        + '<button class="sbtn sbtn-ghost is-sm" data-group-action="edit" data-group-id="' + esc(g.id) + '">Edit</button> '
-        + '<button class="sbtn sbtn-danger is-sm" data-group-action="delete" data-group-id="' + esc(g.id) + '">Delete</button>'
+        + '<button class="sbtn sbtn-ghost" data-group-action="edit" data-group-id="' + esc(g.id) + '">Edit</button> '
+        + '<button class="sbtn sbtn-danger" data-group-action="delete" data-group-id="' + esc(g.id) + '">Delete</button>'
       + '</td></tr>';
   }).join('');
 }
@@ -676,8 +676,8 @@ export function siteRowHtml(s: SiteView, routerCount: number): string {
     + '<td style="' + td + ';color:var(--text-muted)">' + (s.description ? esc(s.description) : '-') + '</td>'
     + '<td style="' + td + ';font-family:var(--font-mono);font-size:.72rem">' + routerCount + '</td>'
     + '<td style="' + td + ';text-align:right;white-space:nowrap">'
-      + '<button class="sbtn sbtn-ghost is-sm" data-site-action="edit" data-site-id="' + esc(s.id) + '">Edit</button> '
-      + '<button class="sbtn sbtn-danger is-sm" data-site-action="delete" data-site-id="' + esc(s.id) + '">Delete</button>'
+      + '<button class="sbtn sbtn-ghost" data-site-action="edit" data-site-id="' + esc(s.id) + '">Edit</button> '
+      + '<button class="sbtn sbtn-danger" data-site-action="delete" data-site-id="' + esc(s.id) + '">Delete</button>'
     + '</td></tr>';
 }
 

@@ -71,7 +71,7 @@ export function initPackagesPage(socket: Socket, isVisible: (page: string) => bo
     if (!caps.permitted) return '';
     const dis = busy === p.name ? ' disabled' : '';
     const b = (act: string, label: string, cls?: string): string =>
-      '<button class="sbtn ' + (cls === 'undo' ? 'sbtn-warn' : 'sbtn-outline') + ' is-sm pkg-act" data-act="' + act +
+      '<button class="sbtn ' + (cls === 'undo' ? 'sbtn-warn' : 'sbtn-outline') + ' pkg-act" data-act="' + act +
       '" data-name="' + esc(p.name) + '"' + dis + '>' + label + '</button>';
     if (p.scheduled) return b('unschedule', 'Undo', 'undo');
     if (p.state === 'available') return b('enable', 'Install');

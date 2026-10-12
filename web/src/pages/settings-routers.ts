@@ -149,7 +149,7 @@ export function renderRouterRow(
     '<td style="text-align:right;white-space:nowrap">' +
       '<div style="display:flex;gap:.3rem;justify-content:flex-end">' +
         toggleBtn +
-        '<button class="sbtn sbtn-ghost is-sm" data-rtr-id="' + esc(r.id) + '" data-rtr-action="edit">Edit</button>' +
+        '<button class="sbtn sbtn-ghost" data-rtr-id="' + esc(r.id) + '" data-rtr-action="edit">Edit</button>' +
         delBtn +
       '</div>' +
     '</td>' +

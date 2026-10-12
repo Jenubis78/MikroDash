@@ -133,5 +133,16 @@
       }
     }
   }
+  // 5. A button in a table row is row-sized, so the row is no taller for having it.
+  const xs = document.createElement('div');
+  xs.style.cssText = 'position:absolute;visibility:hidden;height:var(--ctl-h-xs)';
+  document.body.appendChild(xs);
+  const xsH = xs.getBoundingClientRect().height;
+  xs.remove();
+  for (const b of modal.querySelectorAll('td .sbtn')) {
+    if (!shown(b)) continue;
+    const h = b.getBoundingClientRect().height;
+    if (Math.abs(h - xsH) > 0.5) issues.push(`${name(b)}: a button in a table row is ${h.toFixed(1)}px, --ctl-h-xs is ${xsH.toFixed(1)}px`);
+  }
   return { ok: issues.length === 0, fields: fields.length, issues };
 })();

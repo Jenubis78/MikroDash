@@ -198,7 +198,7 @@ export function initWanPage(socket: Socket, isVisible: (page: string) => boolean
     if (!w.dhcp) return '';
     if (!caps.permitted) return '';
     const b = (verb: string, label: string, cls?: string): string =>
-      '<button class="sbtn ' + (cls === 'danger' ? 'sbtn-danger' : 'sbtn-outline') + ' is-sm" data-wanact="' + verb +
+      '<button class="sbtn ' + (cls === 'danger' ? 'sbtn-danger' : 'sbtn-outline') + '" data-wanact="' + verb +
       '" data-id="' + esc(w.dhcp!.id) + '" data-name="' + esc(w.name) + '"' +
       (busy === w.dhcp!.id ? ' disabled' : '') + '>' + label + '</button>';
     return b('renew', 'Renew') + ' ' + b('release', 'Release', 'danger');

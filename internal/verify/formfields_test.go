@@ -321,6 +321,8 @@ func TestFormFieldStylesheetContract(t *testing.T) {
 		{`\.ff \{[^}]*grid-template-rows: subgrid;[^}]*grid-row: span 3`, "an .ff is a three-row subgrid, so rows align"},
 		{`\.sform-input::placeholder\{color:var\(--text-muted\)`, "placeholders take the palette's muted text, not the browser's grey"},
 		{`select\.sform-input\{appearance:none`, "a select is drawn by the stylesheet, not the browser"},
+		{`--ctl-h-xs: [0-9.]+rem`, "--ctl-h-xs, the table-row button height, is defined"},
+		{`td \.sbtn,td \.sbtn\.is-sm\{height:var\(--ctl-h-xs\)`, "a button in a table cell is row-sized by context"},
 	} {
 		if !regexp.MustCompile(want.re).MatchString(flat) {
 			t.Errorf("app.css no longer holds the form contract: %s (looked for /%s/)", want.why, want.re)

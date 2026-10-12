@@ -350,6 +350,13 @@
     /* An <a> can be a .sbtn (a download, an external page); Tabler underlines a:hover. */
     .sbtn,.sbtn:hover{text-decoration:none}
     .sbtn.is-sm{height:var(--ctl-h-sm);padding:0 .7rem;font-size:.72rem;gap:.3rem}
+    /* THE ROW SIZE, for an action inside a table row (Edit, Delete, Renew, Install):
+       short enough to sit in the row without making it taller. Measured 2026-10-12:
+       a table row with no buttons is about 36px, and compact (.is-sm) buttons made
+       rows 44-52px. A button in a table cell takes this size BY CONTEXT, whatever
+       class it carries, so a new row action cannot be missed; .is-xs gives the same
+       size to a row-style list that is not a table. */
+    .sbtn.is-xs,td .sbtn,td .sbtn.is-sm{height:var(--ctl-h-xs);padding:0 .5rem;font-size:.66rem;gap:.25rem;border-radius:5px}
     /* THE ICON BUTTON: a square, --ctl-h-sm each way, for a button that is only an
        icon or a glyph (theme, sign out, notifications, a map's zoom). There were
        26px, 28px, 1.6rem and 34px ones, each with its own border and fill. */
@@ -3717,7 +3724,7 @@
    built in TypeScript uses fieldHtml() in web/src/form.ts, which emits exactly
    this markup. internal/verify and web/test hold the markup to it, and
    tools/form-geometry.js measures it in a real browser. DESIGN.md has the rules. */
-:root { --ctl-h: 2.2rem; --ctl-h-sm: 1.9rem; }
+:root { --ctl-h: 2.2rem; --ctl-h-sm: 1.9rem; --ctl-h-xs: 1.3rem; }
 /* THE COMPACT CONTROL, for a page's toolbar: a search box, a filter select.
    One deliberate smaller size, rather than each toolbar shrinking its own
    controls (the routers toolbar did, by hand, to match the select beside it). */
