@@ -285,8 +285,24 @@
     .bw-empty{text-align:center;padding:2.5rem;color:var(--text-muted);font-size:.8rem}
     .nav-items{display:flex;flex-direction:column}
     .sform-label{font-size:.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;display:block}
-    .sform-input{width:100%;background:var(--bg-deep);border:1px solid var(--border);border-radius:6px;padding:.45rem .7rem;font-size:.8rem;color:var(--text-main);outline:none;transition:border-color .15s}
+    /* THE FORM CONTROL. One box for a text, number, select and locked display
+       field alike, so a row of them is one height: see "FORM FIELDS" below for
+       the rest of the contract and why it exists. The value is router data, so
+       it is mono; the label above it is the UI font. */
+    .sform-input{width:100%;box-sizing:border-box;height:var(--ctl-h);background:var(--bg-deep);border:1px solid var(--border);border-radius:6px;padding:0 .7rem;font-family:var(--font-mono);font-size:.76rem;line-height:1.2;color:var(--text-main);outline:none;transition:border-color .15s}
     .sform-input:focus{border-color:var(--accent-rx)}
+    /* The browser's own placeholder grey (#757575) carries no blue, so it read as
+       beige on this palette and ignored every other one. */
+    .sform-input::placeholder{color:var(--text-muted);opacity:1}
+    .sform-input:disabled{opacity:.65;cursor:not-allowed}
+    textarea.sform-input{height:auto;min-height:var(--ctl-h);padding:.5rem .7rem;line-height:1.45;resize:vertical}
+    /* A select drawn by the browser is a few pixels off the inputs beside it and
+       insets its text differently, so it is drawn here: the native arrow goes,
+       and a chevron in the muted text colour takes its place. */
+    select.sform-input{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:2rem;
+      background-image:linear-gradient(45deg,transparent 50%,var(--text-muted) 50%),linear-gradient(135deg,var(--text-muted) 50%,transparent 50%);
+      background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+    select[multiple].sform-input,select[size].sform-input{height:auto;background-image:none;padding:.3rem .5rem}
     .bw-unit-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;flex-shrink:0}
     .bw-unit-btn{background:transparent;border:none;border-right:1px solid var(--border);padding:.42rem .6rem;font-size:.8rem;font-family:inherit;color:var(--text-muted);cursor:pointer;line-height:1;transition:background .15s,color .15s;white-space:nowrap}
     .bw-unit-btn:last-child{border-right:none}
@@ -901,7 +917,7 @@
     /* .sform-input is sized for a settings form, which made it 9px taller than
        the select beside it and set the height of the whole bar. Matched to the
        select's metrics so the bar is only as tall as its controls. */
-    .routers-toolbar .sform-input{flex:1 1 auto;min-width:0;padding:.25rem .55rem;font-size:.72rem}
+    .routers-toolbar .sform-input{flex:1 1 auto;min-width:0;height:auto;padding:.25rem .55rem;font-size:.72rem}
     .rtl-dot{display:inline-block;width:8px;height:8px;border-radius:50%}
     /* ── Devices page cards: an overview, opened into the device modal ──────
        The strip's colours are tokens of their own so the light theme can
@@ -3821,8 +3837,7 @@
    about thirty fields, so a tab is two columns wide, one on a phone.
    The count beside a tab name is how many settings are made on it: a value set
    in WinBox on a tab nobody opened is otherwise invisible. */
-.res-tab-panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 .8rem; align-content: start; }
-@media (max-width: 600px) { .res-tab-panel { grid-template-columns: minmax(0, 1fr); } }
+/* A tab panel is an .ff-grid; see FORM FIELDS. */
 .res-tab-count { margin-left: .4rem; }
 /* SIZED TO THE TAB ON SCREEN, unlike the other tabbed dialogs. Their tabs are
    a few fields each, so one height for all costs nothing; here Advanced holds
@@ -3845,3 +3860,109 @@
    the tab's columns, under its fields. */
 .res-tab-extra { grid-column: 1 / -1; margin-top: .8rem; }
 .fws-chart { height: 180px; margin-top: .6rem; }
+
+/* ── FORM FIELDS ─────────────────────────────────────────────────────────────
+   Every field in a dialog is one shape: LABEL, then CONTROL, then HELP.
+
+     <div class="ff-grid">
+       <div class="ff">
+         <label class="sform-label" for="x">Name <span class="ff-req">*</span></label>
+         <input class="sform-input" id="x">            (or a select, or .ff-toggle)
+         <div class="ff-help">One line of help, or empty</div>
+       </div>
+     </div>
+
+   WHY IT IS A CONTRACT AND NOT A STYLE. The text box, the select and the toggle
+   were each built for the Settings page, one per line, and each sized itself:
+   the input by its padding (35px), the select by the browser, the toggle as a
+   bordered panel of its own with a sentence-case label. Put two to a row in a
+   dialog and the grid stretched a toggle to whatever stood beside it (38px in
+   one row, 54px in the next), help text made one column taller than the other
+   so every row below it started at a different height, and the placeholder was
+   the browser's grey. Each was patched where somebody saw it (.auth-grid's
+   min-height, the routers toolbar) and none of the patches was general.
+
+   So: every control is var(--ctl-h) tall; a toggle is a control too, under a
+   label like any other; and each field is a SUBGRID spanning three shared rows,
+   so in a two-column grid the labels, the boxes and the help lines line up
+   across the row whichever field has help. Nothing here is set inline - a field
+   built in TypeScript uses fieldHtml() in web/src/form.ts, which emits exactly
+   this markup. internal/verify and web/test hold the markup to it, and
+   tools/form-geometry.js measures it in a real browser. DESIGN.md has the rules. */
+:root { --ctl-h: 2.2rem; }
+.ff-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: .9rem;
+  row-gap: 0;
+  align-content: start;
+}
+@media (max-width: 600px) { .ff-grid { grid-template-columns: minmax(0, 1fr); } }
+.ff-grid.ff-one { grid-template-columns: minmax(0, 1fr); }
+.ff {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 3;
+  row-gap: 0;
+  min-width: 0;
+}
+/* Outside a grid (a lone field in a section) the three parts simply stack. */
+:not(.ff-grid) > .ff { display: block; }
+.ff-full { grid-column: 1 / -1; }
+.ff > .sform-label { align-self: end; }
+.ff-req { color: var(--accent-err); }
+.ff-help {
+  font-size: .66rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  margin: .25rem 0 .8rem;
+}
+.ff-help:empty { margin-top: 0; }
+
+/* A TOGGLE IS A CONTROL: the same box as an input, saying Off or On beside the
+   switch, under the field's label. The words come from CSS so the state needs
+   no script to stay true. */
+.ff-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  box-sizing: border-box;
+  height: var(--ctl-h);
+  padding: 0 .7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-deep);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color .15s;
+}
+.ff-toggle-state { font-family: var(--font-mono); font-size: .76rem; color: var(--text-muted); }
+.ff-toggle-state::before { content: "Off"; }
+.ff-toggle:has(input:checked) .ff-toggle-state::before { content: "On"; }
+.ff-toggle:has(input:checked) .ff-toggle-state { color: var(--accent-rx); }
+.ff-toggle:has(input:focus-visible) { border-color: var(--accent-rx); }
+.ff-toggle:has(input:disabled) { opacity: .65; cursor: not-allowed; }
+
+/* A set of checkboxes chosen together (a user group's policies): one bordered
+   box, the options in columns. Full width, since it is a list. */
+.ff-multi {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: .3rem .6rem;
+  padding: .5rem .7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-deep);
+}
+.ff-multi > label {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-family: var(--font-mono);
+  font-size: .74rem;
+  color: var(--text-main);
+}
+/* Code and file contents keep their line breaks and scroll sideways. */
+textarea.sform-input.ff-code { white-space: pre; font-size: .74rem; }
+

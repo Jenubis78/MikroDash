@@ -16,6 +16,7 @@
 // for the same reason. The form's job is to be the shape of the row, not the
 // authority on it.
 
+import { fieldHtml as ffField, toggleHtml } from './form';
 import { esc, el, modalTabs } from './dom';
 import type { Socket } from './socket';
 import type { HandEvents, ResSchema, ResSchemaField } from './events-hand';
@@ -166,24 +167,19 @@ export function checkedValue(value: unknown): boolean {
 
 function fieldHtml(f: SchemaField, value: unknown, choices?: string[]): string {
   const id = 'resf_' + f.name;
+  const wrap = (control: string, full = false): string => ffField({
+    id, label: f.label, required: f.required, help: f.help, full,
+    attrs: 'data-res-field="' + esc(f.name) + '"',
+  }, control);
 
   // SHOWN, NEVER SENT. The server skips a display field in every write path, so
   // it is drawn as a locked box rather than an input that looks like it counts.
   if (f.display) {
     const v = value === undefined || value === null ? '' : String(value);
-    return '<div style="margin-top:.6rem" data-res-field="' + esc(f.name) + '">' +
-      '<label class="sform-label" for="' + id + '">' + esc(f.label) + '</label>' +
-      '<input class="sform-input" id="' + id + '" value="' + esc(v) + '" disabled></div>';
+    return wrap('<input class="sform-input" id="' + id + '" value="' + esc(v) + '" disabled>');
   }
 
-  if (f.input === 'checkbox') {
-    // No <label for> on a toggle: the .stoggle markup wraps its own input.
-    return '<label class="stoggle" style="margin-top:.7rem" data-res-field="' + esc(f.name) + '">' +
-      '<span class="stoggle-label">' + esc(f.label) + '</span>' +
-      '<span class="stoggle-switch"><input type="checkbox" id="' + id + '"' +
-      (checkedValue(value) ? ' checked' : '') + '><span class="stoggle-track"></span>' +
-      '<span class="stoggle-thumb"></span></span></label>';
-  }
+  if (f.input === 'checkbox') return wrap(toggleHtml(id, checkedValue(value)));
 
   if (f.input === 'code' || f.input === 'block') {
     // RouterOS CODE, or a BLOCK of text (a file's contents): multi-line,
@@ -191,13 +187,8 @@ function fieldHtml(f: SchemaField, value: unknown, choices?: string[]): string {
     // attribute. Writing code is held to the raw-command gate server-side; the
     // form only has to show either faithfully.
     const code = value === undefined || value === null ? '' : String(value);
-    return '<div style="margin-top:.6rem" data-res-field="' + esc(f.name) + '">' +
-      '<label class="sform-label" for="' + id + '">' + esc(f.label) + '</label>' +
-      '<textarea class="sform-input" id="' + id + '" rows="12" spellcheck="false" ' +
-      'style="font-family:var(--font-mono,monospace);font-size:.74rem;white-space:pre;resize:vertical">' +
-      esc(code) + '</textarea>' +
-      (f.help ? '<div style="font-size:.66rem;color:var(--text-muted);margin-top:.15rem">' + esc(f.help) + '</div>' : '') +
-      '</div>';
+    return wrap('<textarea class="sform-input ff-code" id="' + id + '" rows="12" spellcheck="false">' +
+      esc(code) + '</textarea>', true);
   }
 
   if (f.input === 'multi') {
@@ -205,26 +196,16 @@ function fieldHtml(f: SchemaField, value: unknown, choices?: string[]): string {
     // comma list. The value is what is GRANTED; the server writes the rest.
     const chosen = new Set(String(value ?? '').split(',').map((x) => x.trim()).filter(Boolean));
     const boxes = (f.options || []).map((o, i) =>
-      '<label style="display:flex;align-items:center;gap:.35rem;font-size:.78rem">' +
-      '<input type="checkbox" id="' + id + '__' + i + '" data-res-multi="' + esc(f.name) + '" value="' + esc(o) + '"' +
+      '<label><input type="checkbox" id="' + id + '__' + i + '" data-res-multi="' + esc(f.name) + '" value="' + esc(o) + '"' +
       (chosen.has(o) ? ' checked' : '') + '>' + esc(o) + '</label>').join('');
-    return '<div style="margin-top:.6rem" data-res-field="' + esc(f.name) + '">' +
-      '<div class="sform-label">' + esc(f.label) + '</div>' +
-      '<div id="' + id + '" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));' +
-      'gap:.3rem .6rem;padding:.5rem;border:1px solid var(--border);border-radius:6px">' + boxes + '</div>' +
-      (f.help ? '<div style="font-size:.66rem;color:var(--text-muted);margin-top:.15rem">' + esc(f.help) + '</div>' : '') +
-      '</div>';
+    return wrap('<div class="ff-multi" id="' + id + '">' + boxes + '</div>', true);
   }
 
-  const lbl = '<label class="sform-label" for="' + id + '">' + esc(f.label) +
-    (f.required ? ' <span style="color:var(--accent-err)">*</span>' : '') + '</label>';
   // A NEGATABLE match carries its `!` in the value, as RouterOS spells it. The
   // form splits it off into the toggle and readValues puts it back, so the box
   // and the picker only ever hold the thing being matched.
   const neg = f.negatable ? splitNegation(value) : null;
   if (neg) value = neg.value;
-  const help = f.help ? '<div style="font-size:.66rem;color:var(--text-muted);margin-top:.15rem">' +
-    esc(f.help) + '</div>' : '';
   let body: string;
 
   if (choices && choices.length) {
@@ -257,9 +238,7 @@ function fieldHtml(f: SchemaField, value: unknown, choices?: string[]): string {
       ' autocomplete="off">';
   }
 
-  if (neg) body = negToggle(f, neg.not) + body;
-  return '<div style="margin-top:.6rem" data-res-field="' + esc(f.name) + '">' + lbl +
-    (neg ? '<div class="res-neg-row">' + body + '</div>' : body) + help + '</div>';
+  return wrap(neg ? '<div class="res-neg-row">' + negToggle(f, neg.not) + body + '</div>' : body);
 }
 
 /** A negatable value, with RouterOS's leading `!` split off. */
@@ -376,10 +355,10 @@ function buildForm(schema: Schema, values: Record<string, unknown> | null,
           esc(t) + '<span class="card-badge active-blue res-tab-count" data-res-count="' + esc(t) + '"></span>' +
           '</button>').join('') +
       '</div><div class="modal-panels">' +
-        tabs.map((t) => '<div class="modal-panel res-tab-panel" data-modalpanel="' + esc(t) + '">' +
+        tabs.map((t) => '<div class="modal-panel res-tab-panel ff-grid" data-modalpanel="' + esc(t) + '">' +
           schema.fields.filter((f) => f.tab === t).map(draw).join('') + '</div>').join('') +
       '</div></div>'
-    : schema.fields.map(draw).join('');
+    : '<div class="ff-grid">' + schema.fields.map(draw).join('') + '</div>';
   if (tabs.length) modalTabs('res_tabs', tabs[0]!);
   // ASSIGNED, not added: #res_fields outlives every form, and a listener added
   // per open would count the tabs of every schema it had ever shown.

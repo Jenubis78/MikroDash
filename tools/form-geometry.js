@@ -1,0 +1,95 @@
+// form-geometry.js - measures the open dialog against the form-field contract.
+//
+// Paste into the browser console, or run it with Playwright's evaluate, while a
+// dialog is open (and on each of its tabs). It returns { ok, fields, issues }.
+//
+// ── WHY THIS EXISTS ─────────────────────────────────────────────────────────
+//
+// The repository's tests prove the markup is right: every field an .ff, no
+// inline style, a themed placeholder rule. None of them can see a pixel, and the
+// dialog inconsistencies that prompted the form contract (a toggle 38px in one
+// row and 54px in the next, rows staggered by help text, a select a few pixels
+// off its neighbour, the browser's own placeholder grey) were all geometry. So
+// geometry is measured here, in a real browser, as part of live verification:
+// DESIGN.md says when to run it.
+//
+// It must be able to FAIL: run it once against a dialog you have broken on
+// purpose (give one input `style="height:50px"`) before trusting a pass.
+(() => {
+  const issues = [];
+  const modal = [...document.querySelectorAll('.rtr-modal-bg.open .rtr-modal')].find((m) => m.getClientRects().length);
+  if (!modal) return { ok: false, fields: 0, issues: ['no dialog is open'] };
+
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;visibility:hidden;height:var(--ctl-h);color:var(--text-muted)';
+  document.body.appendChild(probe);
+  const ctlH = probe.getBoundingClientRect().height;
+  const muted = getComputedStyle(probe).color;
+  probe.remove();
+  if (!ctlH) issues.push('--ctl-h is not defined');
+
+  const shown = (e) => e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+  const name = (e) => e.id || e.getAttribute('data-res-field') || String(e.className) || e.tagName;
+
+  // 1. Every control on screen sits in a field.
+  for (const c of modal.querySelectorAll('input, select, textarea')) {
+    if (c.type === 'hidden' || c.type === 'file') continue;
+    if (c.closest('.ff-toggle, .ff-multi')) continue;
+    if (!shown(c)) continue;
+    if (c.type === 'checkbox' || c.type === 'radio') {
+      issues.push(`bare ${c.type} ${name(c)}: a toggle is .ff-toggle, a set of options .ff-multi`);
+      continue;
+    }
+    if (!c.closest('.ff')) issues.push(`${name(c)} is not inside an .ff field`);
+    if (!c.classList.contains('sform-input')) issues.push(`${name(c)} is not an .sform-input`);
+  }
+
+  // 2. Fields: the right shape, nothing inline, the shared height, the themed placeholder.
+  const fields = [...modal.querySelectorAll('.ff')].filter(shown);
+  for (const f of fields) {
+    for (const part of [f, ...f.querySelectorAll('.sform-label, .sform-input, .ff-help, .ff-toggle')]) {
+      const st = part.getAttribute('style');
+      // `display:` is how a field is shown and hidden; nothing else may be inline.
+      if (st && !/^\s*(display:\s*[a-z]*;?\s*)?$/.test(st)) issues.push(`${name(part)} carries style="${st}"`);
+    }
+    const kids = [...f.children];
+    if (kids.length !== 3 || !kids[0].classList.contains('sform-label') || !kids[2].classList.contains('ff-help')) {
+      issues.push(`${name(f)} is not label, control, help`);
+      continue;
+    }
+    const ctl = kids[1];
+    const box = ctl.matches('.sform-input, .ff-toggle') ? ctl : ctl.querySelector('.sform-input');
+    const tall = ctl.matches('textarea, .ff-multi, select[multiple], select[size]');
+    if (box && !tall) {
+      const h = box.getBoundingClientRect().height;
+      if (Math.abs(h - ctlH) > 0.5) issues.push(`${name(f)}: control is ${h.toFixed(1)}px, --ctl-h is ${ctlH.toFixed(1)}px`);
+    }
+    for (const inp of f.querySelectorAll('input.sform-input, textarea.sform-input')) {
+      const ph = getComputedStyle(inp, '::placeholder').color;
+      if (inp.placeholder && ph !== muted) issues.push(`${name(f)}: placeholder is ${ph}, not --text-muted (${muted})`);
+    }
+  }
+
+  // 3. Fields side by side share their label line and their control line.
+  // A row is the fields of one grid whose boxes start on the same line.
+  const grids = [];
+  const rows = new Map();
+  for (const f of fields) {
+    const grid = f.parentElement;
+    if (!grid.classList.contains('ff-grid')) continue;
+    if (grids.indexOf(grid) === -1) grids.push(grid);
+    const id = grids.indexOf(grid) + ':' + Math.round(f.getBoundingClientRect().top);
+    if (!rows.has(id)) rows.set(id, []);
+    rows.get(id).push(f);
+  }
+  for (const row of rows.values()) {
+    if (row.length < 2) continue;
+    for (const part of [0, 1]) {
+      const tops = row.map((f) => f.children[part].getBoundingClientRect().top);
+      if (Math.max(...tops) - Math.min(...tops) > 0.5) {
+        issues.push(`row ${row.map(name).join(' | ')}: ${part ? 'controls' : 'labels'} start at ${tops.map((t) => t.toFixed(1)).join(' / ')}`);
+      }
+    }
+  }
+  return { ok: issues.length === 0, fields: fields.length, issues };
+})();
