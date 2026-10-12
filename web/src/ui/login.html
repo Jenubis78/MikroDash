@@ -111,7 +111,7 @@
     .form-group {
       margin-bottom: 1rem;
     }
-    .form-label {
+    .login-label {
       display: block;
       font-size: .72rem;
       font-weight: 600;
@@ -244,11 +244,11 @@
       <div id="loginView" style="display:none">
         <h2>Sign In</h2>
         <div class="form-group">
-          <label class="form-label" for="loginUser">Username</label>
+          <label class="login-label" for="loginUser">Username</label>
           <input class="form-input" id="loginUser" type="text" autocomplete="username" placeholder="Username" autofocus>
         </div>
         <div class="form-group">
-          <label class="form-label" for="loginPass">Password</label>
+          <label class="login-label" for="loginPass">Password</label>
           <input class="form-input" id="loginPass" type="password" autocomplete="current-password" placeholder="Password">
         </div>
         <button class="btn-primary" id="loginBtn" type="button">Sign In</button>
@@ -266,15 +266,15 @@
           No users exist yet. Create the first admin account to get started.
         </p>
         <div class="form-group">
-          <label class="form-label" for="setupUser">Username</label>
+          <label class="login-label" for="setupUser">Username</label>
           <input class="form-input" id="setupUser" type="text" autocomplete="username" placeholder="admin">
         </div>
         <div class="form-group">
-          <label class="form-label" for="setupPass">Password</label>
+          <label class="login-label" for="setupPass">Password</label>
           <input class="form-input" id="setupPass" type="password" autocomplete="new-password" placeholder="Choose a password">
         </div>
         <div class="form-group">
-          <label class="form-label" for="setupPass2">Confirm Password</label>
+          <label class="login-label" for="setupPass2">Confirm Password</label>
           <input class="form-input" id="setupPass2" type="password" autocomplete="new-password" placeholder="Confirm password">
         </div>
         <button class="btn-primary" id="setupBtn" type="button">Create Account</button>

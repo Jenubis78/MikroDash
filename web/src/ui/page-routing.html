@@ -67,19 +67,19 @@
           <div id="rtRoutesFilters" class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
             <!-- Trimmed to leave room for the two Add buttons in the corner.
                  The selects are sized to their own longest option, not padded. -->
-            <input type="text" class="form-control form-control-sm" id="rtRouteSearch"
+            <input type="text" class="sform-input sform-sm" id="rtRouteSearch"
                    placeholder="Search destination or gateway&hellip;" style="flex:0 1 170px;width:170px">
-            <select class="form-select form-select-sm" id="rtRouteSelType" style="width:142px;flex:0 0 auto;font-size:.74rem" aria-label="Route type filter">
+            <select class="sform-input sform-sm" id="rtRouteSelType" style="width:142px;flex:0 0 auto" aria-label="Route type filter">
               <option value="">Static + Dynamic</option>
               <option value="static">Static only</option>
               <option value="dynamic">Dynamic only</option>
             </select>
-            <select class="form-select form-select-sm" id="rtRouteSelFamily" style="width:118px;flex:0 0 auto;font-size:.74rem" aria-label="Address family filter">
+            <select class="sform-input sform-sm" id="rtRouteSelFamily" style="width:118px;flex:0 0 auto" aria-label="Address family filter">
               <option value="">IPv4 + IPv6</option>
               <option value="ipv4">IPv4 only</option>
               <option value="ipv6">IPv6 only</option>
             </select>
-            <select class="form-select form-select-sm" id="rtRouteSelActive" style="width:108px;flex:0 0 auto;font-size:.74rem" aria-label="Active routes filter">
+            <select class="sform-input sform-sm" id="rtRouteSelActive" style="width:108px;flex:0 0 auto" aria-label="Active routes filter">
               <option value="">All routes</option>
               <option value="active">Active only</option>
             </select>
@@ -93,9 +93,9 @@
             <span data-res-add="route,route6"></span>
           </div>
           <div id="rtPeersFilters" class="d-flex align-items-center gap-2 flex-wrap justify-content-end" hidden>
-            <input type="text" class="form-control form-control-sm" id="rtSearch"
+            <input type="text" class="sform-input sform-sm" id="rtSearch"
                    placeholder="Search peer name, IP or ASN&hellip;" style="flex:0 1 230px;width:230px">
-            <select class="form-select form-select-sm" id="rtSelState" style="width:135px;flex:0 0 auto;font-size:.74rem" aria-label="BGP session state filter">
+            <select class="sform-input sform-sm" id="rtSelState" style="width:135px;flex:0 0 auto" aria-label="BGP session state filter">
               <option value="">All states</option>
               <option value="established">Established</option>
               <option value="idle">Idle</option>
@@ -104,13 +104,13 @@
               <option value="opensent">OpenSent</option>
               <option value="openconfirm">OpenConfirm</option>
             </select>
-            <select class="form-select form-select-sm" id="rtSelType" style="width:150px;flex:0 0 auto;font-size:.74rem" aria-label="BGP peer type filter">
+            <select class="sform-input sform-sm" id="rtSelType" style="width:150px;flex:0 0 auto" aria-label="BGP peer type filter">
               <option value="">All types</option>
               <option value="upstream">Upstream</option>
               <option value="ix">IX / Route Server</option>
               <option value="private">Private / Internal</option>
             </select>
-            <select class="form-select form-select-sm" id="rtSelIpver" style="width:130px;flex:0 0 auto;font-size:.74rem" aria-label="BGP address family filter">
+            <select class="sform-input sform-sm" id="rtSelIpver" style="width:130px;flex:0 0 auto" aria-label="BGP address family filter">
               <option value="">IPv4 + IPv6</option>
               <option value="4">IPv4 only</option>
               <option value="6">IPv6 only</option>

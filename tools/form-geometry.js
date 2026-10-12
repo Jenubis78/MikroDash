@@ -1,7 +1,8 @@
 // form-geometry.js - measures the open dialog against the form-field contract.
 //
 // Paste into the browser console, or run it with Playwright's evaluate, while a
-// dialog is open (and on each of its tabs). It returns { ok, fields, issues }.
+// dialog is open (and on each of its tabs), or with none open to measure the
+// page on screen. It returns { ok, fields, issues }.
 //
 // ── WHY THIS EXISTS ─────────────────────────────────────────────────────────
 //
@@ -17,8 +18,14 @@
 // purpose (give one input `style="height:50px"`) before trusting a pass.
 (() => {
   const issues = [];
-  const modal = [...document.querySelectorAll('.rtr-modal-bg.open .rtr-modal')].find((m) => m.getClientRects().length);
-  if (!modal) return { ok: false, fields: 0, issues: ['no dialog is open'] };
+  // The open dialog, or with none open, the page on screen: a page's own forms
+  // (Settings, a tool's run controls) follow the same contract.
+  const modal = [...document.querySelectorAll('.rtr-modal-bg.open .rtr-modal')].find((m) => m.getClientRects().length) ||
+    [...document.querySelectorAll('[id^="page-"].active')].find((m) => m.getClientRects().length);
+  if (!modal) return { ok: false, fields: 0, issues: ['no dialog is open and no page is active'] };
+  // In a dialog every control is a field. A page may also have a lone toolbar
+  // control (a search box, a filter) that is an .sform-input with no label.
+  const isDialog = modal.classList.contains('rtr-modal');
 
   const probe = document.createElement('div');
   probe.style.cssText = 'position:absolute;visibility:hidden;height:var(--ctl-h);color:var(--text-muted)';
@@ -38,13 +45,15 @@
     // radio hidden inside it) - each draws its own box.
     if (c.closest('.ff-toggle, .ff-multi, .ztp-choice')) continue;
     if (!shown(c)) continue;
+    // A table's selection column: a checkbox per row is the table's, not a field.
+    if ((c.type === 'checkbox' || c.type === 'radio') && c.closest('td, th')) continue;
     if (c.type === 'checkbox' || c.type === 'radio') {
       issues.push(`bare ${c.type} ${name(c)}: a toggle is .ff-toggle, a set of options .ff-multi`);
       continue;
     }
     // A cell of a data-entry table is labelled by its column header, so it needs
     // no field around it - but it is still the one control.
-    if (!c.closest('.ff') && !c.closest('td')) issues.push(`${name(c)} is not inside an .ff field`);
+    if (isDialog && !c.closest('.ff') && !c.closest('td')) issues.push(`${name(c)} is not inside an .ff field`);
     if (!c.classList.contains('sform-input')) issues.push(`${name(c)} is not an .sform-input`);
   }
 
@@ -63,6 +72,9 @@
       continue;
     }
     const ctl = kids[1];
+    // A label starts where its control starts, never centred or pushed right.
+    const lx = kids[0].getBoundingClientRect().left, cx = ctl.getBoundingClientRect().left;
+    if (Math.abs(lx - cx) > 1) issues.push(`${name(f)}: label starts at ${lx.toFixed(1)}px, its control at ${cx.toFixed(1)}px`);
     const box = ctl.matches('.sform-input, .ff-toggle') ? ctl : ctl.querySelector('.sform-input');
     const tall = ctl.matches('textarea, .ff-multi, select[multiple], select[size]');
     if (box && !tall) {

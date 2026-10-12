@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// EVERY DIALOG FIELD IS ONE SHAPE: LABEL, CONTROL, HELP.
+// EVERY FIELD IS ONE SHAPE: LABEL, CONTROL, HELP - IN A DIALOG OR ON A PAGE.
 //
 // ── THE DEFECT THIS EXISTS FOR ──────────────────────────────────────────────
 //
@@ -45,7 +45,6 @@ var dialogControlExceptions = map[string]string{}
 // `.stoggle` panel, because what they draw is on a PAGE, not in a dialog. A
 // dialog toggle is `.ff-toggle`, from toggleHtml() in web/src/form.ts.
 var stoggleFiles = map[string]string{
-	"web/src/pages/settings.ts": "the Settings page's per-area visibility toggles, a page form",
 	"web/src/pages/packages.ts": "the bare switch beside the firmware upgrade button on the Packages page: an action, not a field",
 	"web/src/pages/interfaces-history.ts": "the bare switch inside the traffic-history note in the Interface dialog's extra panel, " +
 		"set in a sentence about recording: an action, not a form field",
@@ -53,6 +52,8 @@ var stoggleFiles = map[string]string{
 
 // stoggleRe finds the .stoggle panel however it is spelled: in a class
 // attribute, alone or with a variant, or assigned as a className.
+var ffTablerTS = regexp.MustCompile(`class="(?:[^"]* )?form-(?:control|select|label)(?:-sm)?[ "]`)
+
 var stoggleRe = regexp.MustCompile(`class="stoggle[ "]|className = 'stoggle[ ']`)
 
 var (
@@ -61,6 +62,10 @@ var (
 	ffCommentRe = regexp.MustCompile(`(?s)<!--.*?-->`)
 	ffVoidTags  = map[string]bool{"input": true, "br": true, "hr": true, "img": true, "meta": true,
 		"link": true, "source": true, "wbr": true, "area": true, "col": true, "embed": true, "param": true, "track": true}
+	// ffTablerForm are the vendored Tabler stylesheet's form classes. It is still
+	// loaded for its layout utilities, but its controls are a second control
+	// system with their own height, padding and colours.
+	ffTablerForm = []string{"form-control", "form-control-sm", "form-select", "form-select-sm", "form-label"}
 	// ffParts are the classes whose box the stylesheet owns outright.
 	ffParts = []string{"ff", "sform-label", "sform-input", "ff-help", "ff-toggle"}
 	// ffHideOnly is the one inline style a field part may carry: hidden until a
@@ -131,6 +136,27 @@ func ffParse(t *testing.T, name, src string) *ffNode {
 	return root
 }
 
+// ffPlacement are the properties that place a control in a row without
+// changing the box itself.
+var ffPlacement = map[string]bool{"width": true, "min-width": true, "max-width": true, "flex": true,
+	"flex-basis": true, "flex-grow": true, "flex-shrink": true, "margin-left": true, "margin-right": true}
+
+func ffPlacementOnly(style string) bool {
+	for _, decl := range strings.Split(style, ";") {
+		prop, _, ok := strings.Cut(decl, ":")
+		if !ok {
+			if strings.TrimSpace(decl) != "" {
+				return false
+			}
+			continue
+		}
+		if !ffPlacement[strings.ToLower(strings.TrimSpace(prop))] {
+			return false
+		}
+	}
+	return true
+}
+
 func ffInCell(n *ffNode) bool {
 	for p := n.parent; p != nil; p = p.parent {
 		if p.tag == "td" {
@@ -163,19 +189,29 @@ func TestDialogFieldsFollowTheContract(t *testing.T) {
 			if n.has("rtr-modal") {
 				dialogs++
 			}
-			if !n.has("rtr-modal") && !n.within("rtr-modal") {
-				return
-			}
 			at := name + ":" + strconv.Itoa(n.line)
 
-			if n.has("stoggle") {
-				t.Errorf("%s: a dialog toggle is an .ff field with .ff-toggle, not the Settings page's .stoggle panel", at)
+			// ── EVERYWHERE: a page's forms follow the same contract as a dialog's.
+			if n.has("stoggle") && !n.has("stoggle-bare") {
+				t.Errorf("%s: a toggle is an .ff field with .ff-toggle, not the old .stoggle panel", at)
+			}
+			for _, c := range ffTablerForm {
+				if n.has(c) {
+					t.Errorf("%s: .%s is the vendored Tabler control, a second control system; use .sform-input (.sform-sm in a toolbar)", at, c)
+				}
 			}
 			for _, c := range ffParts {
-				if st, ok := n.attrs["style"]; ok && n.has(c) && !ffHideOnly.MatchString(st) {
-					t.Errorf("%s: .%s carries style=%q; a field's spacing and size belong to the stylesheet", at, c, st)
-					break
+				st, ok := n.attrs["style"]
+				if !ok || !n.has(c) || ffHideOnly.MatchString(st) {
+					continue
 				}
+				// A control may be PLACED in its row (width, flex), never resized:
+				// its height, padding and type are the stylesheet's.
+				if c == "sform-input" && ffPlacementOnly(st) {
+					continue
+				}
+				t.Errorf("%s: .%s carries style=%q; a field's spacing and size belong to the stylesheet", at, c, st)
+				break
 			}
 			// A location search keeps its suggestion list as an extra child: it is
 			// absolutely positioned, so it takes no row and the shape holds.
@@ -189,6 +225,11 @@ func TestDialogFieldsFollowTheContract(t *testing.T) {
 				t.Errorf("%s: an .ff is exactly a .sform-label, its control, and an .ff-help (empty is fine)", at)
 			}
 
+			// ── IN A DIALOG, every control is a field. A page may also have a lone
+			// toolbar control (a search box), which is .sform-input without one.
+			if !n.has("rtr-modal") && !n.within("rtr-modal") {
+				return
+			}
 			switch n.tag {
 			case "input", "select", "textarea":
 			default:
@@ -250,6 +291,10 @@ func TestFieldMarkupInTypeScriptCarriesNoInlineStyle(t *testing.T) {
 				t.Errorf("%s:%d: a field part carries an inline style - size and spacing belong to the stylesheet",
 					rel, strings.Count(src[:m[0]], "\n")+1)
 			}
+		}
+		for _, m := range ffTablerTS.FindAllStringIndex(src, -1) {
+			t.Errorf("%s:%d: a Tabler form class - use .sform-input (.sform-sm in a toolbar)",
+				rel, strings.Count(src[:m[0]], "\n")+1)
 		}
 		if stoggleRe.MatchString(src) {
 			if _, ok := stoggleFiles[rel]; !ok {

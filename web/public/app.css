@@ -309,15 +309,8 @@
     .bw-unit-btn.active{background:var(--accent-rx,#4a90d9);color:#fff}
     .bw-unit-btn:not(.active):hover{background:var(--border);color:var(--text-main)}
     .sform-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-    .sform-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}
-    @media(max-width:640px){.sform-row,.sform-row3{grid-template-columns:1fr}}
+    @media(max-width:640px){.sform-row{grid-template-columns:1fr}}
     .sform-group{margin-bottom:.9rem}
-    .stoggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
-    @media(max-width:500px){.stoggle-grid{grid-template-columns:1fr}}
-    /* Visible Pages spans the whole tab, so its toggles take as many columns as
-       fit rather than two stretched ones; it is still one column on a phone. */
-    #visiblePagesGrid{grid-template-columns:repeat(auto-fill,minmax(11rem,1fr))}
-    @media(max-width:500px){#visiblePagesGrid{grid-template-columns:1fr}}
     /* Settings, Appearance, Branding (issue #131). The preview is drawn like the
        top bar's wordmark, so what is saved is what the corner will show. */
     .brand-preview{display:flex;align-items:center;gap:.55rem;margin:0 0 .9rem;padding:.55rem .75rem;border:1px solid var(--border);border-radius:8px;min-height:46px;overflow:hidden}
@@ -427,20 +420,6 @@
        replacing the four card headers these panels used to have. */
     .ptab-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.9rem;margin-bottom:.7rem}
     .ptab-desc{font-size:.72rem;color:var(--text-muted);flex:1;min-width:0}
-    /* Authentication spans both columns, so its two short controls sit side by
-       side rather than stacking into a tall, mostly empty card.
-       Two fixed tracks rather than auto-fit: when "require sign-in" is off the
-       right-hand field is hidden, and auto-fit would stretch the lone toggle
-       across the whole card. */
-    .auth-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem 1.75rem;align-items:start}
-    @media (min-width:820px){.auth-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    /* Each column is label → control → hint, so the two read as one row. The
-       toggle pill and the select are separate components with different
-       padding (.55rem vs .45rem), which left them a few pixels out of line -
-       one height for both fixes it. */
-    .auth-grid .stoggle,.auth-grid .sform-input{min-height:2.4rem}
-    .auth-grid .stoggle{padding-top:0;padding-bottom:0}
-    .auth-hint{font-size:.72rem;color:var(--text-muted);margin-top:.4rem;line-height:1.5}
     /* The principals card runs to the bottom of the viewport and scrolls its own
        body, so the tab strip stays put while a long table moves under it. Its
        height is set in JS from the card's actual top offset - a CSS calc() would
@@ -551,13 +530,11 @@
     .sbanner-ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);color:rgba(52,211,153,.9)}
     .sbanner-warn{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);color:rgba(251,191,36,.9)}
     .sbanner-err{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:rgba(248,113,113,.9)}
-    #pollSlidersWrap{display:grid;grid-template-columns:1fr 1fr;gap:0 1.4rem;align-items:start}
     /* The group heading spans both columns so the split reads as two lists of
        one kind each, not one list wrapped arbitrarily. */
     #pollSlidersWrap .poll-group-hdr{grid-column:1/-1;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
       color:var(--text-muted);margin:.2rem 0 .5rem;padding-top:.35rem;border-top:1px solid var(--border)}
     #pollSlidersWrap .poll-group-hdr:first-child{border-top:none;padding-top:0}
-    @media(max-width:900px){#pollSlidersWrap{grid-template-columns:1fr}}
     .srange-val{font-size:.75rem;font-family:var(--font-mono);color:var(--accent-rx);min-width:52px;text-align:right}
     .stab-bar{display:flex;gap:.15rem;margin-bottom:1rem;border-bottom:1px solid var(--border);padding-bottom:0;overflow-x:auto;scrollbar-width:none}
     .stab-bar::-webkit-scrollbar{display:none}
@@ -636,7 +613,6 @@
     /* The sidebar toggle at the foot of the Theme card, separated from the
        swatches it follows so it does not read as a fifteenth swatch. */
     .theme-navgroup{margin-top:1rem;padding-top:.85rem;border-top:1px solid var(--border)}
-    .theme-navgroup-note{font-size:.74rem;color:var(--text-muted);margin:.4rem 0 0;line-height:1.5}
     .theme-swatch-grid{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.85rem}
     .theme-swatch{display:flex;flex-direction:column;align-items:center;gap:.35rem;cursor:pointer;border-radius:8px;padding:.4rem;border:2px solid transparent;transition:border-color .15s}
     .theme-swatch:hover{border-color:rgba(99,130,190,.3)}
@@ -2095,9 +2071,6 @@
     .net-wan-row{display:flex;align-items:baseline;justify-content:space-between;padding:.25rem .45rem;background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.14);border-radius:6px}
     .net-field-label{font-family:var(--font-mono);font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
     .net-field-val{font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--accent-rx)}
-        html[data-theme="light"] select.form-select{background-color:rgba(255,255,255,.9)}
-    #dhcpSearch{background:rgba(13,18,30,.9);border-color:var(--border);color:var(--text-main)}
-    html[data-theme="light"] #dhcpSearch{background:rgba(255,255,255,.9)}
     /* ── Routing page ──────────────────────────────────────────────────────── */
     .rt-summary-row{display:grid;grid-template-columns:2fr 1fr;gap:.75rem;margin-bottom:.85rem}
     /* Routing protocol tabs. The bar reuses .stab-bar/.stab from Settings, as the
@@ -2974,9 +2947,6 @@
     .cfg-ed-empty .cfg-tpl-actions{justify-content:center}
     .cfg-capture{width:100%;margin-top:.6rem;padding:.9rem;border:1px solid var(--border);border-radius:12px;text-align:left;
       background:radial-gradient(80% 120% at 0% 0%,color-mix(in srgb,var(--accent-rx) 10%,transparent),transparent 70%),var(--bg-card)}
-    .cfg-capture-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.55rem;align-items:end}
-    .cfg-capture-row label{display:flex;flex-direction:column;gap:.25rem;font-size:.7rem;color:var(--text-muted)}
-    .cfg-capture-row label[hidden]{display:none}
     .cfg-capture .cfg-meta{margin:.6rem 0 0}
     .cfg-ed{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:.9rem}
     @media (max-width:1100px){.cfg-ed{grid-template-columns:1fr}}
@@ -3009,7 +2979,10 @@
     .cfg-var-row .cfg-var-name{grid-column:1/-1;display:flex;align-items:center;gap:.4rem}
     .cfg-var-row.is-unused{opacity:.6;border-style:dashed}
     .cfg-var-row.is-locked{grid-template-columns:1fr;border-style:dashed}
-    .cfg-var-req{grid-column:1/-1;display:flex;align-items:center;gap:.35rem;font-size:.7rem;color:var(--text-muted)}
+    /* The {{name}} header of a template variable's fields; the grid has no row gap. */
+    .cfg-var-row>.cfg-var-name{grid-column:1/-1;margin-bottom:.45rem}
+    /* A transfer's one field grows to fill its row. */
+    .files-transfer .ff-inline>.ff{flex:1 1 22rem;min-width:0}
     .cfg-ed-acts{display:flex;justify-content:flex-end;gap:.4rem;margin-top:.6rem;flex-wrap:wrap}
     .cfg-ed-acts #cfgEdDelete{margin-right:auto;color:var(--accent-err)}
 
@@ -3137,6 +3110,7 @@
     .ztp-msg{margin-bottom:.6rem}
     .ztp-notice{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:0 0 .8rem;padding:.55rem .8rem;border-radius:10px;font-size:.78rem;color:var(--text-main);background:color-mix(in srgb,var(--accent-warn) 8%,var(--bg-card));border:1px solid color-mix(in srgb,var(--accent-warn) 32%,transparent)}
     .ztp-notice .ztp-btn{margin-left:auto}
+    .ztp-status:not(:empty){margin-bottom:.6rem}
     .ztp-status{font-size:.76rem;color:var(--text-muted);display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
     .ztp-help{font-size:.72rem;color:var(--text-muted);line-height:1.45;margin-top:.25rem}
     .ztp-help code,.ztp-steps code{font-family:var(--font-mono);font-size:.7rem;padding:.05rem .3rem;border-radius:4px;background:color-mix(in srgb,var(--text-muted) 14%,transparent);color:var(--text-main)}
@@ -3814,7 +3788,13 @@
    built in TypeScript uses fieldHtml() in web/src/form.ts, which emits exactly
    this markup. internal/verify and web/test hold the markup to it, and
    tools/form-geometry.js measures it in a real browser. DESIGN.md has the rules. */
-:root { --ctl-h: 2.2rem; }
+:root { --ctl-h: 2.2rem; --ctl-h-sm: 1.9rem; }
+/* THE COMPACT CONTROL, for a page's toolbar: a search box, a filter select.
+   One deliberate smaller size, rather than each toolbar shrinking its own
+   controls (the routers toolbar did, by hand, to match the select beside it). */
+.sform-input.sform-sm { height: var(--ctl-h-sm); padding: 0 .55rem; font-size: .72rem; }
+select.sform-input.sform-sm { padding-right: 1.8rem; background-position: calc(100% - 13px) 50%, calc(100% - 8px) 50%; }
+.sform-input.sform-sm::placeholder { color: var(--text-muted); }
 .ff-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3833,6 +3813,10 @@
 }
 /* Outside a grid (a lone field in a section) the three parts simply stack. */
 :not(.ff-grid) > .ff { display: block; }
+/* A field hidden with the attribute stays hidden: .ff sets display, which would
+   otherwise beat the browser's own [hidden] rule. */
+.ff[hidden], .ff-row[hidden] { display: none; }
+.ai-propose-field { margin-top: .55rem; }
 .ff-full { grid-column: 1 / -1; }
 .ff > .sform-label { align-self: end; }
 .ff-req { color: var(--accent-err); }
@@ -3852,6 +3836,18 @@
   color: var(--text-main);
 }
 
+/* A ONE-ROW FORM (a tool's run controls: target, count, Start): fields side by
+   side, wrapping, with the action button level with the boxes. It has NO HELP
+   LINES - the element is still emitted, as every field's is, but not shown - so
+   every field is label over box and the button lines up with the boxes. A tool
+   that needs to explain a field does it in a note under the row. */
+.ff-inline { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .4rem .75rem; }
+.ff-inline > .ff { display: flex; flex-direction: column; min-width: 8rem; }
+.ff-inline > .ff > .ff-help { display: none; }
+/* In a column the grid's bottom-alignment would mean "push right": a label starts
+   where its box starts. */
+.ff-inline > .ff > .sform-label { align-self: flex-start; }
+.ff-inline > .sbtn { height: var(--ctl-h); }
 /* A TOGGLE IS A CONTROL: the same box as an input, saying Off or On beside the
    switch, under the field's label. The words come from CSS so the state needs
    no script to stay true. */
@@ -3944,6 +3940,16 @@ input[type=range].sform-input { accent-color: var(--accent-rx); }
 .ff-multi input[type=checkbox]:checked::before { transform: scale(1); }
 .ff-multi input[type=checkbox]:focus-visible { outline: 2px solid var(--accent-rx); outline-offset: 2px; }
 .ff-multi input[type=checkbox]:disabled { opacity: .5; cursor: not-allowed; }
+/* A control row whose buttons may wrap (the poll profiles, the view presets). */
+.ff-row.ff-wrap { flex-wrap: wrap; }
+/* A unit or end word beside a control in its row: "h", "s", "Low". */
+.ff-unit { flex: 0 0 auto; font-size: .72rem; color: var(--text-muted); }
+/* A rule above a group of fields that starts a new subject in the same card. */
+.ff-sep { margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--border); }
+/* A live character count, at the end of a help line. */
+.ff-help .ff-count { float: right; margin-left: 1rem; font-family: var(--font-mono); white-space: nowrap; }
+/* The first-run form ends in its buttons; the grid has no bottom margin of its own. */
+.setup-fields { margin-bottom: .6rem; }
 /* Code and file contents keep their line breaks and scroll sideways. */
 textarea.sform-input.ff-code { white-space: pre; font-size: .74rem; }
 

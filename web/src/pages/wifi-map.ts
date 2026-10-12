@@ -43,6 +43,7 @@
 // clicking its corners, and its vertices can be dragged afterwards.
 
 import { esc, el, lsGet, lsSet, svgEl, attr, text } from '../dom';
+import { fieldHtml } from '../form';
 import type { Socket } from '../socket';
 import type { WifiPayload, WirelessPayload, WirelessClient } from '../gen/payloads';
 
@@ -730,9 +731,10 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
 
   // ── the side panel ────────────────────────────────────────────────────────
 
-  function field(label: string, inner: string): string {
-    return '<div class="wm-field"><label class="wm-field-lbl">' + esc(label) + '</label>' +
-      inner + '</div>';
+  // The panel's fields are the app's fields (web/src/form.ts), one column wide:
+  // the panel is narrow, and a field on the map should read like one anywhere.
+  function fields(...parts: string[]): string {
+    return '<div class="ff-grid ff-one">' + parts.join('') + '</div>';
   }
 
   function renderPanel(): void {
@@ -766,23 +768,34 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
   function objectPanel(o: MapObject): string {
     const poly = o.points.length >= 3;
     return '<div class="wm-panel-title">' + esc(o.kind) + '</div>' +
-      field('Label', '<input class="sform-input" id="wmfLabel" value="' + esc(o.label) + '">') +
-      // STOREYS ARE A BUILDING'S. A fence and a plot have one apiece, and a
-      // storey count on them put floors in the picker nothing could be on.
-      (o.kind === 'building'
-        ? field('Storeys', '<input class="sform-input" id="wmfFloors" type="number" min="1" max="64" value="' +
-          String(o.floors) + '">')
-        : '') +
+      fields(
+        fieldHtml({ id: 'wmfLabel', label: 'Label' },
+          '<input class="sform-input" id="wmfLabel" value="' + esc(o.label) + '">'),
+        // STOREYS ARE A BUILDING'S. A fence and a plot have one apiece, and a
+        // storey count on them put floors in the picker nothing could be on.
+        o.kind === 'building'
+          ? fieldHtml({ id: 'wmfFloors', label: 'Storeys' },
+            '<input class="sform-input" id="wmfFloors" type="number" min="1" max="64" value="' +
+            String(o.floors) + '">')
+          : '',
+        poly
+          ? ''
+          : fieldHtml({ id: 'wmfW', label: 'Width' },
+            '<input class="sform-input" id="wmfW" type="number" value="' + String(Math.round(o.w)) + '">') +
+            fieldHtml({ id: 'wmfH', label: 'Height' },
+              '<input class="sform-input" id="wmfH" type="number" value="' + String(Math.round(o.h)) + '">'),
+        fieldHtml({ label: 'Colour' }, '<div class="wm-swatches" id="wmfColours">' +
+          PALETTE.map((c) => '<button type="button" class="wm-swatch' +
+            (c === o.colour ? ' is-on' : '') + '" data-colour="' + esc(c) + '"' +
+            ' style="background:' + (c || 'transparent') + '"' +
+            ' title="' + (c ? esc(c) : 'default') + '"></button>').join('') + '</div>'),
+      ) +
+      // A note about the shape as a whole, not about one field, so it stays
+      // outside the grid.
       (poly
         ? '<div class="wm-panel-note">' + o.points.length + ' corners. Drag one to ' +
           'move it; drag the outline to move the whole shape.</div>'
-        : field('Width', '<input class="sform-input" id="wmfW" type="number" value="' + String(Math.round(o.w)) + '">') +
-          field('Height', '<input class="sform-input" id="wmfH" type="number" value="' + String(Math.round(o.h)) + '">')) +
-      field('Colour', '<div class="wm-swatches" id="wmfColours">' +
-        PALETTE.map((c) => '<button type="button" class="wm-swatch' +
-          (c === o.colour ? ' is-on' : '') + '" data-colour="' + esc(c) + '"' +
-          ' style="background:' + (c || 'transparent') + '"' +
-          ' title="' + (c ? esc(c) : 'default') + '"></button>').join('') + '</div>') +
+        : '') +
       '<button class="sbtn sbtn-danger wm-panel-btn" id="wmfDelete">Delete</button>';
   }
 
@@ -816,9 +829,13 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
   function apPanel(a: MapAP): string {
     return '<div class="wm-panel-title">Access point</div>' +
       '<div class="wm-panel-sub">' + esc(a.ap || a.ifaces.join(', ')) + '</div>' +
-      field('Label', '<input class="sform-input" id="wmfApLabel" value="' + esc(a.label) + '">') +
-      field('Floor', '<input class="sform-input" id="wmfApFloor" type="number" min="1" max="64" value="' +
-        String(a.floor) + '">') +
+      fields(
+        fieldHtml({ id: 'wmfApLabel', label: 'Label' },
+          '<input class="sform-input" id="wmfApLabel" value="' + esc(a.label) + '">'),
+        fieldHtml({ id: 'wmfApFloor', label: 'Floor' },
+          '<input class="sform-input" id="wmfApFloor" type="number" min="1" max="64" value="' +
+          String(a.floor) + '">'),
+      ) +
       '<div class="wm-panel-note">Radios: ' + esc(a.ifaces.join(', ') || '-') + '</div>' +
       '<button class="sbtn sbtn-danger wm-panel-btn" id="wmfApDelete">Take off the map</button>';
   }
@@ -851,12 +868,12 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
       '</div>';
     }).join('');
     return '<div class="wm-panel-title">Site</div>' +
-      field('Metres per canvas unit',
-        '<input class="sform-input" id="wmfScale" type="number" step="0.01" min="0" value="' +
-        String(doc.metresPerUnit || '') + '" placeholder="e.g. 0.25">') +
-      '<div class="wm-panel-note">Draw a wall you know the length of, read its ' +
-        'Width, and divide: 40 m across 160 units is 0.25. Only the Signal ring ' +
-        'mode uses it.</div>' +
+      fields(fieldHtml({
+        id: 'wmfScale', label: 'Metres per canvas unit',
+        help: 'Draw a wall you know the length of, read its Width, and divide: ' +
+          '40 m across 160 units is 0.25. Only the Signal ring mode uses it.',
+      }, '<input class="sform-input" id="wmfScale" type="number" step="0.01" min="0" value="' +
+        String(doc.metresPerUnit || '') + '" placeholder="e.g. 0.25">')) +
       '<div class="wm-panel-title" style="margin-top:.9rem">Access points</div>' +
       (rows || '<div class="wm-panel-note">No radios reported yet. Open Wifi ' +
         'Networks once so this router has answered.</div>');

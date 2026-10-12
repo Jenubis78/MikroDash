@@ -11,20 +11,22 @@
           </div>
         </div>
         <div class="card-body">
-          <form class="d-flex align-items-end flex-wrap gap-2 mb-3" id="pingForm">
-            <div>
-              <label class="form-label" for="pingAddress">Address</label>
-              <input class="form-control form-control-sm" id="pingAddress" type="text" maxlength="253"
+          <form class="ff-inline mb-3" id="pingForm">
+            <div class="ff">
+              <label class="sform-label" for="pingAddress">Address</label>
+              <input class="sform-input" id="pingAddress" type="text" maxlength="253"
                 placeholder="IP address, host name or MAC" autocomplete="off" spellcheck="false" required>
+              <div class="ff-help"></div>
             </div>
-            <div>
-              <label class="form-label" for="pingCount">Packets</label>
-              <select class="form-select form-select-sm" id="pingCount">
+            <div class="ff">
+              <label class="sform-label" for="pingCount">Packets</label>
+              <select class="sform-input" id="pingCount">
                 <option selected>10</option><option>20</option><option>30</option><option>40</option>
                 <option>50</option><option>60</option><option>70</option><option>80</option>
                 <option>90</option><option>100</option>
                 <option value="continuous">Continuous ping</option>
               </select>
+              <div class="ff-help"></div>
             </div>
             <button class="sbtn sbtn-primary" id="pingRun" type="submit">Ping</button>
             <span class="muted-note" id="pingStatus"></span>

@@ -59,10 +59,9 @@
             <span class="scard-title">General</span>
           </div>
           <div class="scard-body">
-            <p style="font-size:.74rem;color:var(--text-muted);margin-bottom:.8rem">Sets the timezone for all timestamps: dashboard clock, push notifications, reports, and exports.</p>
-            <div class="sform-row" style="margin-bottom:0">
-              <div class="sform-group" style="margin-bottom:0">
-                <label class="sform-label">Display Timezone</label>
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="s_displayTimezone">Display Timezone</label>
                 <select class="sform-input" id="s_displayTimezone" aria-label="Display timezone">
                   <option value="">Auto (browser / server local)</option>
                   <optgroup label="UTC">
@@ -130,14 +129,16 @@
                     <option value="Africa/Nairobi">Africa/Nairobi (EAT)</option>
                   </optgroup>
                 </select>
+                <div class="ff-help">Every timestamp: the dashboard clock, push notifications, reports and exports.</div>
               </div>
-            </div>
-            <!-- The Diagnostics card was one toggle and a paragraph, sitting on
-                 its own in the two-column grid. Both are here verbatim; the
-                 setting key is unchanged. -->
-            <p style="font-size:.74rem;color:var(--text-muted);margin:1.1rem 0 .75rem">Enable verbose logging to the container console. Useful for troubleshooting connection or wireless client issues. Takes effect immediately - no restart required.</p>
-            <div class="stoggle-grid">
-              <label class="stoggle"><span class="stoggle-label">Debug Logging</span><span class="stoggle-switch"><input type="checkbox" id="s_rosDebug"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+              <!-- The Diagnostics card was one toggle and a paragraph, sitting on
+                   its own in the two-column grid. The paragraph is its help now;
+                   the setting key is unchanged. -->
+              <div class="ff">
+                <label class="sform-label" for="s_rosDebug">Debug Logging</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_rosDebug"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Verbose logging to the container console, for troubleshooting connection or wireless client issues. Takes effect immediately.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -148,28 +149,28 @@
           </div>
           <div class="scard-body">
             <p style="font-size:.74rem;color:var(--text-muted);margin-bottom:.8rem">Controls how long historical data is kept in the SQLite database. The daily prune job removes rows older than these limits.</p>
-            <div class="sform-row">
-              <div class="sform-group" style="margin-bottom:0">
-                <label class="sform-label">Metrics retention (days)</label>
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="s_dbRetentionDays">Metrics retention (days)</label>
                 <input class="sform-input" id="s_dbRetentionDays" type="number" min="7" max="3650" placeholder="90">
-                <span style="font-size:.68rem;color:var(--text-muted);margin-top:.3rem;display:block">Ping &amp; traffic samples</span>
+                <div class="ff-help">Ping &amp; traffic samples</div>
               </div>
-              <div class="sform-group" style="margin-bottom:0">
-                <label class="sform-label">Events retention (days)</label>
+              <div class="ff">
+                <label class="sform-label" for="s_dbAlertRetentionDays">Events retention (days)</label>
                 <input class="sform-input" id="s_dbAlertRetentionDays" type="number" min="7" max="3650" placeholder="365">
-                <span style="font-size:.68rem;color:var(--text-muted);margin-top:.3rem;display:block">Alerts &amp; connectivity events</span>
+                <div class="ff-help">Alerts &amp; connectivity events</div>
               </div>
-              <div class="sform-group" style="margin-bottom:0">
-                <label class="sform-label">Chat history (days)</label>
+              <div class="ff">
+                <label class="sform-label" for="s_dbAiRetentionDays">Chat history (days)</label>
                 <input class="sform-input" id="s_dbAiRetentionDays" type="number" min="1" max="3650" placeholder="30">
-                <span style="font-size:.68rem;color:var(--text-muted);margin-top:.3rem;display:block">AI Agent conversations</span>
+                <div class="ff-help">AI Agent conversations</div>
               </div>
             </div>
             <!-- ON-DEMAND DELETION OPENS FROM HERE. It was a card of its own,
                  the only thing on this tab that is an ACTION rather than a
                  setting, and it was three times the height of every card around
                  it. The dialog is #dbcModal, below. -->
-            <div style="display:flex;justify-content:flex-end;margin-top:.9rem">
+            <div style="display:flex;justify-content:flex-end">
               <button class="sbtn sbtn-ghost" id="dbcOpenBtn" type="button">Data Cleanup</button>
             </div>
           </div>
@@ -180,28 +181,31 @@
             <span class="scard-title">Limits</span>
           </div>
           <div class="scard-body">
-            <div class="sform-row3">
-              <div class="sform-group">
-                <label class="sform-label">Top Connections N</label>
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="s_topN">Top Connections N</label>
                 <input class="sform-input" id="s_topN" type="number" min="1" max="50" aria-label="Top connections count">
+                <div class="ff-help"></div>
               </div>
-              <div class="sform-group">
-                <label class="sform-label">Top Talkers N</label>
+              <div class="ff">
+                <label class="sform-label" for="s_topTalkersN">Top Talkers N</label>
                 <input class="sform-input" id="s_topTalkersN" type="number" min="1" max="20" aria-label="Top talkers count">
+                <div class="ff-help"></div>
               </div>
-              <div class="sform-group">
-                <label class="sform-label">VPN Dashboard Top N</label>
+              <div class="ff">
+                <label class="sform-label" for="s_vpnDashTopN">VPN Dashboard Top N</label>
                 <input class="sform-input" id="s_vpnDashTopN" type="number" min="1" max="50" aria-label="VPN peers shown on dashboard">
+                <div class="ff-help"></div>
               </div>
-            </div>
-            <div class="sform-row" style="margin-bottom:0">
-              <div class="sform-group" style="margin-bottom:0">
-                <label class="sform-label">Max Connections</label>
+              <div class="ff">
+                <label class="sform-label" for="s_maxConns">Max Connections</label>
                 <input class="sform-input" id="s_maxConns" type="number" min="1000" max="100000" aria-label="Maximum connections tracked">
+                <div class="ff-help"></div>
               </div>
-              <div class="sform-group" style="margin-bottom:0">
-                <label class="sform-label">Traffic History (min)</label>
+              <div class="ff">
+                <label class="sform-label" for="s_historyMinutes">Traffic History (min)</label>
                 <input class="sform-input" id="s_historyMinutes" type="number" min="5" max="120" aria-label="Chart history window in minutes">
+                <div class="ff-help"></div>
               </div>
             </div>
           </div>
@@ -213,31 +217,35 @@
           </div>
           <div class="scard-body">
             <p style="font-size:.74rem;color:var(--text-muted);margin-bottom:.8rem">Changes apply immediately without restart.</p>
-            <div id="pollProfileWrap" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem">
-              <button class="poll-profile-btn" data-profile="fast">Fast</button>
-              <button class="poll-profile-btn" data-profile="faster">Faster</button>
-              <button class="poll-profile-btn" data-profile="standard">Standard</button>
-              <button class="poll-profile-btn" data-profile="slow">Slow</button>
-              <button class="poll-profile-btn" data-profile="slower">Slower</button>
-              <button class="poll-profile-btn" data-profile="custom">Custom</button>
-            </div>
-            <!-- Deliberately outside the profile grid: every other interval
-                 polls the router locally, this one reaches MikroTik's update
-                 servers, so it is measured in hours and is not touched by the
-                 Fast/Slow presets. -->
-            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
-              <label for="s_updateCheckHours" style="font-size:.74rem;color:var(--text-muted)">RouterOS update check every</label>
-              <input type="number" id="s_updateCheckHours" min="1" max="168" step="1"
-                     style="width:5rem;font-size:.74rem;font-family:var(--font-mono);padding:.22rem .4rem;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-main)">
-              <span style="font-size:.74rem;color:var(--text-muted)">hours</span>
-              <span style="font-size:.7rem;color:var(--text-muted);opacity:.75;flex-basis:100%">The only check that contacts MikroTik rather than your router. Minimum 1 hour.</span>
+            <div class="ff-grid">
+              <div class="ff ff-full">
+                <label class="sform-label">Profile</label>
+                <div class="ff-row ff-wrap" id="pollProfileWrap">
+                  <button class="poll-profile-btn" data-profile="fast">Fast</button>
+                  <button class="poll-profile-btn" data-profile="faster">Faster</button>
+                  <button class="poll-profile-btn" data-profile="standard">Standard</button>
+                  <button class="poll-profile-btn" data-profile="slow">Slow</button>
+                  <button class="poll-profile-btn" data-profile="slower">Slower</button>
+                  <button class="poll-profile-btn" data-profile="custom">Custom</button>
+                </div>
+                <div class="ff-help"></div>
+              </div>
+              <!-- Deliberately outside the profile buttons: every other interval
+                   polls the router locally, this one reaches MikroTik's update
+                   servers, so it is measured in hours and is not touched by the
+                   Fast/Slow presets. -->
+              <div class="ff">
+                <label class="sform-label" for="s_updateCheckHours">RouterOS update check (hours)</label>
+                <input class="sform-input" type="number" id="s_updateCheckHours" min="1" max="168" step="1">
+                <div class="ff-help">The only check that contacts MikroTik rather than your router. Minimum 1 hour.</div>
+              </div>
             </div>
             <details id="pollAdvanced">
               <summary style="font-size:.74rem;color:var(--text-muted);cursor:pointer;margin-bottom:.7rem;user-select:none">Advanced</summary>
               <!-- Two columns: nineteen sliders in one column made the Advanced
                    section taller than the viewport. Collapses to one below
                    900px, where two columns would be narrower than the labels. -->
-              <div id="pollSlidersWrap"></div>
+              <div class="ff-grid" id="pollSlidersWrap"></div>
               <div style="margin-top:.7rem;display:flex;align-items:center;gap:.6rem">
                 <button id="pollCustomSaveBtn" style="font-size:.72rem;font-family:var(--font-ui);padding:.28rem .8rem;border-radius:4px;border:1px solid var(--accent-rx);background:transparent;color:var(--accent-rx);cursor:pointer">Save Custom Profile</button>
                 <span id="pollCustomSaveStatus" style="font-size:.72rem;opacity:0;transition:opacity .25s"></span>
@@ -394,18 +402,21 @@
                  reference and sits where it can be glanced at without leaving
                  the box being typed into. -->
             <div class="msg-templates">
-              <div class="msg-fields">
-                <div class="sform-group">
-                  <label class="sform-label">Notification Title</label>
+              <div class="msg-fields ff-grid ff-one">
+                <div class="ff">
+                  <label class="sform-label" for="s_notifTitle">Notification Title</label>
                   <input type="text" id="s_notifTitle" class="sform-input" maxlength="256" placeholder="MikroDash Alert">
+                  <div class="ff-help"></div>
                 </div>
-                <div class="sform-group" style="margin-top:.6rem">
-                  <label class="sform-label">Body - Down / Alert</label>
-                  <textarea id="s_notifBody" class="sform-input" rows="4" maxlength="512" placeholder="⚠️ {{alertType}} on {{routerName}}: {{detail}}" style="resize:vertical;font-family:var(--font-mono);font-size:.78rem"></textarea>
+                <div class="ff">
+                  <label class="sform-label" for="s_notifBody">Body - Down / Alert</label>
+                  <textarea id="s_notifBody" class="sform-input" rows="4" maxlength="512" placeholder="⚠️ {{alertType}} on {{routerName}}: {{detail}}"></textarea>
+                  <div class="ff-help"></div>
                 </div>
-                <div class="sform-group" style="margin-top:.6rem;margin-bottom:0">
-                  <label class="sform-label">Body - Up / Recovery</label>
-                  <textarea id="s_notifBodyUp" class="sform-input" rows="4" maxlength="512" placeholder="✅ {{alertType}} on {{routerName}}: {{detail}}" style="resize:vertical;font-family:var(--font-mono);font-size:.78rem"></textarea>
+                <div class="ff">
+                  <label class="sform-label" for="s_notifBodyUp">Body - Up / Recovery</label>
+                  <textarea id="s_notifBodyUp" class="sform-input" rows="4" maxlength="512" placeholder="✅ {{alertType}} on {{routerName}}: {{detail}}"></textarea>
+                  <div class="ff-help"></div>
                 </div>
               </div>
               <aside class="msg-vars">
@@ -570,13 +581,12 @@
                  deliberately not a Settings.DEFAULTS field - it is a personal
                  preference, not an install-wide one, which keeps it clear of
                  the settings machinery and its drift tests. -->
-            <div class="theme-navgroup">
-              <label class="stoggle">
-                <span class="stoggle-label">Group the sidebar into categories</span>
-                <span class="stoggle-switch"><input type="checkbox" id="navGrouped" class="nav-grouped-input"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span>
-              </label>
-              <p class="theme-navgroup-note">Collapses the 23 pages into Network, Wireless, IP
-                Services, Tunnels, Traffic, Security and System. Turn it off for one flat list.</p>
+            <div class="theme-navgroup ff-grid ff-one">
+              <div class="ff">
+                <label class="sform-label" for="navGrouped">Group the sidebar into categories</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="navGrouped" class="nav-grouped-input"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Collapses the 23 pages into Network, Wireless, IP Services, Tunnels, Traffic, Security and System. Turn it off for one flat list.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -595,22 +605,36 @@
               <img id="brandPreviewIcon" src="/logo.png" alt="">
               <span class="brand-preview-name" id="brandPreviewName">Mikro<span>Dash</span></span>
             </div>
-            <label class="sform-label" for="brandName">App Name</label>
-            <input type="text" id="brandName" class="sform-input" maxlength="40" placeholder="MikroDash" autocomplete="off">
-            <label class="sform-label" for="brandFont" style="margin-top:.75rem">Name Font</label>
-            <select id="brandFont" class="sform-input">
-              <option value="">Default (Orbitron)</option>
-            </select>
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="brandName">App Name</label>
+                <input type="text" id="brandName" class="sform-input" maxlength="40" placeholder="MikroDash" autocomplete="off">
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="brandFont">Name Font</label>
+                <select id="brandFont" class="sform-input">
+                  <option value="">Default (Orbitron)</option>
+                </select>
+                <div class="ff-help"></div>
+              </div>
+            </div>
             <div class="brand-actions">
               <button type="button" class="sbtn sbtn-primary" id="brandSaveBtn">Save Name</button>
             </div>
-            <div class="sform-label" style="margin-top:1rem">App Icon</div>
-            <div class="brand-actions">
-              <button type="button" class="sbtn sbtn-ghost" id="brandIconPick">Upload Icon…</button>
-              <button type="button" class="sbtn sbtn-ghost" id="brandIconReset" disabled>Use Default Icon</button>
-              <input type="file" id="brandIconFile" accept="image/png,image/jpeg" hidden>
+            <!-- The icon's file input is hidden and sits outside the field, so
+                 the field is exactly label, control and help. -->
+            <input type="file" id="brandIconFile" accept="image/png,image/jpeg" hidden>
+            <div class="ff-grid ff-one">
+              <div class="ff">
+                <label class="sform-label" for="brandIconPick">App Icon</label>
+                <div class="ff-row">
+                  <button type="button" class="sbtn sbtn-ghost" id="brandIconPick">Upload Icon…</button>
+                  <button type="button" class="sbtn sbtn-ghost" id="brandIconReset" disabled>Use Default Icon</button>
+                </div>
+                <div class="ff-help">PNG or JPEG, square, 64 to 512 px, up to 512 KB. A transparent PNG of 256 px or more looks best; it is shown at 24 px.</div>
+              </div>
             </div>
-            <p class="brand-hint">PNG or JPEG, square, 64 to 512 px, up to 512 KB. A transparent PNG of 256 px or more looks best; it is shown at 24 px.</p>
             <div class="brand-status" id="brandStatus" role="status" aria-live="polite"></div>
           </div>
         </div>
@@ -620,23 +644,34 @@
             <span class="scard-title">Contrast &amp; Brightness</span>
           </div>
           <div class="scard-body">
-            <label class="sform-label">Contrast</label>
-            <div style="display:flex;align-items:center;gap:.6rem">
-              <span style="font-size:.72rem;color:var(--text-muted);min-width:2rem">Low</span>
-              <input type="range" id="appearanceContrast" min="1" max="15" step="1" style="flex:1;accent-color:var(--accent-rx)" aria-label="Contrast">
-              <span style="font-size:.72rem;color:var(--text-muted);min-width:2.5rem;text-align:right">High</span>
-            </div>
-            <label class="sform-label" style="margin-top:.75rem">Text Brightness</label>
-            <div style="display:flex;align-items:center;gap:.6rem">
-              <span style="font-size:.72rem;color:var(--text-muted);min-width:2rem">Dim</span>
-              <input type="range" id="appearanceTextBright" min="1" max="15" step="1" style="flex:1;accent-color:var(--accent-rx)" aria-label="Text brightness">
-              <span style="font-size:.72rem;color:var(--text-muted);min-width:2.5rem;text-align:right">Bright</span>
-            </div>
-            <label class="sform-label" style="margin-top:.75rem">Background Brightness</label>
-            <div style="display:flex;align-items:center;gap:.6rem">
-              <span style="font-size:.72rem;color:var(--text-muted);min-width:2rem">Dark</span>
-              <input type="range" id="appearanceBgBright" min="1" max="15" step="1" style="flex:1;accent-color:var(--accent-rx)" aria-label="Background brightness">
-              <span style="font-size:.72rem;color:var(--text-muted);min-width:2.5rem;text-align:right">Light</span>
+            <div class="ff-grid ff-one">
+              <div class="ff">
+                <label class="sform-label" for="appearanceContrast">Contrast</label>
+                <div class="ff-row">
+                  <span class="ff-unit">Low</span>
+                  <input class="sform-input" type="range" id="appearanceContrast" min="1" max="15" step="1" aria-label="Contrast">
+                  <span class="ff-unit">High</span>
+                </div>
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="appearanceTextBright">Text Brightness</label>
+                <div class="ff-row">
+                  <span class="ff-unit">Dim</span>
+                  <input class="sform-input" type="range" id="appearanceTextBright" min="1" max="15" step="1" aria-label="Text brightness">
+                  <span class="ff-unit">Bright</span>
+                </div>
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="appearanceBgBright">Background Brightness</label>
+                <div class="ff-row">
+                  <span class="ff-unit">Dark</span>
+                  <input class="sform-input" type="range" id="appearanceBgBright" min="1" max="15" step="1" aria-label="Background brightness">
+                  <span class="ff-unit">Light</span>
+                </div>
+                <div class="ff-help"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -646,45 +681,53 @@
             <span class="scard-title">Fonts</span>
           </div>
           <div class="scard-body">
-            <label class="sform-label">Font Family</label>
-            <select id="appearanceFont" class="sform-input" style="margin-bottom:.75rem" aria-label="Interface font">
-              <option value="system">System UI</option>
-              <option value="syne">Syne</option>
-              <option value="geist">Geist</option>
-              <option value="inter">Inter</option>
-              <option value="plus-jakarta">Plus Jakarta Sans</option>
-              <option value="dm-sans">DM Sans</option>
-              <option value="outfit">Outfit</option>
-              <option value="space-grotesk">Space Grotesk</option>
-              <option value="sofia-sans">Sofia Sans</option>
-              <option value="nunito">Nunito</option>
-              <option value="poppins">Poppins</option>
-              <option value="montserrat">Montserrat</option>
-              <option value="raleway">Raleway</option>
-              <option value="manrope">Manrope</option>
-              <option value="roboto">Roboto</option>
-              <option value="open-sans">Open Sans</option>
-              <option value="lato">Lato</option>
-              <option value="source-sans">Source Sans 3</option>
-              <option value="work-sans">Work Sans</option>
-              <option value="fira-sans">Fira Sans</option>
-              <option value="jetbrains-mono">JetBrains Mono</option>
-              <option value="fira-code">Fira Code</option>
-              <option value="quicksand">Quicksand</option>
-              <option value="comfortaa">Comfortaa</option>
-              <option value="ibm-plex-sans">IBM Plex Sans</option>
-              <option value="oxanium">Oxanium (Default)</option>
-              <option value="orbitron">Orbitron</option>
-            </select>
-            <label class="sform-label" style="margin-top:.25rem">Font Size</label>
-            <select id="appearanceFontSize" class="sform-input" aria-label="Interface font size">
-              <option value="xs">Extra Small</option>
-              <option value="sm">Small</option>
-              <option value="normal">Normal</option>
-              <option value="md">Medium</option>
-              <option value="lg">Large</option>
-              <option value="xl">Extra Large</option>
-            </select>
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="appearanceFont">Font Family</label>
+                <select id="appearanceFont" class="sform-input" aria-label="Interface font">
+                  <option value="system">System UI</option>
+                  <option value="syne">Syne</option>
+                  <option value="geist">Geist</option>
+                  <option value="inter">Inter</option>
+                  <option value="plus-jakarta">Plus Jakarta Sans</option>
+                  <option value="dm-sans">DM Sans</option>
+                  <option value="outfit">Outfit</option>
+                  <option value="space-grotesk">Space Grotesk</option>
+                  <option value="sofia-sans">Sofia Sans</option>
+                  <option value="nunito">Nunito</option>
+                  <option value="poppins">Poppins</option>
+                  <option value="montserrat">Montserrat</option>
+                  <option value="raleway">Raleway</option>
+                  <option value="manrope">Manrope</option>
+                  <option value="roboto">Roboto</option>
+                  <option value="open-sans">Open Sans</option>
+                  <option value="lato">Lato</option>
+                  <option value="source-sans">Source Sans 3</option>
+                  <option value="work-sans">Work Sans</option>
+                  <option value="fira-sans">Fira Sans</option>
+                  <option value="jetbrains-mono">JetBrains Mono</option>
+                  <option value="fira-code">Fira Code</option>
+                  <option value="quicksand">Quicksand</option>
+                  <option value="comfortaa">Comfortaa</option>
+                  <option value="ibm-plex-sans">IBM Plex Sans</option>
+                  <option value="oxanium">Oxanium (Default)</option>
+                  <option value="orbitron">Orbitron</option>
+                </select>
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="appearanceFontSize">Font Size</label>
+                <select id="appearanceFontSize" class="sform-input" aria-label="Interface font size">
+                  <option value="xs">Extra Small</option>
+                  <option value="sm">Small</option>
+                  <option value="normal">Normal</option>
+                  <option value="md">Medium</option>
+                  <option value="lg">Large</option>
+                  <option value="xl">Extra Large</option>
+                </select>
+                <div class="ff-help"></div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="scard scard--wide">
@@ -694,38 +737,51 @@
           </div>
           <div class="scard-body">
             <p style="font-size:.74rem;color:var(--text-muted);margin:.25rem 0 .65rem">Hide pages you don't use. Dashboard and Settings are always visible. A preset ticks a whole set at once; each user still only sees pages their role allows.</p>
-            <div id="viewPresetWrap" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem">
-              <button type="button" class="view-preset-btn" data-view-preset="home" title="Wireless, Interfaces, DHCP, Connections and Bandwidth">Home</button>
-              <button type="button" class="view-preset-btn" data-view-preset="standard" title="Home plus Topology, DNS, VLANs, VPN, Firewall and Logs">Standard</button>
-              <button type="button" class="view-preset-btn" data-view-preset="advanced" title="Every page, including Routers">Advanced</button>
-              <button type="button" class="view-preset-btn" data-view-preset="custom" title="Your own selection">Custom</button>
-            </div>
-            <div class="stoggle-grid" id="visiblePagesGrid">
-              <label class="stoggle"><span class="stoggle-label">Wifi Networks</span><span class="stoggle-switch"><input type="checkbox" id="s_pageWifi"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Wifi Clients</span><span class="stoggle-switch"><input type="checkbox" id="s_pageWireless"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Wifi Map</span><span class="stoggle-switch"><input type="checkbox" id="s_pageWifiMap"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">WAN</span><span class="stoggle-switch"><input type="checkbox" id="s_pageWan"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Interfaces</span><span class="stoggle-switch"><input type="checkbox" id="s_pageInterfaces"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">DHCP</span><span class="stoggle-switch"><input type="checkbox" id="s_pageDhcp"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">VPN</span><span class="stoggle-switch"><input type="checkbox" id="s_pageVpn"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">VLANs</span><span class="stoggle-switch"><input type="checkbox" id="s_pageVlans"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">PPP</span><span class="stoggle-switch"><input type="checkbox" id="s_pagePpp"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">CAPsMAN</span><span class="stoggle-switch"><input type="checkbox" id="s_pageCapsman"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Bridges</span><span class="stoggle-switch"><input type="checkbox" id="s_pageBridges"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">DNS</span><span class="stoggle-switch"><input type="checkbox" id="s_pageDns"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">NetWatch</span><span class="stoggle-switch"><input type="checkbox" id="s_pageNetwatch"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Packages</span><span class="stoggle-switch"><input type="checkbox" id="s_pagePackages"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Devices</span><span class="stoggle-switch"><input type="checkbox" id="s_pageDevices"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Queues</span><span class="stoggle-switch"><input type="checkbox" id="s_pageQueues"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Device Users</span><span class="stoggle-switch"><input type="checkbox" id="s_pageRosusers"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Audit</span><span class="stoggle-switch"><input type="checkbox" id="s_pageAudit"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Backups</span><span class="stoggle-switch"><input type="checkbox" id="s_pageBackups"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Connections</span><span class="stoggle-switch"><input type="checkbox" id="s_pageConnections"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Firewall</span><span class="stoggle-switch"><input type="checkbox" id="s_pageFirewall"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Logs</span><span class="stoggle-switch"><input type="checkbox" id="s_pageLogs"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Bandwidth</span><span class="stoggle-switch"><input type="checkbox" id="s_pageBandwidth"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Routing</span><span class="stoggle-switch"><input type="checkbox" id="s_pageRouting"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              <label class="stoggle"><span class="stoggle-label">Topology</span><span class="stoggle-switch"><input type="checkbox" id="s_pageTopology"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+            <div class="ff-grid">
+              <div class="ff ff-full">
+                <label class="sform-label">Preset</label>
+                <div class="ff-row ff-wrap" id="viewPresetWrap">
+                  <button type="button" class="view-preset-btn" data-view-preset="home" title="Wireless, Interfaces, DHCP, Connections and Bandwidth">Home</button>
+                  <button type="button" class="view-preset-btn" data-view-preset="standard" title="Home plus Topology, DNS, VLANs, VPN, Firewall and Logs">Standard</button>
+                  <button type="button" class="view-preset-btn" data-view-preset="advanced" title="Every page, including Routers">Advanced</button>
+                  <button type="button" class="view-preset-btn" data-view-preset="custom" title="Your own selection">Custom</button>
+                </div>
+                <div class="ff-help"></div>
+              </div>
+              <!-- A SET OF PAGES CHOSEN TOGETHER, so one .ff-multi box rather than
+                   forty toggle fields. The generated pages' boxes are appended
+                   by renderAreaToggles in settings.ts. -->
+              <div class="ff ff-full">
+                <label class="sform-label">Pages</label>
+                <div class="ff-multi" id="visiblePagesGrid">
+                  <label><input type="checkbox" id="s_pageWifi">Wifi Networks</label>
+                  <label><input type="checkbox" id="s_pageWireless">Wifi Clients</label>
+                  <label><input type="checkbox" id="s_pageWifiMap">Wifi Map</label>
+                  <label><input type="checkbox" id="s_pageWan">WAN</label>
+                  <label><input type="checkbox" id="s_pageInterfaces">Interfaces</label>
+                  <label><input type="checkbox" id="s_pageDhcp">DHCP</label>
+                  <label><input type="checkbox" id="s_pageVpn">VPN</label>
+                  <label><input type="checkbox" id="s_pageVlans">VLANs</label>
+                  <label><input type="checkbox" id="s_pagePpp">PPP</label>
+                  <label><input type="checkbox" id="s_pageCapsman">CAPsMAN</label>
+                  <label><input type="checkbox" id="s_pageBridges">Bridges</label>
+                  <label><input type="checkbox" id="s_pageDns">DNS</label>
+                  <label><input type="checkbox" id="s_pageNetwatch">NetWatch</label>
+                  <label><input type="checkbox" id="s_pagePackages">Packages</label>
+                  <label><input type="checkbox" id="s_pageDevices">Devices</label>
+                  <label><input type="checkbox" id="s_pageQueues">Queues</label>
+                  <label><input type="checkbox" id="s_pageRosusers">Device Users</label>
+                  <label><input type="checkbox" id="s_pageAudit">Audit</label>
+                  <label><input type="checkbox" id="s_pageBackups">Backups</label>
+                  <label><input type="checkbox" id="s_pageConnections">Connections</label>
+                  <label><input type="checkbox" id="s_pageFirewall">Firewall</label>
+                  <label><input type="checkbox" id="s_pageLogs">Logs</label>
+                  <label><input type="checkbox" id="s_pageBandwidth">Bandwidth</label>
+                  <label><input type="checkbox" id="s_pageRouting">Routing</label>
+                  <label><input type="checkbox" id="s_pageTopology">Topology</label>
+                </div>
+                <div class="ff-help">Ticked pages are shown in the sidebar.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -742,18 +798,16 @@
           <div class="scard-body">
             <!-- Two columns: the card spans the full grid width, so stacking two
                  short controls left a lot of empty space to their right. -->
-            <div class="auth-grid">
-              <!-- Both columns follow the same shape - heading, control, hint -
-                   so the controls sit on one line and the hints start together. -->
-              <div>
-                <span class="sform-label">Sign-in</span>
-                <label class="stoggle"><span class="stoggle-label">Require sign-in</span><span class="stoggle-switch"><input type="checkbox" id="s_authEnabled" aria-label="Require sign-in"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-                <p class="auth-hint">Off means no login at all: anyone who can reach this page can see every router. Changing router configuration needs sign-in, so write pages are read-only while this is off. Only sensible on a trusted network.</p>
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="s_authEnabled">Require sign-in</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_authEnabled" aria-label="Require sign-in"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Off means no login at all: anyone who can reach this page can see every router. Changing router configuration needs sign-in, so write pages are read-only while this is off. Only sensible on a trusted network.</div>
               </div>
-
-              <!-- Modern auth fields -->
-              <div id="modernAuthFields" style="display:none">
-                <span class="sform-label">Session Timeout</span>
+              <!-- Modern auth fields: shown by applyAuthModeVisibility, which
+                   sets display on the whole field. -->
+              <div class="ff" id="modernAuthFields" style="display:none">
+                <label class="sform-label" for="s_sessionTimeoutMs">Session Timeout</label>
                 <select class="sform-input" id="s_sessionTimeoutMs" aria-label="Session timeout">
                   <option value="3600000">1 hour</option>
                   <option value="14400000">4 hours</option>
@@ -761,14 +815,14 @@
                   <option value="86400000">24 hours</option>
                   <option value="0">Never</option>
                 </select>
-                <p class="auth-hint">Sessions are cleared on server restart. Signing in again is all that is needed.</p>
+                <div class="ff-help">Sessions are cleared on server restart. Signing in again is all that is needed.</div>
               </div>
             </div>
 
             <!-- Warning: open access. Full width beneath both columns - it is the
                  loudest thing on the card when it shows, and must not be a
                  narrow strip beside the toggle. -->
-            <div id="authNoneWarn" style="display:none;background:rgba(245,159,0,.1);border:1px solid rgba(245,159,0,.25);border-radius:6px;padding:.5rem .75rem;font-size:.76rem;color:var(--accent-warn);margin-top:.75rem">
+            <div id="authNoneWarn" style="display:none;background:rgba(245,159,0,.1);border:1px solid rgba(245,159,0,.25);border-radius:6px;padding:.5rem .75rem;font-size:.76rem;color:var(--accent-warn)">
               ⚠ Dashboard is publicly accessible - anyone on the network can view it.
             </div>
           </div>
@@ -1239,7 +1293,6 @@
           <div class="scard-header">
             <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:var(--accent-rx);stroke-width:2;stroke-linejoin:round"><path d="M10 3c.6 3.9 3.1 6.4 7 7-3.9.6-6.4 3.1-7 7-.6-3.9-3.1-6.4-7-7 3.9-.6 6.4-3.1 7-7z"/><path d="M18.5 2.5c.25 1.4 1.1 2.25 2.5 2.5-1.4.25-2.25 1.1-2.5 2.5-.25-1.4-1.1-2.25-2.5-2.5 1.4-.25 2.25-1.1 2.5-2.5z"/><path d="M18.5 16.5c.2 1 .8 1.6 1.8 1.8-1 .2-1.6.8-1.8 1.8-.2-1-.8-1.6-1.8-1.8 1-.2 1.6-.8 1.8-1.8z"/></svg>
             <span class="scard-title">AI Agent</span>
-            <label class="stoggle" style="margin:0 0 0 auto"><span class="stoggle-switch"><input type="checkbox" id="s_aiEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
           </div>
           <div class="scard-body">
             <p style="font-size:.74rem;color:var(--text-muted);margin-bottom:.8rem">
@@ -1249,136 +1302,130 @@
               (Ollama, LM Studio, vLLM, LiteLLM) sends nothing outside your network.
               The AI Agent page appears once this is switched on and an endpoint and model are set.
             </p>
-            <div class="sform-row">
-              <div class="sform-group" style="flex:2">
-                <label class="sform-label">Endpoint</label>
+            <!-- THE SWITCH IS A FIELD, first in the form. It was a bare switch
+                 in the card header with no label of its own. -->
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="s_aiEnabled">Enable the AI Agent</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_aiEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="s_aiBaseUrl">Endpoint</label>
                 <input type="text" id="s_aiBaseUrl" class="sform-input" placeholder="http://192.0.2.10:11434/v1" autocomplete="off">
+                <div class="ff-help"></div>
               </div>
-              <div class="sform-group" style="flex:1">
-                <label class="sform-label">Model</label>
+              <div class="ff">
+                <label class="sform-label" for="s_aiModel">Model</label>
                 <input type="text" id="s_aiModel" class="sform-input" placeholder="llama3.1:8b" autocomplete="off">
+                <div class="ff-help"></div>
               </div>
-            </div>
-            <div class="sform-row" style="margin-top:.5rem">
-              <div class="sform-group" style="flex:2">
-                <label class="sform-label">API Key</label>
+              <div class="ff">
+                <label class="sform-label" for="s_aiApiKey">API Key</label>
                 <input type="password" id="s_aiApiKey" class="sform-input" placeholder="paste key here, or leave blank for a local model" autocomplete="off">
+                <div class="ff-help"></div>
               </div>
-              <!-- Timeout and Token budget share the column Timeout had alone:
-                   .sform-row is a two-column grid, so they sit in a nested one. -->
-              <div class="sform-row" style="gap:.5rem">
-                <div class="sform-group">
-                  <label class="sform-label">Timeout (ms)</label>
-                  <input type="number" id="s_aiTimeoutMs" class="sform-input" min="1000" max="600000" placeholder="60000" autocomplete="off">
-                </div>
-                <div class="sform-group">
-                  <label class="sform-label" title="The most the model may write in one reply, its reasoning included. A reasoning model that runs out writes nothing; raise it if answers come back cut off.">Token budget</label>
-                  <input type="number" id="s_aiMaxTokens" class="sform-input" min="1024" max="65536" step="1024" placeholder="8192" autocomplete="off">
-                </div>
+              <div class="ff">
+                <label class="sform-label" for="s_aiTimeoutMs">Timeout (ms)</label>
+                <input type="number" id="s_aiTimeoutMs" class="sform-input" min="1000" max="600000" placeholder="60000" autocomplete="off">
+                <div class="ff-help"></div>
               </div>
-            </div>
-            <div class="sform-group" style="margin-top:.5rem">
-              <label class="sform-label">Extra headers</label>
-              <textarea id="s_aiHeaders" class="sform-input" rows="2" placeholder="X-Tenant: acme" autocomplete="off" style="resize:vertical;font-family:var(--font-mono);font-size:.72rem"></textarea>
-            </div>
-            <div class="sform-group" style="margin-top:.5rem">
-              <label class="sform-label" for="s_aiTlsPin">Trusted certificate (SHA-256)</label>
-              <input type="text" id="s_aiTlsPin" class="sform-input" placeholder="Empty: the endpoint's certificate must be publicly trusted" autocomplete="off" spellcheck="false" style="font-family:var(--font-mono);font-size:.72rem">
-              <p style="font-size:.7rem;color:var(--text-muted);margin:.35rem 0 0">
-                For an endpoint on your own network with a self-signed certificate. Press
-                <strong>Test Connection</strong>: if the certificate is not trusted, it is shown with a
-                <strong>Trust</strong> button that fills this in, then save. Only that exact certificate is
-                accepted afterwards.
-              </p>
+              <div class="ff">
+                <label class="sform-label" for="s_aiMaxTokens">Token budget</label>
+                <input type="number" id="s_aiMaxTokens" class="sform-input" min="1024" max="65536" step="1024" placeholder="8192" autocomplete="off">
+                <div class="ff-help">The most the model may write in one reply, its reasoning included. A reasoning model that runs out writes nothing; raise it if answers come back cut off.</div>
+              </div>
+              <div class="ff ff-full">
+                <label class="sform-label" for="s_aiHeaders">Extra headers</label>
+                <textarea id="s_aiHeaders" class="sform-input" rows="2" placeholder="X-Tenant: acme" autocomplete="off"></textarea>
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff ff-full">
+                <label class="sform-label" for="s_aiTlsPin">Trusted certificate (SHA-256)</label>
+                <input type="text" id="s_aiTlsPin" class="sform-input" placeholder="Empty: the endpoint's certificate must be publicly trusted" autocomplete="off" spellcheck="false">
+                <div class="ff-help">For an endpoint on your own network with a self-signed certificate. Press
+                  <strong>Test Connection</strong>: if the certificate is not trusted, it is shown with a
+                  <strong>Trust</strong> button that fills this in, then save. Only that exact certificate is
+                  accepted afterwards.</div>
+              </div>
             </div>
             <!-- Test Connection sits with the connection settings it tests, under the
                  last of them, rather than at the foot of the card below unrelated ones. -->
-            <div style="display:flex;align-items:center;gap:.6rem;margin-top:.6rem">
+            <div style="display:flex;align-items:center;gap:.6rem">
               <button id="btn-test-ai" class="sbtn sbtn-ghost" type="button" style="padding:.3rem .8rem;font-size:.72rem">Test Connection</button>
               <span id="test-ai-result" style="font-size:.75rem"></span>
             </div>
             <div id="aiCertTrust" hidden style="margin-top:.5rem;padding:.5rem .6rem;border:1px solid var(--border);border-radius:6px;font-size:.72rem;color:var(--text-main);word-break:break-all"></div>
-            <div class="sform-group" style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border)">
-              <label class="sform-label">Changing the router</label>
-              <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;cursor:pointer;color:var(--text-main)">
-                <input type="checkbox" id="s_aiConfirmWrites">
-                <span>Ask me before the assistant changes anything</span>
-              </label>
-              <p style="font-size:.7rem;color:var(--text-muted);margin:.35rem 0 0">
-                The assistant can only change things you are allowed to change yourself, and
-                every change goes through the same checks, confirmation and audit trail as the
-                forms. <strong>Turning this off lets it apply ordinary changes without
-                asking.</strong> A change that could cut MikroDash off from the router is always
-                put to you, whatever this is set to.
-              </p>
-              <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;cursor:pointer;color:var(--text-main);margin-top:.6rem">
-                <input type="checkbox" id="s_aiAllowRawCommands">
-                <span>Let the assistant run raw RouterOS commands</span>
-              </label>
-              <p style="font-size:.7rem;color:var(--text-muted);margin:.35rem 0 0">
-                For what no page covers. Offered only to signed-in global administrators, and
-                <strong>every command, even a read, is shown to you and runs only when you type the
-                router's name</strong>. Raw commands skip MikroDash's own checks, read-back and
-                undo, so leave this off unless you need it.
-              </p>
-            </div>
-            <div class="sform-row" style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border)">
-              <div class="sform-group" style="flex:2">
-                <label class="sform-label">Agent Overview card</label>
-                <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;cursor:pointer;color:var(--text-main)">
-                  <input type="checkbox" id="s_aiOverviewEnabled">
-                  <span>Write a one-line router status on the Dashboard</span>
-                </label>
+            <!-- CHANGING THE ROUTER. Two toggles, each with its consequence as
+                 its help. -->
+            <div class="ff-grid ff-sep">
+              <div class="ff">
+                <label class="sform-label" for="s_aiConfirmWrites">Ask me before the assistant changes anything</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_aiConfirmWrites"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">The assistant can only change things you are allowed to change yourself, and
+                  every change goes through the same checks, confirmation and audit trail as the
+                  forms. <strong>Turning this off lets it apply ordinary changes without
+                  asking.</strong> A change that could cut MikroDash off from the router is always
+                  put to you, whatever this is set to.</div>
               </div>
-              <div class="sform-group" style="flex:1">
-                <label class="sform-label">Refresh</label>
-                <!-- HOURS AND SECONDS ARE A VIEW OF ONE SETTING. The stored value is
-                     still aiOverviewIntervalSec, in seconds, carried by the hidden
-                     input the save reads; settings.ts combines the two boxes into it
-                     and splits it back out on load. 0 hours means seconds only. -->
-                <input type="hidden" id="s_aiOverviewIntervalSec">
-                <div style="display:flex;gap:.4rem;align-items:center">
+              <div class="ff">
+                <label class="sform-label" for="s_aiAllowRawCommands">Let the assistant run raw RouterOS commands</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_aiAllowRawCommands"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">For what no page covers. Offered only to signed-in global administrators, and
+                  <strong>every command, even a read, is shown to you and runs only when you type the
+                  router's name</strong>. Raw commands skip MikroDash's own checks, read-back and
+                  undo, so leave this off unless you need it.</div>
+              </div>
+            </div>
+            <!-- HOURS AND SECONDS ARE A VIEW OF ONE SETTING. The stored value is
+                 still aiOverviewIntervalSec, in seconds, carried by the hidden
+                 input the save reads; settings.ts combines the two boxes into it
+                 and splits it back out on load. 0 hours means seconds only. -->
+            <input type="hidden" id="s_aiOverviewIntervalSec">
+            <div class="ff-grid ff-sep">
+              <div class="ff">
+                <label class="sform-label" for="s_aiOverviewEnabled">Agent Overview card</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_aiOverviewEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Writes a one-line router status on the Dashboard.</div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="aiOverviewHours">Refresh</label>
+                <div class="ff-row">
                   <input type="number" id="aiOverviewHours" class="sform-input" min="0" max="24" step="1"
-                         placeholder="3" autocomplete="off" aria-label="Refresh hours" style="min-width:0">
-                  <span style="font-size:.72rem;color:var(--text-muted)">h</span>
+                         placeholder="3" autocomplete="off" aria-label="Refresh hours">
+                  <span class="ff-unit">h</span>
                   <input type="number" id="aiOverviewSeconds" class="sform-input" min="0" max="86400" step="1"
-                         placeholder="0" autocomplete="off" aria-label="Refresh seconds" style="min-width:0">
-                  <span style="font-size:.72rem;color:var(--text-muted)">s</span>
+                         placeholder="0" autocomplete="off" aria-label="Refresh seconds">
+                  <span class="ff-unit">s</span>
                 </div>
+                <div class="ff-help">Between 1 minute and 24 hours. 0 hours gives the interval in seconds only.</div>
               </div>
             </div>
-            <p style="font-size:.7rem;color:var(--text-muted);margin:.4rem 0 0">
+            <p style="font-size:.7rem;color:var(--text-muted);margin:0 0 .8rem">
               Off by default. The card asks the model only while it is on your Dashboard and
               the Dashboard is open, and by default at most once every 3 hours (10800
-              seconds); coming back sooner shows the last line again rather than asking. Set
-              0 hours to give the interval in seconds only; it must be between 1 minute and 24
-              hours. On a hosted endpoint every refresh is billable, including the refresh
-              icon on the card.
+              seconds); coming back sooner shows the last line again rather than asking. On a
+              hosted endpoint every refresh is billable, including the refresh icon on the card.
             </p>
-            <div class="sform-group" style="margin-top:.6rem">
-              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
-                <label class="sform-label" style="margin:0">Overview prompt</label>
-                <button id="aiOverviewPromptReset" class="sbtn sbtn-ghost" type="button"
-                        style="margin:0 0 0 auto;padding:.2rem .6rem;font-size:.68rem">Reset to Default</button>
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="s_aiOverviewTextColor">Text Colour</label>
+                <input type="color" id="s_aiOverviewTextColor" class="sform-input" value="#38bdf8">
+                <div class="ff-help">The card&rsquo;s terminal text. MikroDash blue by default.</div>
               </div>
-              <textarea id="s_aiOverviewPrompt" class="sform-input" rows="7" maxlength="500"
-                        autocomplete="off" spellcheck="false"
-                        style="resize:vertical;width:100%;font-family:var(--font-mono);font-size:.71rem;line-height:1.45"></textarea>
-              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin-top:.4rem">
-                <span style="font-size:.7rem;color:var(--text-muted)">
-                  What the card is asked to write. Leave it empty to use the built-in prompt;
-                  MikroDash&rsquo;s safety rules are always applied on top.
-                </span>
-                <span id="aiOverviewPromptCount" style="font-size:.68rem;color:var(--text-muted);font-family:var(--font-mono);white-space:nowrap">0 / 500</span>
+              <div class="ff ff-full">
+                <label class="sform-label" for="s_aiOverviewPrompt">Overview prompt</label>
+                <textarea id="s_aiOverviewPrompt" class="sform-input" rows="7" maxlength="500"
+                          autocomplete="off" spellcheck="false"></textarea>
+                <div class="ff-help"><span class="ff-count" id="aiOverviewPromptCount">0 / 500</span>What the card is asked to write. Leave it empty to use the built-in prompt;
+                  MikroDash&rsquo;s safety rules are always applied on top.</div>
               </div>
             </div>
-            <div class="sform-group" style="margin-top:.6rem">
-              <label class="sform-label" for="s_aiOverviewTextColor">Text Colour</label>
-              <div style="display:flex;align-items:center;gap:.6rem">
-                <input type="color" id="s_aiOverviewTextColor" value="#38bdf8"
-                       style="width:2.6rem;height:1.8rem;padding:0;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer">
-                <span style="font-size:.7rem;color:var(--text-muted)">The card&rsquo;s terminal text. MikroDash blue by default.</span>
-              </div>
+            <!-- Reset sits under the box it resets. It writes the box only; the
+                 operator still saves. -->
+            <div style="display:flex;justify-content:flex-end">
+              <button id="aiOverviewPromptReset" class="sbtn sbtn-ghost" type="button"
+                      style="padding:.2rem .6rem;font-size:.68rem">Reset to Default</button>
             </div>
           </div>
         </div>
@@ -1405,14 +1452,13 @@
               instructions found in router data, and still cannot run commands or reach any
               device other than the one selected.
             </p>
-            <textarea id="s_aiSystemPrompt" class="sform-input" rows="20" maxlength="8000"
-                      autocomplete="off" spellcheck="false"
-                      style="width:100%;font-family:var(--font-mono);font-size:.71rem;line-height:1.45"></textarea>
-            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin-top:.4rem">
-              <span style="font-size:.7rem;color:var(--text-muted)">
-                Leave it empty to use the built-in prompt.
-              </span>
-              <span id="aiPromptCount" style="font-size:.68rem;color:var(--text-muted);font-family:var(--font-mono);white-space:nowrap">0 / 8000</span>
+            <div class="ff-grid ff-one">
+              <div class="ff">
+                <label class="sform-label" for="s_aiSystemPrompt">Prompt</label>
+                <textarea id="s_aiSystemPrompt" class="sform-input" rows="20" maxlength="8000"
+                          autocomplete="off" spellcheck="false"></textarea>
+                <div class="ff-help"><span class="ff-count" id="aiPromptCount">0 / 8000</span>Leave it empty to use the built-in prompt.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1424,7 +1470,6 @@
           <div class="scard-header">
             <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:var(--accent-rx);stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="14" width="18" height="7" rx="1.5"/><path d="M7 17.5h.01M11 17.5h.01"/><path d="M12 3v8"/><path d="M8.5 7.5 12 11l3.5-3.5"/></svg>
             <span class="scard-title">Zero-touch provisioning</span>
-            <label class="stoggle" style="margin:0 0 0 auto"><span class="stoggle-switch"><input type="checkbox" id="s_ztpEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
           </div>
           <div class="scard-body">
             <p style="font-size:.74rem;color:var(--text-muted);margin-bottom:.8rem">
@@ -1435,32 +1480,37 @@
               is off. Routers on your own network need no tunnel.
             </p>
             <div class="ztp-status" id="ztpStatusLine"></div>
-            <div class="sform-row" style="margin-top:.6rem">
-              <div class="sform-group" style="flex:2">
+            <!-- THE SWITCH IS A FIELD, first in the form, as on the AI Agent
+                 card. The paragraph that explained these fields is split into
+                 each one's help. -->
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="s_ztpEnabled">Enable provisioning</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_ztpEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
                 <label class="sform-label" for="s_ztpEndpoint">Address routers dial</label>
                 <input type="text" id="s_ztpEndpoint" class="sform-input" placeholder="vpn.example.com" autocomplete="off">
+                <div class="ff-help">A name or IP, with no port.</div>
               </div>
-              <div class="sform-group" style="flex:1">
+              <div class="ff">
                 <label class="sform-label" for="s_ztpListenPort">UDP port</label>
                 <input type="number" id="s_ztpListenPort" class="sform-input" min="1" max="65535" placeholder="13231">
+                <div class="ff-help"></div>
               </div>
-            </div>
-            <div class="sform-row" style="margin-top:.5rem">
-              <div class="sform-group" style="flex:1">
+              <div class="ff">
                 <label class="sform-label" for="s_ztpSubnet">Tunnel addresses</label>
                 <input type="text" id="s_ztpSubnet" class="sform-input" placeholder="10.249.0.0/16" autocomplete="off">
+                <div class="ff-help">Private, and not used on your routers' networks.</div>
               </div>
-              <div class="sform-group" style="flex:2">
+              <div class="ff ff-full">
                 <label class="sform-label" for="s_ztpLanUrl">This MikroDash on your LAN</label>
                 <input type="text" id="s_ztpLanUrl" class="sform-input" placeholder="http://192.168.88.10:3081" autocomplete="off">
+                <div class="ff-help">Where local routers call home. The wizard suggests it.</div>
               </div>
             </div>
-            <p class="ztp-help" style="margin-top:.4rem">
-              The public address is a name or IP, with no port. Tunnel addresses must be private and not
-              used on your routers' networks. The LAN address is where local routers call home, and the
-              wizard suggests it.
-            </p>
-            <dl class="ztp-facts ztp-facts-wide" style="margin-top:.6rem">
+            <dl class="ztp-facts ztp-facts-wide">
               <dt>Instance</dt><dd><code id="ztpInstanceId">-</code></dd>
               <dt>Public key</dt><dd><code id="ztpPublicKey">-</code></dd>
             </dl>
@@ -1478,19 +1528,21 @@
               page as <strong>Not yet provisioned</strong>, and joins the fleet when you onboard it. It
               needs provisioning switched on and the address above.
             </p>
-            <div class="sform-row">
-              <div class="sform-group" style="flex:2">
+            <div class="ff-grid">
+              <div class="ff">
                 <label class="sform-label" for="ztpBatchName">Name</label>
                 <input type="text" id="ztpBatchName" class="sform-input" maxlength="64" placeholder="Spring branch rollout" autocomplete="off">
+                <div class="ff-help"></div>
               </div>
-              <div class="sform-group" style="flex:1">
+              <div class="ff">
                 <label class="sform-label" for="ztpBatchDays">Works for</label>
                 <select id="ztpBatchDays" class="sform-input">
                   <option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option>
                 </select>
+                <div class="ff-help"></div>
               </div>
             </div>
-            <div style="display:flex;gap:.6rem;align-items:center;margin-top:.5rem">
+            <div style="display:flex;gap:.6rem;align-items:center">
               <button class="sbtn sbtn-primary" type="button" id="ztpBatchBtn">Make a generic script</button>
               <span class="ztp-help" id="ztpBatchMsg" aria-live="polite"></span>
             </div>

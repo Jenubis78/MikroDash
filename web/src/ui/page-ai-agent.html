@@ -109,19 +109,18 @@
                  knows which router this is. The server checks it again against
                  the router's own label; this box cannot be bypassed by sending
                  the frame directly, because that check is not here. -->
-            <div id="aiProposeTyped" hidden style="margin-top:.55rem">
-              <label for="aiProposeConfirm" id="aiProposeTypedLabel"
-                     style="display:block;font-size:.72rem;color:var(--text-main);margin-bottom:.3rem"></label>
-              <input id="aiProposeConfirm" class="sform-input" type="text" autocomplete="off"
-                     spellcheck="false" style="font-size:.75rem"/>
+            <div id="aiProposeTyped" class="ff ai-propose-field" hidden>
+              <label class="sform-label" for="aiProposeConfirm" id="aiProposeTypedLabel"></label>
+              <input id="aiProposeConfirm" class="sform-input" type="text" autocomplete="off" spellcheck="false"/>
+              <div class="ff-help"></div>
             </div>
             <!-- A LOGIN THE ACTION NEEDS, typed by the operator here and sent on
                  the approval frame only. The model never supplies or sees it. -->
-            <div id="aiProposeCreds" hidden style="margin-top:.55rem;display:flex;gap:.45rem">
+            <div id="aiProposeCreds" class="ff-row ai-propose-field" hidden>
               <input id="aiProposeUser" class="sform-input" type="text" autocomplete="off" spellcheck="false"
-                     placeholder="User on the far router" style="font-size:.75rem"/>
+                     placeholder="User on the far router" aria-label="User on the far router"/>
               <input id="aiProposePass" class="sform-input" type="password" autocomplete="new-password"
-                     placeholder="Password" style="font-size:.75rem"/>
+                     placeholder="Password" aria-label="Password on the far router"/>
             </div>
             <div style="display:flex;gap:.45rem;justify-content:flex-end;margin-top:.7rem">
               <button id="aiProposeReject" class="sbtn sbtn-outline" type="button"
@@ -136,7 +135,7 @@
               <textarea id="aiAgentInput" class="sform-input" rows="2"
                         placeholder="Ask about this router&hellip;  (Enter to send, Shift+Enter for a new line)"
                         autocomplete="off"
-                        style="resize:vertical;flex:1;font-size:.8rem"></textarea>
+                        style="flex:1"></textarea>
               <button id="aiAgentSend" class="sbtn sbtn-primary" type="button"
                       style="padding:.45rem 1rem;font-size:.75rem;white-space:nowrap">Send</button>
             </div>

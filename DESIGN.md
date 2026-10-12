@@ -420,6 +420,22 @@ rows below it, a select a few pixels off its neighbours, and placeholders in the
 - **A data-entry table** (one input per router and variable) keeps its table: the column header is
   each input's label, and every cell's control is still `.sform-input`.
 
+**Pages follow the same rules as dialogs.** A page's form (Settings, a card's options) is an
+`.ff-grid` of fields exactly like a dialog's. Two page shapes are added:
+
+- **A toolbar control** (a search box, a filter select in a card header) is unlabelled and compact:
+  `class="sform-input sform-sm"`, `--ctl-h-sm` tall. It may be placed with `width`, `max-width` or
+  `flex`, never resized.
+- **A one-row form** (a tool's run controls: target, count, Start) is `.ff-inline`: fields side by
+  side, wrapping, with the action `.sbtn` level with the boxes. It shows no help lines; a field that
+  needs explaining gets a note under the row.
+- **The one other switch** is `.stoggle.stoggle-bare`: a bare switch set inside a sentence or an
+  action bar ("Upgrade automatically" beside the firmware button), where it is an action, not a
+  field. `internal/verify` holds the list of files allowed to draw one.
+- **The vendored Tabler stylesheet's form classes** (`form-control`, `form-select`, `form-label`)
+  are never used: they are a second control system with their own sizes and colours. Tabler is
+  still loaded for its layout utilities.
+
 **Never.**
 
 - **No inline `style`** on a field or any part of one. The one exception is `display`, which a

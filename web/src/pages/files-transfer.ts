@@ -12,6 +12,7 @@
 // credential value masked by the server; it is set as text, never markup.
 
 import { el, esc } from '../dom';
+import { fieldHtml } from '../form';
 import type { Socket } from '../socket';
 import { registerAreaPanel } from './area';
 
@@ -33,19 +34,21 @@ export function initFilesTransfer(socket: Socket): void {
         '<p class="muted-note" style="margin:0 0 .6rem">The router fetches the file itself, over its own ' +
           'connection, and saves it under the address\'s file name. Scripts that run on arrival ' +
           '(<code>*.auto.*</code>) and packages are refused.</p>' +
-        '<form id="filesFetchForm" class="d-flex gap-2 flex-wrap" autocomplete="off">' +
-          '<input id="filesFetchUrl" class="form-control form-control-sm" type="url" required ' +
-            'placeholder="https://example.com/file.txt" style="flex:1 1 22rem;min-width:0">' +
-          '<button class="btn btn-sm btn-primary" type="submit" id="filesFetchBtn">Download to router</button>' +
+        '<form id="filesFetchForm" class="ff-inline" autocomplete="off">' +
+          fieldHtml({ id: 'filesFetchUrl', label: 'URL' },
+            '<input id="filesFetchUrl" class="sform-input" type="url" required size="48" ' +
+            'placeholder="https://example.com/file.txt">') +
+          '<button class="sbtn sbtn-primary" type="submit" id="filesFetchBtn">Download to router</button>' +
         '</form>' +
         '<div id="filesFetchNote" class="muted-note" style="margin-top:.5rem"></div>' +
         '<h4 class="card-title" style="font-size:.9rem;margin:1.2rem 0 .3rem">Read a text file</h4>' +
         '<p class="muted-note" style="margin:0 0 .6rem">Text files up to 64 KiB. Passwords, secrets and ' +
           'keys are shown as «hidden»; a file holding a private key is not shown.</p>' +
-        '<form id="filesReadForm" class="d-flex gap-2 flex-wrap" autocomplete="off">' +
-          '<input id="filesReadName" class="form-control form-control-sm" type="text" required ' +
-            'placeholder="flash/notes.txt" style="flex:1 1 22rem;min-width:0">' +
-          '<button class="btn btn-sm btn-outline-secondary" type="submit">Show</button>' +
+        '<form id="filesReadForm" class="ff-inline" autocomplete="off">' +
+          fieldHtml({ id: 'filesReadName', label: 'File' },
+            '<input id="filesReadName" class="sform-input" type="text" required size="48" ' +
+            'placeholder="flash/notes.txt">') +
+          '<button class="sbtn sbtn-ghost" type="submit">Show</button>' +
         '</form>' +
         '<div id="filesReadNote" class="muted-note" style="margin-top:.5rem"></div>' +
         '<pre id="filesReadText" hidden style="margin-top:.5rem;max-height:60vh;overflow:auto;font-size:.72rem;' +

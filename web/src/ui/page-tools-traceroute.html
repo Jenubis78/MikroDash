@@ -11,18 +11,20 @@
           </div>
         </div>
         <div class="card-body">
-          <form class="d-flex align-items-end flex-wrap gap-2 mb-3" id="traceForm">
-            <div>
-              <label class="form-label" for="traceAddress">Address</label>
-              <input class="form-control form-control-sm" id="traceAddress" type="text" maxlength="253"
+          <form class="ff-inline mb-3" id="traceForm">
+            <div class="ff">
+              <label class="sform-label" for="traceAddress">Address</label>
+              <input class="sform-input" id="traceAddress" type="text" maxlength="253"
                 placeholder="IP address or host name" autocomplete="off" spellcheck="false" required>
+              <div class="ff-help"></div>
             </div>
-            <div>
-              <label class="form-label" for="traceHops">Max hops</label>
-              <select class="form-select form-select-sm" id="traceHops">
+            <div class="ff">
+              <label class="sform-label" for="traceHops">Max hops</label>
+              <select class="sform-input" id="traceHops">
                 <option>5</option><option>10</option><option selected>15</option>
                 <option>20</option><option>25</option><option>30</option>
               </select>
+              <div class="ff-help"></div>
             </div>
             <button class="sbtn sbtn-primary" id="traceRun" type="submit">Trace</button>
             <span class="muted-note" id="traceStatus"></span>

@@ -197,8 +197,6 @@ html[data-theme="light"] .topo-stage{
 .wm-panel-sub{font-family:var(--font-mono);font-size:.7rem;color:var(--accent-rx);word-break:break-all}
 .wm-panel-note{font-size:.68rem;color:var(--text-muted);line-height:1.45}
 .wm-panel-btn{margin-top:.5rem;width:100%}
-.wm-field{display:flex;flex-direction:column;gap:.2rem}
-.wm-field-lbl{font-size:.68rem;color:var(--text-muted)}
 .wm-swatches{display:flex;gap:.3rem}
 .wm-swatch{width:1.3rem;height:1.3rem;border-radius:4px;cursor:pointer;
   border:1px solid var(--border);background:transparent}

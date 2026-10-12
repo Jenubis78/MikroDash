@@ -92,7 +92,8 @@ function valueFor(raw: unknown, rule: ValueDefault | undefined): string {
  * web/src/presets.ts), each by the tier its area declares.
  *
  * Rendered rather than written into the markup, because the markup is a fixed
- * document and the areas are a declaration.
+ * document and the areas are a declaration. Each is a box in the grid's
+ * `.ff-multi`, the same markup as the hand-written pages before it.
  */
 function renderAreaToggles(hidden: readonly string[]): void {
   const grid = el('visiblePagesGrid');
@@ -102,10 +103,8 @@ function renderAreaToggles(hidden: readonly string[]): void {
     let box = el<HTMLInputElement>(id);
     if (!box) {
       const label = document.createElement('label');
-      label.className = 'stoggle';
-      label.innerHTML = '<span class="stoggle-label">' + esc(area.title) + '</span>' +
-        '<span class="stoggle-switch"><input type="checkbox" id="' + id + '" data-area-toggle="' +
-        esc(area.key) + '"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span>';
+      label.innerHTML = '<input type="checkbox" id="' + id + '" data-area-toggle="' +
+        esc(area.key) + '">' + esc(area.title);
       grid.appendChild(label);
       box = el<HTMLInputElement>(id);
     }
@@ -1014,14 +1013,16 @@ export function grantEditorHtml(
   // `rows || <the empty note>` - an empty string is falsy, so a principal with
   // no grants gets the note rather than a blank box.
   return (rows || '<div style="color:var(--text-muted);margin-bottom:.3rem">No access granted yet.</div>')
-    + '<div style="display:flex;gap:.4rem;margin-top:.5rem">'
-      + '<select class="sform-input" data-grant-role style="flex:0 0 9rem">'
+    // The add row is the shared control row: both pickers at the one control
+    // height, sharing the width, and the button beside them.
+    + '<div class="ff-row">'
+      + '<select class="sform-input" data-grant-role aria-label="Role">'
         + (o.roles || []).map((r) => '<option value="' + esc(r.id) + '">' + esc(r.name) + '</option>').join('')
       + '</select>'
-      + '<select class="sform-input" data-grant-scope style="flex:1">'
+      + '<select class="sform-input" data-grant-scope aria-label="Scope">'
         + '<option value="global:">All routers</option>' + siteOpts + rtrOpts
       + '</select>'
-      + '<button class="sbtn sbtn-outline" data-grant-add style="flex:0 0 auto">Add</button>'
+      + '<button class="sbtn sbtn-outline" data-grant-add>Add</button>'
     + '</div>';
 }
 

@@ -22,10 +22,10 @@
                happens, because a flex line wraps before it shrinks and without
                it the group would rather break than give up input width. -->
           <div class="d-flex align-items-center gap-2 flex-nowrap">
-            <select id="logSeverity" class="form-select form-select-sm" style="max-width:110px;font-size:.73rem" aria-label="Log severity filter">
+            <select id="logSeverity" class="sform-input sform-sm" style="max-width:110px" aria-label="Log severity filter">
               <option value="">All levels</option><option value="error">Error</option><option value="warning">Warning</option><option value="info">Info</option><option value="debug">Debug</option>
             </select>
-            <input id="logSearch" class="form-control form-control-sm" placeholder="Search&#8230;" style="max-width:200px;min-width:0;font-size:.73rem"/>
+            <input id="logSearch" class="sform-input sform-sm" placeholder="Search&#8230;" style="max-width:200px;min-width:0"/>
             <button id="toggleScroll" class="btn btn-sm btn-outline-secondary" style="font-size:.7rem;flex:0 0 auto">Pause</button>
             <button id="clearLogs"   class="btn btn-sm btn-outline-secondary" style="font-size:.7rem;flex:0 0 auto">Clear</button>
           </div>

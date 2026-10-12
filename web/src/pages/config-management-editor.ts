@@ -3,6 +3,7 @@
 // wires them to the page.
 
 import { esc } from '../dom';
+import { fieldHtml, toggleHtml } from '../form';
 import { highlight } from './config-management-cards';
 
 /** One declared setting, as the server stores it (cfgtpl.VarDef). */
@@ -61,20 +62,31 @@ export function gutter(body: string, badLine: number): string {
   return out.join('\n');
 }
 
-/** One settings row. Server variables are listed apart, locked. */
+/**
+ * One settings row: the placeholder's name, then its fields. Each control is
+ * labelled rather than named by its placeholder, which is for a default. Ids
+ * are the variable's name, unique in a template. Server variables are listed
+ * apart, locked.
+ */
 export function varRow(d: VarDef, types: string[], unused: boolean): string {
   const opt = (t: string): string => '<option value="' + esc(t) + '"' + (t === d.type ? ' selected' : '') + '>' +
     esc(t) + '</option>';
-  return '<div class="cfg-var-row' + (unused ? ' is-unused' : '') + '" data-var="' + esc(d.name) + '">' +
+  const id = (f: string): string => 'cfgVar-' + d.name + '-' + f;
+  const secret = d.type === 'secret';
+  return '<div class="cfg-var-row ff-grid' + (unused ? ' is-unused' : '') + '" data-var="' + esc(d.name) + '">' +
     '<div class="cfg-var-name"><span class="cfg-var">{{' + esc(d.name) + '}}</span>' +
     (unused ? '<span class="cfg-meta">not used</span>' : '') + '</div>' +
-    '<select class="form-select form-select-sm" data-var-field="type" aria-label="Type">' + types.map(opt).join('') + '</select>' +
-    '<input class="form-control form-control-sm" data-var-field="label" placeholder="Label" value="' + esc(d.label ?? '') + '">' +
-    '<input class="form-control form-control-sm" data-var-field="default" placeholder="Default" value="' +
-    esc(d.type === 'secret' ? '' : d.default ?? '') + '"' + (d.type === 'secret' ? ' disabled title="A secret has no default: it would be stored with the template"' : '') + '>' +
-    (d.type === 'enum' ? '<input class="form-control form-control-sm" data-var-field="options" placeholder="Options, comma separated" value="' +
-      esc((d.options ?? []).join(',')) + '">' : '') +
-    '<label class="cfg-var-req"><input type="checkbox" data-var-field="required"' + (d.required ? ' checked' : '') + '> required</label>' +
+    fieldHtml({ id: id('type'), label: 'Type' }, '<select class="sform-input" id="' + esc(id('type')) +
+      '" data-var-field="type">' + types.map(opt).join('') + '</select>') +
+    fieldHtml({ id: id('label'), label: 'Label' }, '<input class="sform-input" id="' + esc(id('label')) +
+      '" data-var-field="label" value="' + esc(d.label ?? '') + '">') +
+    fieldHtml({ id: id('default'), label: 'Default' }, '<input class="sform-input" id="' + esc(id('default')) +
+      '" data-var-field="default" value="' + esc(secret ? '' : d.default ?? '') + '"' +
+      (secret ? ' disabled title="A secret has no default: it would be stored with the template"' : '') + '>') +
+    (d.type === 'enum' ? fieldHtml({ id: id('options'), label: 'Options' }, '<input class="sform-input" id="' +
+      esc(id('options')) + '" data-var-field="options" placeholder="Comma separated" value="' +
+      esc((d.options ?? []).join(',')) + '">') : '') +
+    fieldHtml({ id: id('required'), label: 'Required' }, toggleHtml(id('required'), !!d.required, 'data-var-field="required"')) +
     '</div>';
 }
 
@@ -92,16 +104,19 @@ export function serverVarRows(names: string[]): string {
 /** The capture form: which router, the whole of it or one menu, and a name. */
 export function captureForm(routers: { id: string; label: string }[], menus: string[]): string {
   return '<div class="cfg-capture">' +
-    '<div class="cfg-capture-row"><label>Router<select class="form-select form-select-sm" id="cfgCapRouter">' +
-    routers.map((r) => '<option value="' + esc(r.id) + '">' + esc(r.label) + '</option>').join('') + '</select></label>' +
-    '<label>What<select class="form-select form-select-sm" id="cfgCapKind">' +
-    '<option value="fragment">One menu (for additions)</option>' +
-    '<option value="full-export">The whole router (for full replacement)</option></select></label>' +
-    '<label id="cfgCapMenuWrap">Menu<select class="form-select form-select-sm" id="cfgCapMenu">' +
-    menus.map((m) => '<option value="' + esc(m) + '"' + (m === '/ip/firewall/filter' ? ' selected' : '') + '>' +
-      esc(m) + '</option>').join('') + '</select></label>' +
-    '<label>Name<input class="form-control form-control-sm" id="cfgCapName" placeholder="e.g. Branch firewall"></label>' +
-    '<button class="cfg-btn cfg-btn-go" type="button" id="cfgCapGo">Capture</button></div>' +
+    '<div class="ff-inline">' +
+    fieldHtml({ id: 'cfgCapRouter', label: 'Router' }, '<select class="sform-input" id="cfgCapRouter">' +
+      routers.map((r) => '<option value="' + esc(r.id) + '">' + esc(r.label) + '</option>').join('') + '</select>') +
+    fieldHtml({ id: 'cfgCapKind', label: 'What' }, '<select class="sform-input" id="cfgCapKind">' +
+      '<option value="fragment">One menu (for additions)</option>' +
+      '<option value="full-export">The whole router (for full replacement)</option></select>') +
+    // The wrapper's id is what config-management.ts hides for a whole-router
+    // capture: the whole field goes, never just its box.
+    fieldHtml({ id: 'cfgCapMenu', label: 'Menu', attrs: 'id="cfgCapMenuWrap"' }, '<select class="sform-input" id="cfgCapMenu">' +
+      menus.map((m) => '<option value="' + esc(m) + '"' + (m === '/ip/firewall/filter' ? ' selected' : '') + '>' +
+        esc(m) + '</option>').join('') + '</select>') +
+    fieldHtml({ id: 'cfgCapName', label: 'Name' }, '<input class="sform-input" id="cfgCapName" placeholder="e.g. Branch firewall">') +
+    '<button class="sbtn sbtn-primary" type="button" id="cfgCapGo">Capture</button></div>' +
     '<p class="cfg-meta">A menu is captured without its secrets. The whole router is captured with them, for a faithful ' +
     'replacement, and stored encrypted.</p></div>';
 }

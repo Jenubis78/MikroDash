@@ -34,7 +34,7 @@
               </div>
               <div class="cfg-hero-controls">
                 <div class="cfg-segs" id="cfgCats" role="group" aria-label="Category"></div>
-                <input class="form-control form-control-sm cfg-search" id="cfgSearch" type="search"
+                <input class="sform-input sform-sm cfg-search" id="cfgSearch" type="search"
                   placeholder="Search templates" aria-label="Search templates">
               </div>
             </section>
@@ -54,8 +54,8 @@
             <div class="cfg-ed" id="cfgEd" hidden>
               <div class="cfg-ed-main">
                 <div class="cfg-ed-head">
-                  <input class="form-control cfg-ed-name" id="cfgEdName" placeholder="Template name" maxlength="80" aria-label="Template name">
-                  <input class="form-control form-control-sm" id="cfgEdDesc" placeholder="What it does, in a sentence" maxlength="500" aria-label="Description">
+                  <input class="sform-input cfg-ed-name" id="cfgEdName" placeholder="Template name" maxlength="80" aria-label="Template name">
+                  <input class="sform-input" id="cfgEdDesc" placeholder="What it does, in a sentence" maxlength="500" aria-label="Description">
                   <div class="cfg-meta" id="cfgEdMeta"></div>
                 </div>
                 <div class="cfg-ed-code">
@@ -84,7 +84,7 @@
             <div class="cfg-dep" id="cfgDep">
               <section class="cfg-step"><div class="cfg-step-n">1</div><div class="cfg-step-body">
                 <h5 class="cfg-step-title">Template</h5>
-                <select class="form-select form-select-sm cfg-dep-tpl" id="cfgDepTpl" aria-label="Template"></select>
+                <select class="sform-input cfg-dep-tpl" id="cfgDepTpl" aria-label="Template"></select>
                 <div class="cfg-meta" id="cfgDepTplMeta"></div></div></section>
               <section class="cfg-step"><div class="cfg-step-n">2</div><div class="cfg-step-body">
                 <h5 class="cfg-step-title">Routers</h5><div id="cfgDepRouters"></div></div></section>
@@ -107,7 +107,7 @@
                 <p class="cfg-meta">Each router gets a restore point first, the syntax is checked on the router, and
                   MikroDash logs in afresh afterwards to prove it still can.</p>
                 <div class="cfg-dep-go">
-                  <input class="form-control form-control-sm" id="cfgDepConfirm" autocomplete="off" aria-label="Confirm">
+                  <input class="sform-input" id="cfgDepConfirm" autocomplete="off" aria-label="Confirm">
                   <button class="cfg-btn cfg-btn-go" type="button" id="cfgDepStart">Deploy</button>
                 </div>
                 <div class="cfg-meta cfg-dep-why" id="cfgDepWhy"></div></div></section>

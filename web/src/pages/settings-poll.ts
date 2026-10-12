@@ -23,6 +23,7 @@
  */
 
 import { el } from '../dom';
+import { fieldHtml } from '../form';
 import { POLL_SLIDERS, POLL_PROFILES, POLL_PROFILE_KEY, type PollSlider } from '../gen/poll-tables';
 
 export type PollData = Record<string, unknown>;
@@ -133,6 +134,10 @@ export function showBanner(type: string, msg: string): void {
  * the two groups appear in table order and a re-ordered table re-groups itself.
  * The live comment: "so a reader can see which sliders share a ceiling rather
  * than inferring it from the numbers."
+ *
+ * Each slider is a field (web/src/form.ts): its label, the range and its value
+ * in one control row, and an empty help line. `#pollSlidersWrap` is the
+ * `.ff-grid`, and the headings span both of its columns.
  */
 export function buildSliders(data: PollData, sliders: PollSlider[] = POLL_SLIDERS): void {
   const wrap = el('pollSlidersWrap');
@@ -150,15 +155,9 @@ export function buildSliders(data: PollData, sliders: PollSlider[] = POLL_SLIDER
         : 'Slow-changing data - 10s to 10m';
       wrap.appendChild(hdr);
     }
-    const row = document.createElement('div');
-    row.style.cssText = 'margin-bottom:.7rem';
     if (cfg.streamed) {
-      row.innerHTML =
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">' +
-          '<span style="font-size:.75rem;color:var(--text-muted)">' + cfg.label + '</span>' +
-          '<span style="font-size:.68rem;font-family:var(--font-ui);padding:.15rem .5rem;border-radius:4px;background:rgba(99,190,130,.12);color:#6dba8a;border:1px solid rgba(99,190,130,.25)">Event-driven</span>' +
-        '</div>';
-      wrap.appendChild(row);
+      wrap.insertAdjacentHTML('beforeend', fieldHtml({ label: cfg.label },
+        '<div class="ff-row"><span class="vpn-hs-badge hs-ok">Event-driven</span></div>'));
       return;
     }
     const min = cfg.min as number;
@@ -169,15 +168,12 @@ export function buildSliders(data: PollData, sliders: PollSlider[] = POLL_SLIDER
     // something the input silently rounds, and the label beside it would then
     // disagree with the control.
     const val = raw != null ? Math.max(min, Math.min(max, raw as number)) : min;
-    row.innerHTML =
-      '<label class="sform-label">' + cfg.label + '</label>' +
-      '<div style="display:flex;align-items:center;gap:.6rem">' +
-        '<input type="range" id="s_' + cfg.key + '" ' +
-          'min="' + min + '" max="' + max + '" step="' + cfg.step + '" value="' + val + '" ' +
-          'style="flex:1;accent-color:var(--accent-rx)">' +
+    wrap.insertAdjacentHTML('beforeend', fieldHtml({ id: 's_' + cfg.key, label: cfg.label },
+      '<div class="ff-row">' +
+        '<input class="sform-input" type="range" id="s_' + cfg.key + '" ' +
+          'min="' + min + '" max="' + max + '" step="' + cfg.step + '" value="' + val + '">' +
         '<span class="srange-val" id="sv_' + cfg.key + '">' + fmtMs(val) + '</span>' +
-      '</div>';
-    wrap.appendChild(row);
+      '</div>'));
     const slider = el<HTMLInputElement>('s_' + cfg.key);
     const valEl = el('sv_' + cfg.key);
     if (slider && valEl) {

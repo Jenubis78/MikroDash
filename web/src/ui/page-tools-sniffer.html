@@ -42,40 +42,45 @@
                activities, two lines. -->
           <div class="thin-progress" id="snifferExportProgress" aria-hidden="true"><div class="thin-progress-bar" id="snifferExportBar"></div></div>
           <div class="muted-note mb-2" id="snifferExportStatus"></div>
-          <form class="d-flex align-items-end flex-wrap gap-2 mb-3" id="snifferForm" autocomplete="off">
-            <div>
-              <label class="form-label" for="snifferInterface">Interface</label>
-              <select class="form-select form-select-sm" id="snifferInterface">
+          <form class="ff-inline mb-3" id="snifferForm" autocomplete="off">
+            <div class="ff">
+              <label class="sform-label" for="snifferInterface">Interface</label>
+              <select class="sform-input" id="snifferInterface">
                 <option value="">All interfaces</option>
               </select>
+              <div class="ff-help"></div>
             </div>
-            <div>
-              <label class="form-label" for="snifferProtocol">Protocol</label>
-              <select class="form-select form-select-sm" id="snifferProtocol">
+            <div class="ff">
+              <label class="sform-label" for="snifferProtocol">Protocol</label>
+              <select class="sform-input" id="snifferProtocol">
                 <option value="" selected>Any</option>
                 <option>tcp</option><option>udp</option><option>icmp</option>
                 <option>icmpv6</option><option>igmp</option><option>gre</option>
                 <option>ospf</option><option>ipsec-esp</option><option>ipsec-ah</option>
                 <option>vrrp</option><option>pim</option>
               </select>
+              <div class="ff-help"></div>
             </div>
-            <div>
-              <label class="form-label" for="snifferPort">Port</label>
-              <input class="form-control form-control-sm" id="snifferPort" type="text" maxlength="120"
+            <div class="ff">
+              <label class="sform-label" for="snifferPort">Port</label>
+              <input class="sform-input" id="snifferPort" type="text" maxlength="120"
                 placeholder="443 or 53,443" autocomplete="off" spellcheck="false" size="12">
+              <div class="ff-help"></div>
             </div>
-            <div>
-              <label class="form-label" for="snifferAddress">Address</label>
-              <input class="form-control form-control-sm" id="snifferAddress" type="text" maxlength="400"
+            <div class="ff">
+              <label class="sform-label" for="snifferAddress">Address</label>
+              <input class="sform-input" id="snifferAddress" type="text" maxlength="400"
                 placeholder="198.51.100.7 or 198.51.100.0/24" autocomplete="off" spellcheck="false" size="20">
+              <div class="ff-help"></div>
             </div>
-            <div>
-              <label class="form-label" for="snifferDirection">Direction</label>
-              <select class="form-select form-select-sm" id="snifferDirection">
+            <div class="ff">
+              <label class="sform-label" for="snifferDirection">Direction</label>
+              <select class="sform-input" id="snifferDirection">
                 <option value="any" selected>Any</option>
                 <option value="rx">Received</option>
                 <option value="tx">Transmitted</option>
               </select>
+              <div class="ff-help"></div>
             </div>
             <button class="sbtn sbtn-primary" id="snifferRun" type="submit">Start</button>
             <span class="muted-note" id="snifferStatus"></span>
