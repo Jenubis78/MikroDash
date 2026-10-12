@@ -425,7 +425,13 @@ rows below it, a select a few pixels off its neighbours, and placeholders in the
 
 - **A toolbar control** (a search box, a filter select in a card header) is unlabelled and compact:
   `class="sform-input sform-sm"`, `--ctl-h-sm` tall. It may be placed with `width`, `max-width` or
-  `flex`, never resized.
+  `flex`, never resized. A filter that is narrowing the list adds `.active`, which draws it in the
+  interactive accent so a filtered view never looks unfiltered.
+- **There is one control.** Every text, number, select and textarea in the app is `.sform-input`;
+  no page gives a control its own class for height, padding or colour. The two exceptions, held
+  in `internal/verify`, are the Terminal's command line (a prompt on the terminal's surface) and
+  Config Management's template editor (a full-height code pane). The sign-in page is standalone
+  and keeps its own small stylesheet.
 - **A one-row form** (a tool's run controls: target, count, Start) is `.ff-inline`: fields side by
   side, wrapping, with the action `.sbtn` level with the boxes. It shows no help lines; a field that
   needs explaining gets a note under the row.

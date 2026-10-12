@@ -12,11 +12,11 @@
         <div class="stale-overlay">&#9679; stale</div>
         <div class="rt-toolbar">
           <span class="rt-card-title" style="margin-bottom:0;flex-shrink:0">Network Topology</span>
-          <input type="text" class="rt-search" id="topoSearch" placeholder="Find a device by name, IP or MAC…">
-          <select class="rt-sel" id="topoVlan" aria-label="VLAN filter" title="Show only clients on a VLAN">
+          <input type="text" class="sform-input sform-sm" id="topoSearch" style="flex:1 1 0;min-width:0" placeholder="Find a device by name, IP or MAC…">
+          <select class="sform-input sform-sm" id="topoVlan" style="width:auto" aria-label="VLAN filter" title="Show only clients on a VLAN">
             <option value="">All VLANs</option>
           </select>
-          <select class="rt-sel" id="topoType" aria-label="Device type filter">
+          <select class="sform-input sform-sm" id="topoType" style="width:auto" aria-label="Device type filter">
             <option value="">All types</option>
             <option value="router">Routers</option>
             <option value="switch">Switches</option>

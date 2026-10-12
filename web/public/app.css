@@ -61,10 +61,10 @@
        :focus-visible so a mouse click does not leave a ring behind. */
     /* !important is deliberate and load-bearing here. A dozen component classes
        set `outline:none` in their *base* rule rather than a :focus rule -
-       .conn-src-filter, .sform-input, .rt-sel, .rpt-select, .bw-toolbar
-       input/select among them - so those apply in every state, and
-       #navRouterSelect / #routerSelectBtn are ID selectors that outrank any
-       class-based focus rule outright. Without it the ring is suppressed across
+       .sform-input, the one control every form and toolbar uses, among them -
+       so those apply in every state, and
+       #routerSelectBtn is an ID selector that outranks any class-based focus
+       rule outright. Without it the ring is suppressed across
        most of the interactive surface. An accessibility guarantee should not be
        defeatable by a decorative reset. */
 
@@ -92,9 +92,9 @@
     #sidenav:hover{width:var(--nav-w-open)}
     .nav-logo{height:52px;display:flex;align-items:center;justify-content:flex-start;padding:0 14px;gap:.55rem;border-bottom:1px solid var(--border);flex-shrink:0;overflow:hidden}
     .nav-logo img{width:24px;height:24px;object-fit:contain;flex-shrink:0;border-radius:4px}
-    #navRouterWrap{display:none;align-items:center;gap:.35rem;flex:1;min-width:0;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:6px;padding:.2rem .5rem .2rem .4rem;overflow:hidden}
+    #navRouterWrap{display:none;align-items:center;gap:.35rem;flex:1;min-width:0;overflow:hidden}
     #navRouterWrap .rtr-status-dot{flex-shrink:0}
-    #navRouterSelect{background:transparent;border:none;color:var(--text-main);font-family:var(--font-mono);font-size:.72rem;font-weight:600;cursor:pointer;outline:none;width:100%;min-width:0;padding:0}
+    #navRouterSelect{min-width:0}
     #navRouterSelect option{background:var(--bg-deep);color:var(--text-main)}
     /* Scrolling exists exactly when the user can see what they are scrolling: a
        scrollbar inside the 52px rail is unusable and steals a chunk of it. */
@@ -204,21 +204,8 @@
     .bw-stat-sub{font-family:var(--font-mono);font-size:.68rem;color:var(--text-muted);margin-top:.15rem}
     @media(max-width:600px){.bw-header-row{grid-template-columns:1fr;}.bw-stat-col{flex-direction:row;gap:.5rem;}.bw-stat-card{padding:.7rem 1rem;}}
     .bw-toolbar{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.85rem;align-items:center}
-    .bw-search{flex:1 1 0;min-width:0}
-    .bw-toolbar input,.bw-toolbar select{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.35rem .65rem;font-size:.76rem;color:var(--text-main);outline:none;transition:border-color .15s,background .15s,color .15s}
-    .bw-toolbar select{appearance:none;-webkit-appearance:none;padding-right:1.8rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(148,163,190,.6)' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .5rem center;cursor:pointer}
-    .bw-toolbar input:focus,.bw-toolbar select:focus{border-color:var(--accent-rx)}
-    html[data-theme="light"] .bw-toolbar input,html[data-theme="light"] .bw-toolbar select{background:rgba(255,255,255,.95);color:var(--text-main)}
     .bw-table-wrap{background:var(--bg-card)}
-    .conn-src-filter{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.25rem .5rem;padding-right:1.7rem;font-size:.72rem;font-family:var(--font-mono);color:var(--text-muted);outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='rgba(148,163,190,.5)' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .4rem center;cursor:pointer;min-width:160px;transition:border-color .15s,color .15s}
-    /* outline:none removed - it suppressed the global focus ring on every
-       filter dropdown in the app, which is most of them. */
-    .conn-src-filter:focus{border-color:var(--accent-rx);color:var(--text-main)}
-    .conn-src-filter.active{border-color:var(--accent-rx);color:var(--accent-rx)}
-    html[data-theme="light"] .conn-src-filter{background:rgba(255,255,255,.95);color:var(--text-main)}
     /* ── The Connections List tab ─────────────────────────────────────── */
-    .conn-search{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.25rem .55rem;font-size:.72rem;font-family:var(--font-mono);color:var(--text-main);outline:none;min-width:200px}
-    .conn-search:focus{border-color:var(--accent-rx)}
     #connPanelList{padding:.5rem .75rem}
     /* THE LIST TAB IS THE MAP TAB'S SIZE, and scrolls inside it. It grew to fit
        every row, so switching tabs resized the card and pushed the cards below
@@ -257,7 +244,6 @@
     .conn-page-btn{width:24px;height:24px;border:1px solid var(--border);border-radius:5px;background:var(--bg-card);color:var(--text-main);line-height:1;cursor:pointer}
     .conn-page-btn:disabled{opacity:.35;cursor:default}
     .conn-empty{text-align:center;color:var(--text-muted);padding:1.5rem!important}
-    @media (max-width:640px){.conn-search{min-width:0;width:100%}}
 
     .bw-table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)}
     .bw-table{width:100%;border-collapse:collapse;font-size:.75rem;table-layout:fixed}
@@ -886,10 +872,9 @@
        narrows both - a control that did nothing in card view would be worse
        than no control. */
     .routers-toolbar{padding:.3rem .6rem}
-    /* .sform-input is sized for a settings form, which made it 9px taller than
-       the select beside it and set the height of the whole bar. Matched to the
-       select's metrics so the bar is only as tall as its controls. */
-    .routers-toolbar .sform-input{flex:1 1 auto;min-width:0;height:auto;padding:.25rem .55rem;font-size:.72rem}
+    /* The search takes the bar's spare width. Placement only: its size is the
+       shared compact control's (.sform-sm), like the selects beside it. */
+    .routers-toolbar #routersSearch{flex:1 1 auto;min-width:0}
     .rtl-dot{display:inline-block;width:8px;height:8px;border-radius:50%}
     /* ── Devices page cards: an overview, opened into the device modal ──────
        The strip's colours are tokens of their own so the light theme can
@@ -1285,9 +1270,6 @@
       box-shadow:0 14px 36px rgba(0,0,0,.32);backdrop-filter:blur(14px);display:none;overflow:hidden;cursor:default}
     #routerSelectWrap.open .rtr-dd{display:block}
     .rtr-dd-search{padding:.5rem .5rem .4rem;border-bottom:1px solid var(--border)}
-    .rtr-dd-search input{width:100%;background:var(--bg-deep);border:1px solid var(--border);border-radius:6px;
-      color:var(--text-main);font-family:var(--font-ui);font-size:.72rem;padding:.35rem .5rem;outline:none}
-    .rtr-dd-search input:focus{border-color:var(--accent-tx)}
     .rtr-dd-list{max-height:286px;overflow-y:auto;padding:.3rem}
     .rtr-dd-item{display:flex;align-items:center;gap:.55rem;padding:.42rem .5rem;border-radius:6px;
       cursor:pointer;border:1px solid transparent}
@@ -1374,13 +1356,11 @@
     .fw-search-wrap{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;padding:.45rem .75rem;border-bottom:1px solid var(--border)}
 /* The search box was width:100% and would eat the whole row once the IPv6
    checkbox joined it. Allowed to shrink, capped so it does not sprawl. */
-.fw-search-wrap #fwSearch{flex:0 1 320px;min-width:0}
+.fw-search-wrap #fwSearch{flex:0 1 280px;min-width:0}
 .fw-v6-toggle{display:flex;align-items:center;gap:.35rem;margin:0;font-family:var(--font-mono);font-size:.68rem;color:var(--text-muted);cursor:pointer;user-select:none;white-space:nowrap}
 .fw-v6-toggle input{margin:0;cursor:pointer}
 /* .stab-bar carries margin-bottom:1rem, which is too much inside a card body. */
 .fwfam-bar{margin:.4rem .75rem 0;padding-bottom:0}
-    #fwSearch{width:100%;max-width:280px;background:rgba(13,18,30,.9);border:1px solid var(--border);border-radius:5px;color:var(--text-main);font-size:.72rem;padding:.28rem .6rem;font-family:var(--font-mono)}
-    html[data-theme="light"] #fwSearch{background:rgba(255,255,255,.9)}
     /* scroll */
     /* A TABLE WIDER THAN ITS CARD SCROLLS SIDEWAYS. Without overflow-x the
        columns past the card's edge are simply unreachable - not clipped
@@ -2168,12 +2148,6 @@
     .rt-peer-desc{font-size:.65rem;color:var(--text-muted)}
     /* toolbar */
     .rt-toolbar{display:flex;gap:.5rem;align-items:center;padding:.6rem .8rem;border-bottom:1px solid var(--border);flex-wrap:wrap}
-    .rt-sel{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.28rem .5rem;font-size:.72rem;color:var(--text-main);outline:none;cursor:pointer;font-family:var(--font-ui);appearance:none;-webkit-appearance:none;padding-right:1.6rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(148,163,190,.6)' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .4rem center;transition:border-color .15s}
-    .rt-sel:focus{border-color:rgba(99,130,190,.5)}
-    html[data-theme="light"] .rt-sel{background:rgba(255,255,255,.95);color:var(--text-main)}
-    .rt-search{flex:1 1 0;min-width:0;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.3rem .6rem;font-size:.75rem;color:var(--text-main);outline:none;font-family:var(--font-ui);transition:border-color .15s}
-    .rt-search:focus{border-color:rgba(99,130,190,.5)}
-    html[data-theme="light"] .rt-search{background:rgba(255,255,255,.95);color:var(--text-main)}
     /* sparkline cell */
     .rt-spark{display:block}
     /* mobile */
@@ -2197,11 +2171,7 @@
     }
     /* ── Reports page ─────────────────────────────────────────────────────── */
     .rpt-bar{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
-    .rpt-select,.rpt-date-input{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.38rem .65rem;font-size:.76rem;color:var(--text-main);outline:none;transition:border-color .15s;font-family:var(--font-ui)}
-    .rpt-date-input{font-family:var(--font-mono)}
-    .rpt-select:focus,.rpt-date-input:focus{border-color:var(--accent-rx)}
     #rptPreset optgroup{font-family:var(--font-ui);font-size:.78rem;font-weight:600}
-    html[data-theme="light"] .rpt-select,html[data-theme="light"] .rpt-date-input{background:rgba(255,255,255,.95)}
     /* Flex, not a grid of fixed tracks: a stat value is free text (the Alerts
        tab's "Top Type" is a stored alert_type such as bgp_hold_timer_warning,
        one unbreakable word), and a 160px grid track cannot grow for it - the
@@ -2717,17 +2687,13 @@
     .apps-stats div{display:flex;flex-direction:column;align-items:flex-end}
     .apps-stats b{font-family:var(--font-mono);font-size:1.6rem;line-height:1;color:var(--text-main)}
     .apps-stats span{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
-    .apps-setup-form{display:flex;align-items:flex-end;gap:.6rem;flex-wrap:wrap;margin-top:.7rem}
-    .apps-setup-form label{display:flex;flex-direction:column;gap:.2rem;font-size:.68rem;color:var(--text-muted)}
-    .apps-setup-form select{min-width:12rem;background:var(--bg-deep);color:var(--text-main);border:1px solid var(--border);border-radius:8px;padding:.35rem .5rem}
+    .apps-setup-form{margin-top:.7rem}
+    .apps-setup-form .sform-input{min-width:12rem}
     .apps-notice{padding:.8rem 1rem;border-radius:10px;border:1px dashed var(--border);color:var(--text-muted);font-size:.82rem;margin-bottom:.8rem}
     .apps-notice.is-bad{border-color:rgba(248,113,113,.4);color:var(--accent-err)}
 
     .apps-toolbar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.55rem}
     .apps-search{flex:1;min-width:220px}
-    .apps-search input{width:100%;background:var(--bg-deep);color:var(--text-main);border:1px solid var(--border);border-radius:10px;
-      padding:.5rem .8rem;font-size:.85rem;transition:border-color .2s,box-shadow .2s}
-    .apps-search input:focus{outline:none;border-color:var(--accent-rx);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
     .apps-seg{display:inline-flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
     .apps-seg button{background:transparent;border:0;color:var(--text-muted);font-size:.76rem;padding:.42rem .8rem;cursor:pointer}
     .apps-seg button.active{background:rgba(56,189,248,.14);color:var(--accent-rx)}
@@ -2803,9 +2769,6 @@
     .apps-modal-card{width:min(420px,92vw);padding:1.2rem;border-radius:14px;background:var(--bg-deep);border:1px solid rgba(248,113,113,.35)}
     .apps-modal-card h4{margin:0 0 .5rem;color:var(--text-main)}
     .apps-modal-card p{font-size:.8rem;color:var(--text-muted)}
-    .apps-modal-card label{display:flex;flex-direction:column;gap:.3rem;font-size:.74rem;color:var(--text-muted)}
-    .apps-modal-card label code{font-family:var(--font-mono);color:var(--text-main);background:rgba(99,130,190,.12);padding:.05rem .35rem;border-radius:5px}
-    .apps-modal-card input{background:var(--bg-card);color:var(--text-main);border:1px solid var(--border);border-radius:8px;padding:.45rem .6rem}
     .apps-modal-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.9rem}
     @media (prefers-reduced-motion: reduce){
       .apps-card,.apps-drawer{animation:none}
@@ -3795,6 +3758,10 @@
 .sform-input.sform-sm { height: var(--ctl-h-sm); padding: 0 .55rem; font-size: .72rem; }
 select.sform-input.sform-sm { padding-right: 1.8rem; background-position: calc(100% - 13px) 50%, calc(100% - 8px) 50%; }
 .sform-input.sform-sm::placeholder { color: var(--text-muted); }
+/* A toolbar filter that is narrowing the view says so: the scripts toggle
+   .active on it while a value is chosen (Connections' client, Interfaces' type,
+   Devices' site). One state for every such filter, not a colour per toolbar. */
+.sform-input.sform-sm.active { border-color: var(--accent-rx); color: var(--accent-rx); }
 .ff-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3847,7 +3814,7 @@ select.sform-input.sform-sm { padding-right: 1.8rem; background-position: calc(1
 /* In a column the grid's bottom-alignment would mean "push right": a label starts
    where its box starts. */
 .ff-inline > .ff > .sform-label { align-self: flex-start; }
-.ff-inline > .sbtn { height: var(--ctl-h); }
+.ff-inline > button { height: var(--ctl-h); box-sizing: border-box; }
 /* A TOGGLE IS A CONTROL: the same box as an input, saying Off or On beside the
    switch, under the field's label. The words come from CSS so the state needs
    no script to stay true. */
@@ -3948,6 +3915,9 @@ input[type=range].sform-input { accent-color: var(--accent-rx); }
 .ff-sep { margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--border); }
 /* A live character count, at the end of a help line. */
 .ff-help .ff-count { float: right; margin-left: 1rem; font-family: var(--font-mono); white-space: nowrap; }
+/* The connections search: a fixed width in its toolbar, the full row on a phone. */
+#connListSearch { width: 200px; max-width: 100%; }
+@media (max-width: 640px) { #connListSearch { width: 100%; } }
 /* The first-run form ends in its buttons; the grid has no bottom margin of its own. */
 .setup-fields { margin-bottom: .6rem; }
 /* Code and file contents keep their line breaks and scroll sideways. */

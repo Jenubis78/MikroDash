@@ -84,7 +84,7 @@ export function topoPanel(st: TopoState, deps: {
       esc(label) + '</option>';
     return '<div class="topo-panel-sec">Cabling</div>' +
       '<div class="topo-pin">' +
-        '<select class="rt-sel" id="topoPinSel" aria-label="What this device hangs off">' +
+        '<select class="sform-input sform-sm" id="topoPinSel" aria-label="What this device hangs off">' +
           opt('', 'Work it out (' + esc(parentName(
             (st.data?.nodes || []).find((m) => m.key === key)!) || 'directly attached') + ')') +
           opt('core', 'Directly attached to this router') +

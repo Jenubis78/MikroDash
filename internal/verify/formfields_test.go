@@ -327,3 +327,82 @@ func TestFormFieldStylesheetContract(t *testing.T) {
 		}
 	}
 }
+
+// ONE CONTROL, EVERYWHERE: a text, number, select or textarea control anywhere
+// in the frontend is .sform-input.
+//
+// Toolbars grew their own: .conn-src-filter, .rt-sel, .rpt-select, the bandwidth
+// toolbar's input/select rules, Tabler's .form-control. Each was a box of its own
+// height, padding and colour, which is the inconsistency the form contract ended
+// in dialogs, repeated on pages. Templates and the markup TypeScript builds are
+// both read; a native widget (checkbox, radio, range, colour, file) draws itself
+// and is not checked.
+
+// controlExceptions are controls that are deliberately not the shared box, keyed
+// "file#id", each with why.
+var controlExceptions = map[string]string{
+	"web/src/ui/page-terminal.html#terminalInput": "the terminal's command line, drawn as a prompt inside the " +
+		"terminal's own surface; a form box there would read as a dialog field",
+	"web/src/ui/page-config-management.html#cfgEdBody": "the template editor: a full-height code pane with a " +
+		"gutter, not a form field",
+}
+
+// controlExemptFiles are whole files outside the app's stylesheet.
+var controlExemptFiles = map[string]string{
+	"web/src/ui/login.html": "the sign-in page is standalone: it loads its own small stylesheet, not app.css",
+}
+
+var (
+	ffControlRe = regexp.MustCompile(`<(input|select|textarea)\s[^>]*>`)
+	ffNativeRe  = regexp.MustCompile(`type="(?:checkbox|radio|hidden|file|range|color|submit|button)"`)
+	ffIDRe      = regexp.MustCompile(`\sid="([^"]*)"`)
+	ffClassRe   = regexp.MustCompile(`\sclass="([^"]*)"`)
+)
+
+func TestEveryControlIsTheSharedControl(t *testing.T) {
+	root := repoRoot(t)
+	files := readFiles(t, root, "web/src/", func(rel string) bool {
+		return (strings.HasSuffix(rel, ".html") || strings.HasSuffix(rel, ".ts")) &&
+			!strings.HasPrefix(rel, "web/src/gen/") && !isTestSource(rel)
+	})
+	seen := map[string]bool{}
+	for rel, src := range files {
+		if controlExemptFiles[rel] != "" {
+			seen[rel] = true
+			continue
+		}
+		for _, m := range ffControlRe.FindAllStringIndex(src, -1) {
+			tag := src[m[0]:m[1]]
+			if ffNativeRe.MatchString(tag) {
+				continue
+			}
+			id := ""
+			if g := ffIDRe.FindStringSubmatch(tag); g != nil {
+				id = g[1]
+			}
+			key := rel + "#" + id
+			if controlExceptions[key] != "" {
+				seen[key] = true
+				continue
+			}
+			cls := ""
+			if g := ffClassRe.FindStringSubmatch(tag); g != nil {
+				cls = g[1]
+			}
+			if !strings.Contains(" "+cls+" ", " sform-input ") {
+				t.Errorf("%s:%d: %q is not .sform-input (.sform-sm in a toolbar) - one control, everywhere",
+					rel, strings.Count(src[:m[0]], "\n")+1, strings.TrimSpace(tag[:min(len(tag), 80)]))
+			}
+		}
+	}
+	for key := range controlExceptions {
+		if !seen[key] {
+			t.Errorf("%s is recorded as an exception but no longer exists as a control - remove it", key)
+		}
+	}
+	for rel := range controlExemptFiles {
+		if !seen[rel] {
+			t.Errorf("%s is recorded as exempt but was not read - remove it", rel)
+		}
+	}
+}

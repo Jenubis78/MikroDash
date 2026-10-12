@@ -3,8 +3,8 @@
 
       <!-- Toolbar -->
       <div class="rpt-bar">
-        <select id="rptRouter" class="rpt-select" title="Router"></select>
-        <select id="rptPreset" class="rpt-select" title="Quick date range">
+        <select id="rptRouter" class="sform-input sform-sm" style="width:auto" title="Router"></select>
+        <select id="rptPreset" class="sform-input sform-sm" style="width:auto" title="Quick date range">
           <optgroup label="Relative">
             <option value="last1h">Last 1 Hour</option>
             <option value="last3h">Last 3 Hours</option>
@@ -40,11 +40,11 @@
             <option value="thisYearSoFar">This Year So Far</option>
           </optgroup>
         </select>
-        <input type="datetime-local" id="rptFrom" class="rpt-date-input" title="From date/time"/>
+        <input type="datetime-local" id="rptFrom" class="sform-input sform-sm" style="width:auto" title="From date/time"/>
         <span style="color:var(--text-muted);font-size:.75rem;flex-shrink:0">to</span>
-        <input type="datetime-local" id="rptTo" class="rpt-date-input" title="To date/time"/>
+        <input type="datetime-local" id="rptTo" class="sform-input sform-sm" style="width:auto" title="To date/time"/>
         <span style="color:var(--text-muted);font-size:.75rem;flex-shrink:0">Group by</span>
-        <select id="rptAggregate" class="rpt-select" title="Aggregation period">
+        <select id="rptAggregate" class="sform-input sform-sm" style="width:auto" title="Aggregation period">
           <option value="">Default</option>
           <option value="hour">Hour</option>
           <option value="day">Day</option>
@@ -98,7 +98,7 @@
         </div>
         <div class="rpt-iface-row">
           <span class="rpt-iface-label">Interface:</span>
-          <select id="rptTrafficIface" class="rpt-select" aria-label="Interface"></select>
+          <select id="rptTrafficIface" class="sform-input sform-sm" style="width:auto" aria-label="Interface"></select>
           <label style="display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;color:var(--text-muted);cursor:pointer;margin-left:.6rem">
             <input type="checkbox" id="rptShowCapacity" style="accent-color:var(--accent-rx);cursor:pointer">
             Show link capacity
@@ -126,7 +126,7 @@
         </div>
         <div class="rpt-iface-row">
           <span class="rpt-iface-label">Interface:</span>
-          <select id="rptBwIface" class="rpt-select" aria-label="Interface"></select>
+          <select id="rptBwIface" class="sform-input sform-sm" style="width:auto" aria-label="Interface"></select>
         </div>
         <div class="rpt-export-row">
           <a id="rptBwCsvLink" class="sbtn sbtn-ghost" href="#" download style="display:none">Export CSV</a>

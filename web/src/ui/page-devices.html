@@ -58,15 +58,15 @@
            filter boxes lived in the table head and cost a row of chrome for
            something one box answers. -->
       <div class="card mt-3 routers-toolbar d-flex flex-row align-items-center gap-2">
-        <select id="routersSiteFilter" class="conn-src-filter" title="Filter by site - a device may belong to more than one" style="min-width:150px">
+        <select id="routersSiteFilter" class="sform-input sform-sm" title="Filter by site - a device may belong to more than one" style="width:auto;min-width:150px">
           <option value="">All Sites</option>
         </select>
-        <input id="routersSearch" type="search" class="sform-input"
+        <input id="routersSearch" type="search" class="sform-input sform-sm"
                placeholder="Search devices…"
                title="Matches name, host, model, RouterOS version and site. Also understands online, offline and alerting."
                autocomplete="off" style="max-width:22rem">
         <span class="text-muted" id="routersShown" style="font-size:.75rem"></span>
-        <select id="routersView" class="conn-src-filter ms-auto" title="View - Compact fits more cards per row; List adds sortable columns" style="min-width:140px">
+        <select id="routersView" class="sform-input sform-sm ms-auto" title="View - Compact fits more cards per row; List adds sortable columns" style="width:auto;min-width:140px">
           <option value="comfortable">Comfortable</option>
           <option value="compact">Compact</option>
           <option value="list">List</option>

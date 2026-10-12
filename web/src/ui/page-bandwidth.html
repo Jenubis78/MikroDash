@@ -26,25 +26,25 @@
       </div>
     </div>
     <div class="bw-toolbar">
-      <input class="bw-search" id="bwSearch" type="text" placeholder="Search IP / hostname / MAC…">
+      <input class="sform-input sform-sm" id="bwSearch" type="text" style="flex:1 1 0;min-width:0" placeholder="Search IP / hostname / MAC…">
       <!-- How many rows survived the four filters beside it. app.js has always
            computed this and written it here; the element itself was missing, so
            the count was discarded on every frame. -->
       <span id="bwStats" class="muted-note" aria-live="polite"></span>
-      <select id="bwIface" style="margin-left:auto" aria-label="Interface filter">
+      <select id="bwIface" class="sform-input sform-sm" style="width:auto;margin-left:auto" aria-label="Interface filter">
         <option value="">All interfaces</option>
       </select>
-      <select id="bwScope" aria-label="Traffic scope filter">
+      <select id="bwScope" class="sform-input sform-sm" style="width:auto" aria-label="Traffic scope filter">
         <option value="">LAN + WAN</option>
         <option value="lan">LAN only</option>
         <option value="wan">WAN only</option>
       </select>
-      <select id="bwIpver" aria-label="IP version filter">
+      <select id="bwIpver" class="sform-input sform-sm" style="width:auto" aria-label="IP version filter">
         <option value="">IPv4 + IPv6</option>
         <option value="4">IPv4 only</option>
         <option value="6">IPv6 only</option>
       </select>
-      <select id="bwTopN" aria-label="Number of devices to show">
+      <select id="bwTopN" class="sform-input sform-sm" style="width:auto" aria-label="Number of devices to show">
         <option value="10" selected>Top 10</option>
         <option value="20">Top 20</option>
         <option value="50">Top 50</option>

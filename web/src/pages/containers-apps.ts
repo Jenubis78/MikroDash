@@ -19,6 +19,7 @@
 import { copyText, el, esc } from '../dom';
 import type { Socket } from '../socket';
 import type { AppsPayload } from '../gen/payloads';
+import { fieldHtml } from '../form';
 import { registerAreaPanel } from './area';
 import {
   appCard, drawer, matches, categories, categoryLabel, order, type Pending, type View,
@@ -45,7 +46,7 @@ export function initContainersApps(socket: Socket): void {
       '<div class="apps">' +
       '<div class="apps-hero" id="appsHero"></div>' +
       '<div class="apps-toolbar">' +
-      '<div class="apps-search"><input type="search" id="appsQ" placeholder="Search apps…" autocomplete="off" spellcheck="false"></div>' +
+      '<div class="apps-search"><input type="search" class="sform-input sform-sm" id="appsQ" placeholder="Search apps…" autocomplete="off" spellcheck="false"></div>' +
       '<div class="apps-seg" id="appsSeg"></div>' +
       '</div>' +
       '<div class="apps-cats" id="appsCats"></div>' +
@@ -84,8 +85,9 @@ export function initContainersApps(socket: Socket): void {
       ? '<p>A global administrator must choose where apps are stored before any can be installed.</p>'
       : !s.disks.length
         ? '<p>Apps need a formatted, mounted disk (ext4 or btrfs). Add one under System › Disks, then come back.</p>'
-        : '<div class="apps-setup-form"><label>Store apps on<select id="appsDisk">' + disks + '</select></label>' +
-          '<label>LAN bridge<select id="appsBridge">' + bridges + '</select></label>' +
+        : '<div class="apps-setup-form ff-inline">' +
+          fieldHtml({ id: 'appsDisk', label: 'Store apps on' }, '<select class="sform-input" id="appsDisk">' + disks + '</select>') +
+          fieldHtml({ id: 'appsBridge', label: 'LAN bridge' }, '<select class="sform-input" id="appsBridge">' + bridges + '</select>') +
           '<button type="button" class="apps-btn is-primary" data-apps-setup>Set up apps</button></div>';
     return '<div class="apps-hero-card is-setup"><div class="apps-hero-text"><h4>Set up the app store</h4>' +
       '<p>Choose where apps are stored. RouterOS then handles each app’s containers, network and firewall.</p>' +
@@ -155,7 +157,12 @@ export function initContainersApps(socket: Socket): void {
     m.innerHTML = '<div class="apps-modal-card" role="dialog" aria-modal="true">' +
       '<h4>Remove ' + esc(removing) + '?</h4>' +
       '<p>This stops the app and <b>permanently deletes its data</b> and its image. It cannot be undone.</p>' +
-      '<label><span>Type <code>' + esc(removing) + '</code> to confirm</span><input type="text" id="appsConfirm" autocomplete="off" spellcheck="false"></label>' +
+      // Hand-written rather than fieldHtml(): the help line carries the name as
+      // <code>, which fieldHtml would escape. It is the help, not the label,
+      // because a label is uppercase and the name must be typed as written.
+      '<div class="ff-grid ff-one"><div class="ff"><label class="sform-label" for="appsConfirm">App name</label>' +
+      '<input type="text" class="sform-input" id="appsConfirm" autocomplete="off" spellcheck="false">' +
+      '<div class="ff-help">Type <code>' + esc(removing) + '</code> to confirm.</div></div></div>' +
       '<div class="apps-modal-actions"><button type="button" class="apps-btn" data-apps-cancel>Cancel</button>' +
       '<button type="button" class="apps-btn is-danger" id="appsRemove" data-apps-remove disabled>Remove app</button></div></div>';
     m.hidden = false;
