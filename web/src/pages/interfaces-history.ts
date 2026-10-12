@@ -43,15 +43,18 @@ import {
   pushSample, windowedPoints, rightBufferFor, MAX_CLIENT_POINTS,
 } from './dashboard-traffic-buffer';
 import type { Interface, TrafficPoint } from '../gen/payloads';
+import { paletteColour, onPaletteChange } from '../palette';
 
 declare const Chart: undefined | (new (canvas: HTMLCanvasElement, cfg: unknown) => ChartLike);
 
 interface XY { x: number; y: number }
 
+interface Dataset { data: XY[]; borderColor?: string; backgroundColor?: string }
+
 interface ChartLike {
   destroy(): void;
   update(mode?: string): void;
-  data: { datasets: Array<{ data: XY[] }> };
+  data: { datasets: Dataset[] };
   options: { scales: { x: { min: number; max: number } } };
 }
 
@@ -513,20 +516,16 @@ function paint(): void {
   const canvas = el<HTMLCanvasElement>('ifhChart');
   if (!canvas || typeof Chart === 'undefined') return;
   const win = xWindow();
-  chart = new Chart(canvas, {
+  const cfg = {
     type: 'line',
     data: {
       datasets: [
         {
           label: 'RX', data: series(rows, 'rx_mbps'),
-          // THE FIXED COLOURS, read from the theme rather than written here:
-          // Rx is --accent-rx and Tx is --accent-tx everywhere in this app.
-          borderColor: cssVar('--accent-rx'), backgroundColor: 'rgba(56,189,248,.12)',
           borderWidth: 1.5, pointRadius: 0, tension: 0.2, fill: true,
         },
         {
           label: 'TX', data: series(rows, 'tx_mbps'),
-          borderColor: cssVar('--accent-tx'), backgroundColor: 'rgba(74,222,128,.12)',
           borderWidth: 1.5, pointRadius: 0, tension: 0.2, fill: true,
         },
       ],
@@ -568,20 +567,34 @@ function paint(): void {
         },
       },
     },
-  });
+  };
+  colourSets(cfg.data.datasets);
+  chart = new Chart(canvas, cfg);
   startScroll();
 }
+
+/**
+ * THE FIXED COLOURS, from the palette rather than written here: Rx is
+ * --accent-rx and Tx is --accent-tx everywhere in this app. Resolved when the
+ * chart is built and again when the palette changes, because Chart.js cannot
+ * read a CSS variable.
+ */
+function colourSets(sets: Dataset[]): void {
+  const [rx, tx] = sets;
+  if (rx) { rx.borderColor = paletteColour('--accent-rx'); rx.backgroundColor = paletteColour('--accent-rx', 0.12); }
+  if (tx) { tx.borderColor = paletteColour('--accent-tx'); tx.backgroundColor = paletteColour('--accent-tx', 0.12); }
+}
+
+onPaletteChange(() => {
+  if (!chart) return;
+  colourSets(chart.data.datasets);
+  chart.update('none');
+});
 
 /** The right-hand edge the axis labels are measured against. Read from the
  *  chart so a label cannot disagree with the window it sits under. */
 function xWindowMax(): number {
   return chart ? chart.options.scales.x.max : Date.now();
-}
-
-function cssVar(name: string): string {
-  try {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#888';
-  } catch { return '#888'; }
 }
 
 /**

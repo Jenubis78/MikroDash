@@ -24,6 +24,7 @@
 
 import { el } from '../dom';
 import type { RouteCounts, RoutingPayload } from '../gen/payloads';
+import { paletteColour, onPaletteChange, type PaletteToken } from '../palette';
 
 interface ChartLike {
   data: { labels: string[]; datasets: { data: number[]; backgroundColor: string[] }[] };
@@ -32,9 +33,11 @@ interface ChartLike {
 }
 declare const Chart: undefined | (new (canvas: HTMLElement, cfg: unknown) => ChartLike);
 
-const DONUT_COLOURS: Record<string, string> = {
-  static: 'rgba(56,189,248,.85)', dynamic: 'rgba(251,191,36,.85)',
-  bgp: 'rgba(167,139,250,.85)', ospf: 'rgba(251,113,133,.85)', other: 'rgba(99,130,190,.4)',
+// Resolved per draw (`paletteColour`), because a canvas cannot read a CSS
+// variable; a palette change repaints the ring through `onPaletteChange` below.
+const DONUT_COLOURS: Record<string, [PaletteToken, number]> = {
+  static: ['--accent-rx', 0.85], dynamic: ['--accent-warn', 0.85],
+  bgp: ['--accent-alt', 0.85], ospf: ['--accent-pink', 0.85], other: ['--border', 0.4],
 };
 const DONUT_LABELS: Record<string, string> = {
   static: 'Static', dynamic: 'Dynamic', bgp: 'BGP', ospf: 'OSPF', other: 'Other',
@@ -44,6 +47,10 @@ let donut: ChartLike | null = null;
 // Read by the centre-text plugin at DRAW time, not at construction - which is
 // why it is module state and not a closure over the first payload.
 let donutTotal = 0;
+// The last counts drawn, so a palette change can repaint the ring with them.
+let lastCounts: RouteCounts | null = null;
+
+onPaletteChange(() => { if (donut && lastCounts) updateDonut(lastCounts); });
 
 /** The count grid's setter: absent is an em dash, present-and-null is "null". */
 function setCount(id: string, v: number | null | undefined): void {
@@ -65,7 +72,7 @@ export function donutSlices(rc: RouteCounts): { keys: string[]; vals: number[]; 
   return {
     keys: dataKeys,
     vals,
-    colours: dataKeys.map((k) => DONUT_COLOURS[k]!),
+    colours: dataKeys.map((k) => paletteColour(...DONUT_COLOURS[k]!)),
     labels: dataKeys.map((k) => DONUT_LABELS[k] || k),
   };
 }
@@ -80,8 +87,7 @@ export function drawDonutCentre(chart: {
   const cy = (chart.chartArea.top + chart.chartArea.bottom) / 2;
   ctx.save();
   ctx.font = "bold 26px 'JetBrains Mono',ui-monospace,monospace";
-  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-main').trim()
-    || 'rgba(200,215,240,.9)';
+  ctx.fillStyle = paletteColour('--text-main', 0.9);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   // `|| '-'` on a NUMBER: zero routes shows a dash, not a nought.
@@ -116,6 +122,7 @@ export function updateDonut(rc: RouteCounts): void {
   const canvas = el('dc-rtDonutCanvas');
   if (!canvas) return;
   donutTotal = rc.total || 0;
+  lastCounts = rc;
   if (!donut) {
     if (typeof Chart === 'undefined') return;
     donut = new Chart(canvas, donutConfig(rc));

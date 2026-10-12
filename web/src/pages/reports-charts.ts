@@ -23,6 +23,7 @@ import { el, fmtMbps, fmtDataMB } from '../dom';
 import { chartLabel } from './reports';
 import type { PingRow } from './reports-ping';
 import { peakNoun, type TrafficRow, type BandwidthRow, type IfaceSummary } from './reports-traffic';
+import { paletteColour, onPaletteChange } from '../palette';
 
 // Chart.js is loaded by the shell from /vendor, so it is a global here rather
 // than an import. Typed loosely on purpose: the port does not own the library's
@@ -31,13 +32,17 @@ interface ChartLike { destroy(): void }
 declare const Chart: undefined | (new (canvas: HTMLCanvasElement, cfg: unknown) => ChartLike);
 
 const MONO = { size: 10, family: 'JetBrains Mono,monospace' };
-const GRID = { color: 'rgba(99,130,190,.08)' };
-const AXIS_TICK = { maxTicksLimit: 8, color: 'rgba(148,163,190,.5)', font: MONO };
-
-const RX_LINE = 'rgba(56,189,248,.85)';
-const RX_FILL = 'rgba(56,189,248,.07)';
-const TX_LINE = 'rgba(52,211,153,.8)';
-const TX_FILL = 'rgba(52,211,153,.06)';
+// ── COLOURS ARE READ WHEN A CHART IS BUILT ──────────────────────────────────
+//
+// Chart.js cannot read a CSS variable, so each colour is the palette's resolved
+// at build time (`paletteColour`), never once at module load. A palette or theme
+// change rebuilds whichever charts are drawn, from the rows already in hand -
+// see the `onPaletteChange` below.
+const grid = () => ({ color: paletteColour('--border', 0.08) });
+const axisTick = () => ({ maxTicksLimit: 8, color: paletteColour('--text-muted', 0.5), font: MONO });
+const muted = (alpha: number): string => paletteColour('--text-muted', alpha);
+const rx = (alpha: number): string => paletteColour('--accent-rx', alpha);
+const tx = (alpha: number): string => paletteColour('--accent-tx', alpha);
 
 /** Keep every step-th row so the canvas draws at most 300 points. */
 function downsample<T>(rows: T[]): T[] {
@@ -73,6 +78,17 @@ let pingChart: ChartLike | null = null;
 let trafficChart: ChartLike | null = null;
 let bandwidthChart: ChartLike | null = null;
 
+// What the ping and volume charts last drew, so a palette change can rebuild
+// them identically; the rate chart keeps its own for the capacity toggle.
+let lastPingRows: PingRow[] = [];
+let lastBandwidth: [BandwidthRow[], string, string | undefined] = [[], '', undefined];
+
+onPaletteChange(() => {
+  if (pingChart) renderPingChart(lastPingRows);
+  if (trafficChart) renderTrafficChart(lastTrafficRows, lastTrafficSummary, lastTrafficAgg);
+  if (bandwidthChart) renderBandwidthChart(...lastBandwidth);
+});
+
 /**
  * The RTT trend, with loss on a second axis.
  *
@@ -85,6 +101,7 @@ let bandwidthChart: ChartLike | null = null;
  * which is where the eye should go anyway.
  */
 export function renderPingChart(rows: PingRow[]): void {
+  lastPingRows = rows;
   const canvas = el<HTMLCanvasElement>('rptPingChart');
   if (!canvas || typeof Chart === 'undefined') return;
   if (pingChart) {
@@ -103,11 +120,11 @@ export function renderPingChart(rows: PingRow[]): void {
       labels,
       datasets: [
         {
-          label: 'RTT ms', data: rtts, borderColor: RX_LINE, backgroundColor: RX_FILL,
+          label: 'RTT ms', data: rtts, borderColor: rx(0.85), backgroundColor: rx(0.07),
           borderWidth: 1.5, pointRadius: 0, tension: 0.2, fill: true, spanGaps: true, yAxisID: 'yR',
         },
         {
-          label: 'Loss %', data: losses, borderColor: 'rgba(248,113,113,.8)',
+          label: 'Loss %', data: losses, borderColor: paletteColour('--accent-err', 0.8),
           backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.2,
           fill: false, yAxisID: 'yL',
         },
@@ -116,11 +133,11 @@ export function renderPingChart(rows: PingRow[]): void {
     options: baseOptions({
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: AXIS_TICK, grid: GRID },
-        yR: { position: 'left', ticks: { color: 'rgba(56,189,248,.7)', font: MONO }, grid: GRID },
+        x: { ticks: axisTick(), grid: grid() },
+        yR: { position: 'left', ticks: { color: rx(0.7), font: MONO }, grid: grid() },
         yL: {
           position: 'right', min: 0, max: 100,
-          ticks: { color: 'rgba(248,113,113,.7)', font: MONO },
+          ticks: { color: paletteColour('--accent-err', 0.7), font: MONO },
           // The right axis draws no grid of its own - two grids at different
           // scales over one plot is unreadable.
           grid: { drawOnChartArea: false },
@@ -211,12 +228,12 @@ export function renderTrafficChart(
   const sets: Record<string, unknown>[] = [
     {
       label: 'RX', data: sub.map((r) => +(+r.rx_mbps).toFixed(3)),
-      borderColor: RX_LINE, backgroundColor: RX_FILL,
+      borderColor: rx(0.85), backgroundColor: rx(0.07),
       borderWidth: 1.5, pointRadius: 0, tension: 0.2, fill: true,
     },
     {
       label: 'TX', data: sub.map((r) => +(+r.tx_mbps).toFixed(3)),
-      borderColor: TX_LINE, backgroundColor: TX_FILL,
+      borderColor: tx(0.8), backgroundColor: tx(0.06),
       borderWidth: 1.5, pointRadius: 0, tension: 0.2, fill: true,
     },
   ];
@@ -226,13 +243,13 @@ export function renderTrafficChart(
     sets.push({
       label: 'Peak RX in bucket',
       data: sub.map((r) => +(+(r.rx_max_mbps as number)).toFixed(3)),
-      borderColor: 'rgba(56,189,248,.35)', borderDash: [3, 3], borderWidth: 1,
+      borderColor: rx(0.35), borderDash: [3, 3], borderWidth: 1,
       pointRadius: 0, tension: 0.2, fill: false,
     });
     sets.push({
       label: 'Peak TX in bucket',
       data: sub.map((r) => +(+(r.tx_max_mbps as number)).toFixed(3)),
-      borderColor: 'rgba(52,211,153,.35)', borderDash: [3, 3], borderWidth: 1,
+      borderColor: tx(0.35), borderDash: [3, 3], borderWidth: 1,
       pointRadius: 0, tension: 0.2, fill: false,
     });
   }
@@ -241,7 +258,7 @@ export function renderTrafficChart(
     sets.push({
       label: 'Capacity RX (' + s.capacityDownMbps + ' Mbps)',
       data: labels.map(() => s.capacityDownMbps),
-      borderColor: 'rgba(148,163,190,.55)', borderDash: [6, 4], borderWidth: 1,
+      borderColor: muted(0.55), borderDash: [6, 4], borderWidth: 1,
       pointRadius: 0, fill: false,
     });
     // A second line only when the link is ASYMMETRIC. Two identical dashed lines
@@ -250,7 +267,7 @@ export function renderTrafficChart(
       sets.push({
         label: 'Capacity TX (' + s.capacityUpMbps + ' Mbps)',
         data: labels.map(() => s.capacityUpMbps),
-        borderColor: 'rgba(148,163,190,.35)', borderDash: [2, 4], borderWidth: 1,
+        borderColor: muted(0.35), borderDash: [2, 4], borderWidth: 1,
         pointRadius: 0, fill: false,
       });
     }
@@ -263,7 +280,7 @@ export function renderTrafficChart(
       plugins: {
         legend: {
           display: true,
-          labels: { color: 'rgba(148,163,190,.7)', font: MONO, boxWidth: 12 },
+          labels: { color: muted(0.7), font: MONO, boxWidth: 12 },
         },
         tooltip: {
           callbacks: {
@@ -273,14 +290,14 @@ export function renderTrafficChart(
         },
       },
       scales: {
-        x: { ticks: AXIS_TICK, grid: GRID },
+        x: { ticks: axisTick(), grid: grid() },
         y: {
           beginAtZero: true,
           ticks: {
-            color: 'rgba(148,163,190,.5)', font: MONO,
+            color: muted(0.5), font: MONO,
             callback: (v: number) => fmtMbps(v),
           },
-          grid: GRID,
+          grid: grid(),
         },
       },
     }),
@@ -306,6 +323,7 @@ export function renderTrafficChart(
 export function renderBandwidthChart(
   rows: BandwidthRow[], agg: string, resolution?: string,
 ): void {
+  lastBandwidth = [rows, agg, resolution];
   const canvas = el<HTMLCanvasElement>('rptBandwidthChart');
   if (!canvas || typeof Chart === 'undefined') return;
   if (bandwidthChart) {
@@ -319,12 +337,12 @@ export function renderBandwidthChart(
   const sets: Record<string, unknown>[] = [
     {
       label: 'Download', data: sub.map((r) => +(+r.rx_mb).toFixed(3)),
-      borderColor: RX_LINE, backgroundColor: RX_FILL,
+      borderColor: rx(0.85), backgroundColor: rx(0.07),
       borderWidth: 1.5, pointRadius: 0, tension: 0.2, fill: true,
     },
     {
       label: 'Upload', data: sub.map((r) => +(+r.tx_mb).toFixed(3)),
-      borderColor: TX_LINE, backgroundColor: TX_FILL,
+      borderColor: tx(0.8), backgroundColor: tx(0.06),
       borderWidth: 1.5, pointRadius: 0, tension: 0.2, fill: true,
     },
   ];
@@ -334,13 +352,13 @@ export function renderBandwidthChart(
     sets.push({
       label: 'Busiest ' + peakNoun(resolution).toLowerCase() + ' ↓',
       data: sub.map((r) => +(+(r.rx_max_mb as number)).toFixed(3)),
-      borderColor: 'rgba(56,189,248,.35)', borderDash: [3, 3], borderWidth: 1,
+      borderColor: rx(0.35), borderDash: [3, 3], borderWidth: 1,
       pointRadius: 0, tension: 0.2, fill: false,
     });
     sets.push({
       label: 'Busiest ' + peakNoun(resolution).toLowerCase() + ' ↑',
       data: sub.map((r) => +(+(r.tx_max_mb as number)).toFixed(3)),
-      borderColor: 'rgba(52,211,153,.35)', borderDash: [3, 3], borderWidth: 1,
+      borderColor: tx(0.35), borderDash: [3, 3], borderWidth: 1,
       pointRadius: 0, tension: 0.2, fill: false,
     });
   }
@@ -352,7 +370,7 @@ export function renderBandwidthChart(
       plugins: {
         legend: {
           display: true,
-          labels: { color: 'rgba(148,163,190,.7)', font: MONO, boxWidth: 12 },
+          labels: { color: muted(0.7), font: MONO, boxWidth: 12 },
         },
         tooltip: {
           callbacks: {
@@ -362,14 +380,14 @@ export function renderBandwidthChart(
         },
       },
       scales: {
-        x: { ticks: AXIS_TICK, grid: GRID },
+        x: { ticks: axisTick(), grid: grid() },
         y: {
           beginAtZero: true,
           ticks: {
-            color: 'rgba(148,163,190,.5)', font: MONO,
+            color: muted(0.5), font: MONO,
             callback: (v: number) => fmtDataMB(v),
           },
-          grid: GRID,
+          grid: grid(),
         },
       },
     }),

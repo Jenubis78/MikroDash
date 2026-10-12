@@ -42,6 +42,7 @@ import {
   type XYPoint,
 } from './dashboard-traffic-buffer';
 import type { TrafficHistory, TrafficPoint, TrafficSample } from '../gen/payloads';
+import { paletteColour, onPaletteChange } from '../palette';
 
 /** How far the right edge sits behind the anchor, so the newest point is not clipped. */
 
@@ -96,21 +97,21 @@ export const trafficTickPlugin = {
     const labelW = ctx.measureText(fmtTime(x.min)).width;
     const n = Math.min(7, Math.max(1, Math.floor(w / (labelW + 20))));
     if (n === 1) {
-      ctx.fillStyle = 'rgba(148,163,190,.4)';
+      ctx.fillStyle = paletteColour('--text-muted', 0.4);
       ctx.textAlign = 'right';
       ctx.fillText(fmtTime(x.max), ca.right, ca.bottom + 6);
     } else {
       for (let i = 0; i < n; i++) {
         const frac = i / (n - 1), px = Math.round(ca.left + frac * w);
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(99,130,190,.07)';
+        ctx.strokeStyle = paletteColour('--border', 0.07);
         ctx.lineWidth = 1;
         // The half-pixel offset puts a 1px line on a device pixel instead of
         // straddling two and rendering as a 2px blur.
         ctx.moveTo(px + 0.5, ca.top);
         ctx.lineTo(px + 0.5, ca.bottom);
         ctx.stroke();
-        ctx.fillStyle = 'rgba(148,163,190,.4)';
+        ctx.fillStyle = paletteColour('--text-muted', 0.4);
         ctx.textAlign = i === 0 ? 'left' : i === n - 1 ? 'right' : 'center';
         ctx.fillText(fmtTime(x.min + frac * (x.max - x.min)), px, ca.bottom + 6);
       }
@@ -119,14 +120,43 @@ export const trafficTickPlugin = {
   },
 };
 
+/** The colour-bearing part of a traffic chart: its config and the live chart alike. */
+export interface TrafficPaint {
+  data: { datasets: { borderColor?: string; backgroundColor?: string }[] };
+  options: {
+    plugins: { tooltip: { backgroundColor?: string; borderColor?: string } };
+    scales: { y: { grid: { color?: string }; ticks: { color?: string } } };
+  };
+}
+
+/** How strongly each part of a traffic chart is drawn; the charts differ only here. */
+export interface TrafficAlphas { rxFill: number; txFill: number; grid: number; ticks: number }
+export const DASHBOARD_ALPHAS: TrafficAlphas = { rxFill: 0.08, txFill: 0.06, grid: 0.07, ticks: 0.4 };
+
+/**
+ * Writes the palette's colours onto a traffic chart - the Dashboard's, the
+ * Bandwidth page's compact one and the device dialog's - onto its config when
+ * it is built and onto the live chart when the palette changes. Chart.js cannot
+ * read a CSS variable, so the colours are resolved here and re-resolved then.
+ */
+export function paintTrafficChart(c: TrafficPaint, a: TrafficAlphas): void {
+  const [rx, tx] = c.data.datasets;
+  if (rx) { rx.borderColor = paletteColour('--accent-rx'); rx.backgroundColor = paletteColour('--accent-rx', a.rxFill); }
+  if (tx) { tx.borderColor = paletteColour('--accent-tx'); tx.backgroundColor = paletteColour('--accent-tx', a.txFill); }
+  c.options.plugins.tooltip.backgroundColor = paletteColour('--bg-deep', 0.9);
+  c.options.plugins.tooltip.borderColor = paletteColour('--border', 0.2);
+  c.options.scales.y.grid.color = paletteColour('--border', a.grid);
+  c.options.scales.y.ticks.color = paletteColour('--text-muted', a.ticks);
+}
+
 export function chartConfig(nowMs: number): unknown {
-  return {
+  const cfg = {
     type: 'line',
     plugins: [trafficTickPlugin],
     data: {
       datasets: [
-        { label: 'RX', data: [], borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,.08)', borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
-        { label: 'TX', data: [], borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,.06)', borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
+        { label: 'RX', data: [], borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
+        { label: 'TX', data: [], borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
       ],
     },
     options: {
@@ -156,7 +186,7 @@ export function chartConfig(nowMs: number): unknown {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: 'rgba(7,9,15,.9)', borderColor: 'rgba(99,130,190,.2)', borderWidth: 1,
+          borderWidth: 1,
           titleFont: { family: "'JetBrains Mono',monospace", size: 11 },
           bodyFont: { family: "'JetBrains Mono',monospace", size: 11 },
           callbacks: {
@@ -177,9 +207,8 @@ export function chartConfig(nowMs: number): unknown {
         },
         y: {
           beginAtZero: true,
-          grid: { color: 'rgba(99,130,190,.07)' },
+          grid: {},
           ticks: {
-            color: 'rgba(148,163,190,.4)',
             font: { family: "'JetBrains Mono',monospace", size: 10 },
             callback: (v: number) => fmtMbps(v),
           },
@@ -187,6 +216,8 @@ export function chartConfig(nowMs: number): unknown {
       },
     },
   };
+  paintTrafficChart(cfg as TrafficPaint, DASHBOARD_ALPHAS);
+  return cfg;
 }
 
 function makeChartObj(): void {
@@ -530,6 +561,14 @@ export function resetTraffic(): void {
 }
 
 export function initTraffic(socket: Socket): void {
+  // A palette or theme change re-reads the colours onto the live chart (the
+  // tick plugin reads them on every draw); a chart built later reads them in
+  // `chartConfig`.
+  onPaletteChange(() => {
+    if (!chart) return;
+    paintTrafficChart(chart as unknown as TrafficPaint, DASHBOARD_ALPHAS);
+    chart.update('none');
+  });
   requestInterface = (ifName) => socket.emit('traffic:select', { ifName });
   socket.on('traffic:history', (d) => onTrafficHistory(d));
   socket.on('traffic:update', (d) => noteTrafficUpdate(d));

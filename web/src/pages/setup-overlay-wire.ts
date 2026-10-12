@@ -205,7 +205,7 @@ export function initSetupOverlay(socket: SetupSocket): void {
         if (test) test.disabled = false;
         if (res) {
           res.textContent = setupTestResultText(!!d.ok, d.boardName || '', d.error || '');
-          res.style.color = d.ok ? 'var(--accent-ok)' : '#f87171';
+          res.style.color = d.ok ? 'var(--accent-ok)' : 'var(--accent-err)';
         }
         setSaveReady(!!d.ok);
       })
@@ -213,7 +213,7 @@ export function initSetupOverlay(socket: SetupSocket): void {
         if (test) test.disabled = false;
         if (res) {
           res.textContent = '✗ Request failed - check browser console';
-          res.style.color = '#f87171';
+          res.style.color = 'var(--accent-err)';
         }
         setSaveReady(false);
       });

@@ -619,6 +619,9 @@ func TestEveryColourIsThePalettes(t *testing.T) {
 	})
 	tagRe := regexp.MustCompile(`<[a-zA-Z][^<>]*>`)
 	styleRe := regexp.MustCompile(`style=(?:"([^"]*)"|'([^']*)')`)
+	// An SVG presentation attribute cannot read a CSS variable, so a colour in one
+	// is always a literal: it belongs in the element's style instead.
+	svgAttrRe := regexp.MustCompile(`\s(?:fill|stroke|stop-color|flood-color)="(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\))"`)
 	swatch := regexp.MustCompile(`class="[^"]*\bswatch-(?:preview|dot)\b`)
 	for rel, src := range markup {
 		for _, m := range tagRe.FindAllStringIndex(src, -1) {
@@ -626,12 +629,92 @@ func TestEveryColourIsThePalettes(t *testing.T) {
 			if swatch.MatchString(tag) {
 				continue // a palette swatch shows its own palette
 			}
+			for _, a := range svgAttrRe.FindAllStringSubmatch(tag, -1) {
+				if !colourIsNeutral(a[1]) {
+					t.Errorf("%s:%d: an SVG colour attribute carries %s - put it in the style, from the palette", rel, strings.Count(src[:m[0]], "\n")+1, a[1])
+				}
+			}
 			for _, s := range styleRe.FindAllStringSubmatch(tag, -1) {
 				for _, lit := range colourLiteralRe.FindAllString(s[1]+s[2], -1) {
 					if !colourIsNeutral(lit) {
 						t.Errorf("%s:%d: a style attribute carries %s - take it from the palette", rel, strings.Count(src[:m[0]], "\n")+1, lit)
 					}
 				}
+			}
+		}
+	}
+}
+
+// THE SCRIPT HALF: a colour set from code is the palette's too.
+//
+// Charts, gauges, maps and canvases set their colours in code, where neither the
+// stylesheet check nor a page sweep reaches (a canvas has no computed style).
+// web/src/palette.ts gives code the palette: paletteCss for anything the browser
+// styles, paletteColour for a canvas, onPaletteChange to redraw. A literal colour
+// in a script is refused, apart from neutrals, an HTML entity (&#039;) that only
+// looks like one, and a stored key mapped to a token in the same pair (the Wi-Fi
+// map's saved-plan colours: ['#38bdf8', '--accent-rx']).
+func TestScriptColoursAreThePalettes(t *testing.T) {
+	root := repoRoot(t)
+	files := readFiles(t, root, "web/src/", func(rel string) bool {
+		return strings.HasSuffix(rel, ".ts") && !strings.HasPrefix(rel, "web/src/gen/") && !isTestSource(rel)
+	})
+	block := regexp.MustCompile(`(?s)/\*.*?\*/`)
+	line := regexp.MustCompile(`(^|[^:])//.*$`)
+	lit := regexp.MustCompile(`(&)?(#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b|rgba?\(\s*\d[^)]*\))('\s*,\s*'--)?`)
+	for rel, src := range files {
+		src = block.ReplaceAllStringFunc(src, func(c string) string { return strings.Repeat("\n", strings.Count(c, "\n")) })
+		for i, l := range strings.Split(src, "\n") {
+			code := line.ReplaceAllString(l, "$1")
+			for _, m := range lit.FindAllStringSubmatch(code, -1) {
+				if m[1] != "" || m[3] != "" || colourIsNeutral(m[2]) {
+					continue
+				}
+				t.Errorf("%s:%d: %s is a literal colour in code - use paletteCss/paletteColour from web/src/palette.ts", rel, i+1, m[2])
+			}
+		}
+	}
+}
+
+// A DERIVED VARIABLE IS DERIVED. A custom property set in :root that no palette
+// or theme overrides is the same in every palette, so if it holds a literal
+// colour that colour is the default palette's everywhere. The count pills and
+// the Devices status dots did exactly that (--card-badge-*, --dv-*): measured
+// under Nord, 88 default-green dots on the Devices page. Such a variable is built
+// from the palette's tokens instead.
+func TestRootColourVariablesComeFromThePalette(t *testing.T) {
+	css := mustRead(t, filepath.Join(repoRoot(t), "web", "public", "app.css"))
+	css = regexp.MustCompile(`(?s)/\*.*?\*/`).ReplaceAllString(css, "")
+	rule := regexp.MustCompile(`([^{}]+)\{([^{}]*)\}`)
+	rootVars := map[string]string{}
+	overridden := map[string]bool{}
+	for _, m := range rule.FindAllStringSubmatch(css, -1) {
+		sel := strings.TrimSpace(m[1])
+		for _, decl := range strings.Split(m[2], ";") {
+			k, v, ok := strings.Cut(decl, ":")
+			k = strings.TrimSpace(k)
+			if !ok || !strings.HasPrefix(k, "--") {
+				continue
+			}
+			switch {
+			case sel == ":root":
+				rootVars[k] = v
+			case strings.Contains(sel, "data-palette") || strings.HasSuffix(sel, `html[data-theme="light"]`):
+				overridden[k] = true
+			}
+		}
+	}
+	if len(rootVars) < 10 {
+		t.Fatalf("found %d :root variables - the scan has stopped seeing them", len(rootVars))
+	}
+	for k, v := range rootVars {
+		if overridden[k] {
+			continue
+		}
+		for _, lit := range colourLiteralRe.FindAllString(v, -1) {
+			if !colourIsNeutral(lit) {
+				t.Errorf("%s is %s in :root and no palette overrides it, so it is the default palette's colour in every palette - "+
+					"derive it: rgb(from var(--token) r g b / alpha)", k, strings.TrimSpace(v))
 			}
 		}
 	}

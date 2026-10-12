@@ -330,12 +330,13 @@ function apply(rows: RouterStatsRow[] | null): void {
     e.dot.setAttribute('cy', String(g.y));
     e.dot.setAttribute('r', String(rad));
     e.dot.setAttribute('stroke-width', String(1.5 / scale));
-    e.dot.setAttribute('fill', colour);
+    // In the style: a fill attribute cannot hold a palette colour.
+    e.dot.style.fill = colour;
     e.dot.setAttribute('stroke', 'rgba(0,0,0,.45)');
     e.ripple.setAttribute('cx', String(g.x));
     e.ripple.setAttribute('cy', String(g.y));
     e.ripple.setAttribute('r', String(rad));
-    e.ripple.setAttribute('fill', colour);
+    e.ripple.style.fill = colour;
 
     if (n > 1) {
       e.count.setAttribute('x', String(g.x));

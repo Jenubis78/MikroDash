@@ -21,12 +21,14 @@
 import { el } from '../dom';
 import { dcEsc } from './dashboard-cards-util';
 import type { FirewallPayload } from '../gen/payloads';
+import { paletteCss, type PaletteToken } from '../palette';
 
-const ACTION_COLOUR: Record<string, string> = {
-  accept: 'rgba(52,211,153,.8)', drop: 'rgba(248,113,113,.8)',
-  reject: 'rgba(251,113,133,.8)', masquerade: 'rgba(56,189,248,.8)',
-  'dst-nat': 'rgba(251,191,36,.8)', 'src-nat': 'rgba(251,191,36,.8)',
-  log: 'rgba(167,139,250,.8)', passthrough: 'rgba(52,211,153,.6)',
+// The same token per action as the Firewall page's `actionBadge`.
+const ACTION_COLOUR: Record<string, [PaletteToken, number]> = {
+  accept: ['--accent-tx', 0.8], drop: ['--accent-err', 0.8],
+  reject: ['--accent-err', 0.8], masquerade: ['--accent-rx', 0.8],
+  'dst-nat': ['--accent-warn', 0.8], 'src-nat': ['--accent-warn', 0.8],
+  log: ['--accent-alt', 0.8], passthrough: ['--accent-tx', 0.6],
 };
 
 export function renderFwActionsCard(data: FirewallPayload): void {
@@ -54,7 +56,8 @@ export function renderFwActionsCard(data: FirewallPayload): void {
   // same way rather than as a length test, because that is where the original
   // puts the decision.
   listEl.innerHTML = entries.map((e) => {
-    const col = ACTION_COLOUR[e[0]] || 'rgba(99,130,190,.7)';
+    const [tok, alpha] = ACTION_COLOUR[e[0]] || ['--border', 0.7];
+    const col = paletteCss(tok, alpha);
     return '<div class="fw-action-row">' +
       '<span class="fw-action-name" style="color:' + col + '">' + dcEsc(e[0]) + '</span>' +
       '<div class="fw-action-bar-wrap"><div class="fw-action-bar" style="width:' +

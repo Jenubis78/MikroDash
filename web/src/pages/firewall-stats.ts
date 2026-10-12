@@ -36,6 +36,7 @@ import { fmtTime } from '../timefmt';
 import { trafficTickPlugin } from './dashboard-traffic';
 import { axisWindow, easeBuffer, smoothMax, smoothOffset, KEEPALIVE_SLACK_MS } from './dashboard-traffic-buffer';
 import type { FirewallPayload, FirewallRule } from '../gen/payloads';
+import { paletteColour, onPaletteChange } from '../palette';
 
 declare const Chart: undefined | (new (canvas: HTMLCanvasElement, cfg: unknown) => ChartLike);
 
@@ -209,11 +210,38 @@ function keepaliveTick(): void {
   chart.update('none');
 }
 
-function cssVar(name: string): string {
-  try {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#888';
-  } catch { return '#888'; }
+/** The colour-bearing part of the chart: its config and the live chart alike. */
+interface FwsPaint {
+  data: { datasets: { borderColor?: string; backgroundColor?: string }[] };
+  options: {
+    plugins: { tooltip: { backgroundColor?: string; borderColor?: string } };
+    scales: { y: { grid: { color?: string }; ticks: { color?: string } }; y1: { ticks: { color?: string } } };
+  };
 }
+
+/**
+ * Writes the palette's colours onto the chart - onto its config when it is
+ * built, and onto the live chart when the palette changes. Chart.js cannot read
+ * a CSS variable, so they are resolved here and re-resolved then.
+ */
+function paint(c: FwsPaint): void {
+  const [rate, pps] = c.data.datasets;
+  // Not Rx or Tx: a rule's rate has no direction, so neither fixed colour; the
+  // accent and the alternate accent instead.
+  if (rate) { rate.borderColor = paletteColour('--accent-rx'); rate.backgroundColor = paletteColour('--accent-rx', 0.08); }
+  if (pps) pps.borderColor = paletteColour('--accent-alt');
+  c.options.plugins.tooltip.backgroundColor = paletteColour('--bg-deep', 0.9);
+  c.options.plugins.tooltip.borderColor = paletteColour('--border', 0.2);
+  c.options.scales.y.grid.color = paletteColour('--border', 0.07);
+  c.options.scales.y.ticks.color = paletteColour('--text-muted', 0.4);
+  c.options.scales.y1.ticks.color = paletteColour('--text-muted', 0.4);
+}
+
+onPaletteChange(() => {
+  if (!chart) return;
+  paint(chart as unknown as FwsPaint);
+  chart.update('none');
+});
 
 const mono = "'JetBrains Mono',monospace";
 
@@ -221,7 +249,7 @@ function makeChart(): void {
   const canvas = el<HTMLCanvasElement>('fwsChart');
   if (!canvas || typeof Chart === 'undefined') return;
   const now = Date.now();
-  chart = new Chart(canvas, {
+  const cfg = {
     type: 'line',
     // The Dashboard's tick plugin: grid lines and clock-time labels at fixed
     // pixel positions, read from the axis rather than the data.
@@ -229,15 +257,12 @@ function makeChart(): void {
     data: {
       datasets: [
         {
-          // Not Rx or Tx: a rule's rate has no direction, so neither fixed
-          // colour; the accent and the alternate accent instead.
           label: 'Rate', data: [], yAxisID: 'y',
-          borderColor: cssVar('--accent-rx'), backgroundColor: 'rgba(56,189,248,.08)',
           borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true,
         },
         {
           label: 'Packet rate', data: [], yAxisID: 'y1',
-          borderColor: cssVar('--accent-alt'), borderWidth: 1.5, tension: 0.3, pointRadius: 0,
+          borderWidth: 1.5, tension: 0.3, pointRadius: 0,
         },
       ],
     },
@@ -249,7 +274,7 @@ function makeChart(): void {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: 'rgba(7,9,15,.9)', borderColor: 'rgba(99,130,190,.2)', borderWidth: 1,
+          borderWidth: 1,
           titleFont: { family: mono, size: 11 }, bodyFont: { family: mono, size: 11 },
           callbacks: {
             title: (items: Array<{ parsed: { x: number } }>): string =>
@@ -271,20 +296,22 @@ function makeChart(): void {
         },
         y: {
           beginAtZero: true, position: 'left',
-          grid: { color: 'rgba(99,130,190,.07)' },
-          ticks: { color: 'rgba(148,163,190,.4)', font: { family: mono, size: 10 },
+          grid: {},
+          ticks: { font: { family: mono, size: 10 },
             callback: (v: number): string => fmtBps(v) },
         },
         y1: {
           beginAtZero: true, position: 'right', grid: { drawOnChartArea: false },
           // Whole packets only. The eased top of the axis is a fraction, and
           // was labelled "11.011011011011012 p/s".
-          ticks: { color: 'rgba(148,163,190,.4)', font: { family: mono, size: 10 }, precision: 0,
+          ticks: { font: { family: mono, size: 10 }, precision: 0,
             callback: (v: number): string => (Number.isInteger(v) ? v + ' p/s' : '') },
         },
       },
     },
-  });
+  };
+  paint(cfg as unknown as FwsPaint);
+  chart = new Chart(canvas, cfg);
 }
 
 /** Register the Statistics extra on every firewall resource. `getLast` is the

@@ -6,6 +6,7 @@
 // return markup, which also makes them testable without a page.
 
 import { esc, svcBadge, iso2Flag, sparkPoints } from '../dom';
+import { paletteCss } from '../palette';
 import { CC_NAMES, PORT_NAMES } from './connections-map';
 import type {
   ConnCountry, ConnCountryProto, ConnDestEntry, ConnPort, ConnSource, Lease,
@@ -26,7 +27,7 @@ export function drawSparkSVG(data: number[] | undefined): string {
   const w = 50, h = 12;
   const pts = sparkPoints(data, w, h, 1);
   return '<svg class="conn-sparkline" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' +
-    '<polyline points="' + pts + '" fill="none" stroke="rgba(56,189,248,.6)" stroke-width="1.2" stroke-linejoin="round"/>' +
+    '<polyline points="' + pts + '" fill="none" style="stroke:' + paletteCss('--accent-rx', 0.6) + '" stroke-width="1.2" stroke-linejoin="round"/>' +
     '</svg>';
 }
 

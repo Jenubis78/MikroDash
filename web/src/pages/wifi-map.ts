@@ -43,6 +43,7 @@
 // clicking its corners, and its vertices can be dragged afterwards.
 
 import { esc, el, lsGet, lsSet, svgEl, attr, text } from '../dom';
+import { paletteCss, type PaletteToken } from '../palette';
 import { fieldHtml } from '../form';
 import type { Socket } from '../socket';
 import type { WifiPayload, WirelessPayload, WirelessClient } from '../gen/payloads';
@@ -130,27 +131,47 @@ function bounds(pts: MapPoint[]): { x: number; y: number; w: number; h: number }
 
 /** The signal bands the rest of the app uses, so a colour means one thing. */
 function signalColour(dbm: number): string {
-  if (dbm >= -55) return 'rgba(52,211,153,.9)';
-  if (dbm >= -65) return 'rgba(56,189,248,.9)';
-  if (dbm >= -75) return 'rgba(251,191,36,.9)';
-  return 'rgba(248,113,113,.9)';
+  if (dbm >= -55) return paletteCss('--accent-tx', 0.9);
+  if (dbm >= -65) return paletteCss('--accent-rx', 0.9);
+  if (dbm >= -75) return paletteCss('--accent-warn', 0.9);
+  return paletteCss('--accent-err', 0.9);
+}
+
+/**
+ * SVG colour goes in the style, never a fill or stroke attribute: a
+ * presentation attribute cannot hold a palette colour.
+ */
+function paint(fill: string, stroke?: string): string {
+  return 'fill:' + fill + (stroke ? ';stroke:' + stroke : '');
 }
 
 const OBJECT_FILL: Record<string, string> = {
-  building: 'rgba(56,189,248,.10)',
-  area: 'rgba(52,211,153,.07)',
-  wall: 'rgba(148,163,184,.45)',
+  building: paletteCss('--accent-rx', 0.1),
+  area: paletteCss('--accent-tx', 0.07),
+  wall: paletteCss('--text-muted', 0.45),
   label: 'transparent',
 };
 const OBJECT_STROKE: Record<string, string> = {
-  building: 'rgba(56,189,248,.45)',
-  area: 'rgba(52,211,153,.35)',
-  wall: 'rgba(148,163,184,.6)',
+  building: paletteCss('--accent-rx', 0.45),
+  area: paletteCss('--accent-tx', 0.35),
+  wall: paletteCss('--text-muted', 0.6),
   label: 'transparent',
 };
 /** The palette the colour picker offers. Small on purpose: a plan reads better
- *  with five colours than with a wheel. */
-const PALETTE = ['', '#38bdf8', '#34d399', '#fbbf24', '#f87171', '#a78bfa'];
+ *  with five colours than with a wheel. The hex is what a saved plan STORES -
+ *  its key, kept so existing plans still read - and the token is what it draws. */
+const PALETTE: Array<[string, PaletteToken | null]> = [
+  ['', null], ['#38bdf8', '--accent-rx'], ['#34d399', '--accent-tx'],
+  ['#fbbf24', '--accent-warn'], ['#f87171', '--accent-err'], ['#a78bfa', '--accent-alt'],
+];
+
+/** A stored object colour at `alpha`, drawn from the palette. A colour the
+ *  picker never offered is drawn as stored. */
+function objectColour(c: string, alpha = 1): string {
+  const hit = PALETTE.find((p) => p[0] === c);
+  if (hit && hit[1]) return paletteCss(hit[1], alpha);
+  return alpha === 1 ? c : 'rgb(from ' + c + ' r g b / ' + alpha + ')';
+}
 
 const DEFAULT_SIZE: Record<string, { w: number; h: number }> = {
   building: { w: 220, h: 150 },
@@ -386,7 +407,7 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
     if (!gMeasure || !measureFrom || !to) return;
     gMeasure.appendChild(svgEl('line', {
       x1: measureFrom.x, y1: measureFrom.y, x2: to.x, y2: to.y,
-      stroke: 'var(--accent-warn)', 'stroke-width': 1.5, 'stroke-dasharray': '5 4',
+      style: paint('none', 'var(--accent-warn)'), 'stroke-width': 1.5, 'stroke-dasharray': '5 4',
     }));
     const t = svgEl('text', {
       x: (measureFrom.x + to.x) / 2, y: (measureFrom.y + to.y) / 2 - 6,
@@ -404,15 +425,15 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
     if (pts.length > 1) {
       gDraft.appendChild(svgEl('polyline', {
         points: pts.map((q) => q.x + ',' + q.y).join(' '),
-        fill: drawing.length > 2 ? 'rgba(52,211,153,.08)' : 'none',
-        stroke: 'var(--accent-rx)', 'stroke-width': 1.5 * k,
+        style: paint(drawing.length > 2 ? paletteCss('--accent-tx', 0.08) : 'none', 'var(--accent-rx)'),
+        'stroke-width': 1.5 * k,
         'stroke-dasharray': (6 * k).toFixed(1) + ' ' + (5 * k).toFixed(1),
       }));
     }
     drawing.forEach((q, i) => {
       gDraft.appendChild(svgEl('circle', {
         cx: q.x, cy: q.y, r: (i === 0 ? 6 : 4) * k,
-        fill: i === 0 ? 'var(--accent-rx)' : 'rgba(56,189,248,.5)',
+        style: paint(i === 0 ? 'var(--accent-rx)' : paletteCss('--accent-rx', 0.5)),
       }));
     });
   }
@@ -423,8 +444,9 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
     doc.objects.forEach((o) => {
       const g = svgEl('g', { class: 'wm-obj', 'data-id': o.id });
       const skin = {
-        fill: o.colour ? o.colour + '22' : (OBJECT_FILL[o.kind] || 'none'),
-        stroke: o.colour || OBJECT_STROKE[o.kind] || 'none',
+        // 0x22 / 255: the alpha the stored colour's '22' suffix used to give.
+        style: paint(o.colour ? objectColour(o.colour, 0.133) : (OBJECT_FILL[o.kind] || 'none'),
+          o.colour ? objectColour(o.colour) : (OBJECT_STROKE[o.kind] || 'none')),
         'stroke-width': 1.5,
         'stroke-dasharray': o.kind === 'area' ? '6 5' : '',
       };
@@ -442,7 +464,7 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
       if (o.label) {
         const t = svgEl('text', {
           x: o.x + 10 * k, y: o.y + (o.kind === 'label' ? 18 : 20) * k,
-          class: 'wm-obj-label', fill: o.colour || 'var(--text-main)',
+          class: 'wm-obj-label', style: paint(o.colour ? objectColour(o.colour) : 'var(--text-main)'),
           'font-size': (FONT.obj * k).toFixed(1) + 'px',
         });
         text(t, o.label);
@@ -460,7 +482,7 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
         g.appendChild(svgEl('rect', {
           x: o.x - 3 * k, y: o.y - 3 * k,
           width: Math.max(1, o.w) + 6 * k, height: Math.max(1, o.h) + 6 * k,
-          rx: 10, fill: 'none', stroke: 'var(--accent-rx)', 'stroke-width': k,
+          rx: 10, style: paint('none', 'var(--accent-rx)'), 'stroke-width': k,
           'stroke-dasharray': (4 * k).toFixed(1) + ' ' + (3 * k).toFixed(1),
         }));
         // A polygon resizes by its CORNERS. One handle in the bottom right would
@@ -471,14 +493,14 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
             g.appendChild(svgEl('rect', {
               class: 'wm-handle', 'data-vertex': o.id + ':' + i,
               x: q.x - 5 * k, y: q.y - 5 * k, width: 10 * k, height: 10 * k, rx: 2,
-              fill: 'var(--accent-rx)',
+              style: paint('var(--accent-rx)'),
             }));
           });
         } else if (o.kind !== 'label') {
           g.appendChild(svgEl('rect', {
             class: 'wm-handle', 'data-handle': o.id,
             x: o.x + o.w - 6 * k, y: o.y + o.h - 6 * k, width: 12 * k, height: 12 * k, rx: 2,
-            fill: 'var(--accent-rx)',
+            style: paint('var(--accent-rx)'),
           }));
         }
       }
@@ -497,8 +519,8 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
       const g = svgEl('g', { class: 'wm-ap', 'data-ap': key });
       g.appendChild(svgEl('circle', {
         cx: a.x, cy: a.y, r: 13 * k,
-        fill: n ? 'rgba(56,189,248,.18)' : 'rgba(148,163,184,.15)',
-        stroke: n ? 'var(--accent-rx)' : 'rgba(148,163,184,.6)', 'stroke-width': 2 * k,
+        style: paint(n ? paletteCss('--accent-rx', 0.18) : paletteCss('--text-muted', 0.15),
+          n ? 'var(--accent-rx)' : paletteCss('--text-muted', 0.6)), 'stroke-width': 2 * k,
       }));
       const lbl = svgEl('text', {
         x: a.x, y: a.y + 30 * k, class: 'wm-ap-label',
@@ -516,7 +538,7 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
       }
       if (mode === 'edit' && sel?.kind === 'ap' && sel.id === key) {
         g.appendChild(svgEl('circle', {
-          cx: a.x, cy: a.y, r: 19 * k, fill: 'none', stroke: 'var(--accent-rx)',
+          cx: a.x, cy: a.y, r: 19 * k, style: paint('none', 'var(--accent-rx)'),
           'stroke-width': k, 'stroke-dasharray': (4 * k).toFixed(1) + ' ' + (3 * k).toFixed(1),
         }));
       }
@@ -607,11 +629,11 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
       const g = svgEl('g', { class: 'wm-client' });
       g.appendChild(svgEl('line', {
         x1: pin.x, y1: pin.y, x2: x, y2: y,
-        stroke: 'rgba(148,163,184,.25)', 'stroke-width': k,
+        style: paint('none', paletteCss('--text-muted', 0.25)), 'stroke-width': k,
       }));
       g.appendChild(svgEl('circle', {
-        cx: x, cy: y, r: 5 * k, fill: signalColour(c.signal),
-        stroke: 'rgba(15,23,42,.7)', 'stroke-width': k,
+        cx: x, cy: y, r: 5 * k, style: paint(signalColour(c.signal), paletteCss('--bg-deep', 0.7)),
+        'stroke-width': k,
       }));
 
       if (lines.length) {
@@ -785,9 +807,9 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
             fieldHtml({ id: 'wmfH', label: 'Height' },
               '<input class="sform-input" id="wmfH" type="number" value="' + String(Math.round(o.h)) + '">'),
         fieldHtml({ label: 'Colour' }, '<div class="wm-swatches" id="wmfColours">' +
-          PALETTE.map((c) => '<button type="button" class="wm-swatch' +
+          PALETTE.map(([c, tok]) => '<button type="button" class="wm-swatch' +
             (c === o.colour ? ' is-on' : '') + '" data-colour="' + esc(c) + '"' +
-            ' style="background:' + (c || 'transparent') + '"' +
+            ' style="background:' + (tok ? paletteCss(tok) : 'transparent') + '"' +
             ' title="' + (c ? esc(c) : 'default') + '"></button>').join('') + '</div>'),
       ) +
       // A note about the shape as a whole, not about one field, so it stays

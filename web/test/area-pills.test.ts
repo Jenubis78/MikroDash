@@ -98,9 +98,12 @@ const rules = send('routing-rules', [
   { id: '*2', identity: 'r2', values: { action: 'unreachable' } },
 ]);
 const r = cells('routing-rules', rules);
-assert.ok(/^<span style="[^"]*rgba\(99,130,190/.test(r[0].action) && r[0].action.endsWith('>lookup</span>'),
+// The colour is the palette's, not a literal, so a chosen palette recolours it:
+// the neutral badge is the border token, a refusal the error token.
+assert.ok(/^<span style="[^"]*color:rgb\(from var\(--border\) /.test(r[0].action) && r[0].action.endsWith('>lookup</span>'),
   'lookup is not the Firewall badge in its neutral colour: ' + r[0].action);
-assert.ok(/rgba\(248,113,113/.test(r[1].action), 'unreachable is not red: ' + r[1].action);
+assert.ok(/color:rgb\(from var\(--accent-err\) /.test(r[1].action), 'unreachable is not red: ' + r[1].action);
+assert.ok(!/rgba?\(\s*\d/.test(r[0].action + r[1].action), 'the badge carries a literal colour');
 assert.strictEqual(r[0].table, 'main', 'the table column became a pill');
 say('ok  an action is drawn with the Firewall page\'s badge');
 

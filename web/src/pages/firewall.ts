@@ -19,6 +19,7 @@
 // different id order, or a queued pulse - takes the full path.
 
 import { esc, el, resRow, debounce, fmtBytes } from '../dom';
+import { paletteCss, type PaletteToken } from '../palette';
 import type { Socket } from '../socket';
 // FirewallPayload, as generated from the Go collector:
 //
@@ -47,17 +48,19 @@ const FW_RES: Record<Fam, Record<string, string>> = {
 // family resets to IPv4 on page entry, the way Routing resets its tab.
 const V6_CARDS_KEY = 'mdFwShowV6';
 
-const ACTION_COLOUR: Record<string, string> = {
-  accept: 'rgba(52,211,153,.8)', drop: 'rgba(248,113,113,.8)',
-  reject: 'rgba(251,113,133,.8)', masquerade: 'rgba(56,189,248,.8)',
-  'dst-nat': 'rgba(251,191,36,.8)', 'src-nat': 'rgba(251,191,36,.8)',
-  log: 'rgba(167,139,250,.8)', passthrough: 'rgba(52,211,153,.6)',
+// Colours as palette tokens, resolved where drawn, so a chosen palette or the
+// light theme recolours them.
+const ACTION_COLOUR: Record<string, [PaletteToken, number]> = {
+  accept: ['--accent-tx', 0.8], drop: ['--accent-err', 0.8],
+  reject: ['--accent-err', 0.8], masquerade: ['--accent-rx', 0.8],
+  'dst-nat': ['--accent-warn', 0.8], 'src-nat': ['--accent-warn', 0.8],
+  log: ['--accent-alt', 0.8], passthrough: ['--accent-tx', 0.6],
 };
 
-const CHAIN_COL: Record<string, string> = {
-  forward: '#4299e1', input: '#4299e1', output: '#4299e1',
-  srcnat: '#48bb78', dstnat: '#48bb78', masquerade: '#48bb78',
-  prerouting: '#ed8936', postrouting: '#ed8936',
+const CHAIN_COL: Record<string, PaletteToken> = {
+  forward: '--accent-rx', input: '--accent-rx', output: '--accent-rx',
+  srcnat: '--accent-tx', dstnat: '--accent-tx', masquerade: '--accent-tx',
+  prerouting: '--accent-warn', postrouting: '--accent-warn',
 };
 
 /**
@@ -95,15 +98,16 @@ export function actionBadge(a: string): string {
   // `encrypt`, `discard` and `unreachable` are no firewall action: they are the
   // IPsec policy's and the routing rule's, which the generated pages draw with
   // this same badge.
-  const col = a === 'accept' || a === 'passthrough' || a === 'encrypt' ? 'rgba(52,211,153,.9)'
-    : a === 'drop' || a === 'reject' || a === 'tarpit' || a === 'discard' || a === 'unreachable' ? 'rgba(248,113,113,.9)'
-      : a === 'log' || a === 'add-src-to-address-list' ? 'rgba(167,139,250,.9)'
-        : a === 'masquerade' ? 'rgba(56,189,248,.9)'
-          : a === 'dst-nat' || a === 'src-nat' ? 'rgba(251,191,36,.9)'
-            : 'rgba(99,130,190,.8)';
-  return '<span style="font-family:var(--font-mono);font-size:.63rem;color:' + col +
-    ';background:' + col.replace(/[\d.]+\)$/, '0.1)') +
-    ';border:1px solid ' + col.replace(/[\d.]+\)$/, '0.25)') +
+  const [tok, alpha]: [PaletteToken, number] =
+    a === 'accept' || a === 'passthrough' || a === 'encrypt' ? ['--accent-tx', 0.9]
+      : a === 'drop' || a === 'reject' || a === 'tarpit' || a === 'discard' || a === 'unreachable' ? ['--accent-err', 0.9]
+        : a === 'log' || a === 'add-src-to-address-list' ? ['--accent-alt', 0.9]
+          : a === 'masquerade' ? ['--accent-rx', 0.9]
+            : a === 'dst-nat' || a === 'src-nat' ? ['--accent-warn', 0.9]
+              : ['--border', 0.8];
+  return '<span style="font-family:var(--font-mono);font-size:.63rem;color:' + paletteCss(tok, alpha) +
+    ';background:' + paletteCss(tok, 0.1) +
+    ';border:1px solid ' + paletteCss(tok, 0.25) +
     ';border-radius:4px;padding:1px 6px;white-space:nowrap">' + esc(a) + '</span>';
 }
 
@@ -184,7 +188,8 @@ export function initFirewallPage(socket: Socket, isVisible: (page: string) => bo
     const listEl = el('fwActionList');
     if (listEl) {
       listEl.innerHTML = actionEntries.map((e) => {
-        const col = ACTION_COLOUR[e[0]] || 'rgba(99,130,190,.7)';
+        const [tok, alpha] = ACTION_COLOUR[e[0]] || ['--border', 0.7];
+        const col = paletteCss(tok, alpha);
         return '<div class="fw-action-row">' +
           '<span class="fw-action-name" style="color:' + col + '">' + esc(e[0]) + '</span>' +
           '<div class="fw-action-bar-wrap"><div class="fw-action-bar" style="width:' +
@@ -217,7 +222,7 @@ export function initFirewallPage(socket: Socket, isVisible: (page: string) => bo
     const max = entries[0]![1];
     const bars = entries.map((en) => {
       const h = Math.max(3, Math.round((en[1] / max) * 88)) + '%';
-      const col = CHAIN_COL[en[0]] || '#a0aec0';
+      const col = paletteCss(CHAIN_COL[en[0]] || '--text-muted');
       return '<div class="fw-vbar-col">' +
         '<span class="fw-vbar-count">' + en[1] + '</span>' +
         '<div class="fw-vbar" style="height:' + h + ';background:' + col + '"></div>' +

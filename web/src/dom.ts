@@ -5,6 +5,8 @@
 // helper that emitted tidier HTML would render a page that no longer matches
 // the one it replaced.
 
+import { paletteCss } from './palette';
+
 /** Escape for HTML text and attribute contexts, exactly as `esc` does. */
 export function esc(s: unknown): string {
   return String(s)
@@ -383,14 +385,17 @@ export function standardBadge(standard: string): string {
   return '<span class="wl-std ' + cls + '">' + esc(standard) + '</span>';
 }
 
+// Drawn from the palette, so a chosen palette or the light theme recolours them.
+// Seven slots, not five distinct tokens: the slot count is part of the hash, and
+// changing it would move every SSID to a different colour.
 const SSID_COLOURS = [
-  'var(--accent-rx)',      /* blue   */
-  'rgba(52,211,153,.95)',  /* green  */
-  'rgba(167,139,250,.95)', /* purple */
-  'rgba(251,191,36,.95)',  /* amber  */
-  'rgba(244,114,182,.95)', /* pink   */
-  'rgba(45,212,191,.95)',  /* teal   */
-  'rgba(251,146,60,.95)',  /* orange */
+  'var(--accent-rx)',                  /* blue   */
+  paletteCss('--accent-tx', 0.95),     /* green  */
+  paletteCss('--accent-alt', 0.95),    /* purple */
+  paletteCss('--accent-warn', 0.95),   /* amber  */
+  paletteCss('--accent-pink', 0.95),   /* pink   */
+  paletteCss('--accent-tx', 0.75),     /* teal   */
+  paletteCss('--accent-warn', 0.75),   /* orange */
 ];
 
 /**

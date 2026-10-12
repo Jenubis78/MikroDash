@@ -22,10 +22,11 @@
 
 import { el } from '../dom';
 import {
-  spectrumConfig, spectrumData, spectrumBandGeometry, FA_BAND_LEGEND,
+  spectrumConfig, spectrumData, spectrumBandGeometry,
   type LegendItem,
 } from './wireless-fa';
 import type { WifiscanRow } from '../gen/payloads';
+import { paletteColour, onPaletteChange } from '../palette';
 
 interface ChartArea { top: number; bottom: number }
 interface ChartCtx {
@@ -52,6 +53,17 @@ interface ChartLike {
 declare const Chart: undefined | (new (canvas: HTMLElement, cfg: unknown) => ChartLike);
 
 let chart: ChartLike | null = null;
+type SpectrumDeps = Parameters<typeof makeSpectrumChart>[0];
+let lastDeps: SpectrumDeps | null = null;
+
+// A palette or theme change rebuilds the chart, which reads its colours from the
+// palette as it is configured, and redraws the rows already in hand. Chart.js
+// cannot read a CSS variable, so nothing short of that re-reads them.
+onPaletteChange(() => {
+  if (!chart || !lastDeps) return;
+  makeSpectrumChart(lastDeps);
+  renderSpectrum(lastDeps.rows());
+});
 
 /**
  * The band marking the radio's OWN channel.
@@ -82,9 +94,9 @@ function bandPlugin(currentChannelMhz: () => number | null) {
       const a = c.chartArea;
       const ctx = c.ctx;
       ctx.save();
-      ctx.fillStyle = 'rgba(56,189,248,.20)';
+      ctx.fillStyle = paletteColour('--accent-rx', 0.2);
       ctx.fillRect(g.x - g.w / 2, a.top, g.w, a.bottom - a.top);
-      ctx.strokeStyle = 'rgba(56,189,248,.85)';
+      ctx.strokeStyle = paletteColour('--accent-rx', 0.85);
       ctx.lineWidth = 1.5;
       ctx.strokeRect(g.x - g.w / 2, a.top, g.w, a.bottom - a.top);
       ctx.restore();
@@ -106,6 +118,7 @@ export function makeSpectrumChart(deps: {
   legendLabels: (chart: unknown) => LegendItem[];
   legendClick: (e: unknown, item: LegendItem, legend: unknown) => void;
 }): void {
+  lastDeps = deps;
   if (chart) {
     chart.destroy();
     chart = null;
@@ -152,5 +165,3 @@ export function destroySpectrumChart(): void {
   chart = null;
 }
 
-/** The legend item the band plugin has no dataset for. Re-exported for the mount. */
-export { FA_BAND_LEGEND };

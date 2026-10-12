@@ -26,6 +26,7 @@
  */
 
 import { el } from '../dom';
+import { paletteCss, type PaletteToken } from '../palette';
 import { bwCapacityMbps } from './dashboard-card-bandwidth';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -59,7 +60,7 @@ interface Lane {
   acc: number; speed: number; dest: string; parts: Particle[]; pool: Particle[];
 }
 
-const LINKS: Record<LinkKey, { color: string; a: [number, number]; b: [number, number]; ends: [string, string] }> = {
+const LINKS: Record<LinkKey, { color: PaletteToken; a: [number, number]; b: [number, number]; ends: [string, string] }> = {
   // The LAN endpoints follow their boxes: the markup translates them by -24 and
   // +24 into the taller view, and a curve left behind would start in mid-air
   // beside the node it belongs to.
@@ -67,9 +68,9 @@ const LINKS: Record<LinkKey, { color: string; a: [number, number]; b: [number, n
   // `translate(-14)` is applied. Only the vertical moved: each box is translated
   // 16 into the taller view, and growing the rects changed their height about a
   // fixed centre, so this is the centre plus that translate.
-  wired: { color: '#38bdf8', a: [176, 68], b: [312, 140], ends: ['wired', 'router'] },
-  wireless: { color: '#a78bfa', a: [176, 232], b: [312, 160], ends: ['wireless', 'router'] },
-  wan: { color: '#34d399', a: [448, 150], b: [584, 150], ends: ['router', 'wan'] },
+  wired: { color: '--accent-rx', a: [176, 68], b: [312, 140], ends: ['wired', 'router'] },
+  wireless: { color: '--accent-alt', a: [176, 232], b: [312, 160], ends: ['wireless', 'router'] },
+  wan: { color: '--accent-tx', a: [448, 150], b: [584, 150], ends: ['router', 'wan'] },
 };
 
 const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
@@ -95,11 +96,10 @@ const GLOW_ID: Record<string, string> = {
 const CNT_ID = { wired: 'nf-cnt-wired', wireless: 'nf-cnt-wireless' } as const;
 const WAN_IP_ID = 'nf-wan-ip';
 
-/** Lighten a hex colour toward white, for the upload lane. */
-function tint(hex: string, t: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v + (255 - v) * t));
-  return 'rgb(' + c.join(',') + ')';
+/** A palette colour lightened toward white, for the upload lane and the
+ *  gradients' pale end. A CSS colour, so it goes in a style, never an attribute. */
+function tint(token: PaletteToken, t: number): string {
+  return 'color-mix(in srgb, ' + paletteCss(token) + ', white ' + Math.round(t * 100) + '%)';
 }
 
 /**
@@ -317,9 +317,12 @@ export function mountNetFlow(): { update: (d: NetFlowUpdate) => void } | null {
     if (defs) {
       const g = mk<SVGElement>('linearGradient',
         { id: gid, gradientUnits: 'userSpaceOnUse', x1: L.a[0], y1: 0, x2: L.b[0], y2: 0 }, defs);
-      const pair = key === 'wan' ? ['#7dd3fc', L.color] : [L.color, '#7dd3fc'];
-      mk('stop', { offset: 0, 'stop-color': pair[0]! }, g);
-      mk('stop', { offset: 1, 'stop-color': pair[1]! }, g);
+      // The pale end is sky blue lightened by 30%, where the fixed pale blue it replaced sat.
+      // Stop colours in the style: an attribute cannot hold a palette colour.
+      const pale = tint('--accent-rx', .3), own = paletteCss(L.color);
+      const pair = key === 'wan' ? [pale, own] : [own, pale];
+      mk('stop', { offset: 0, style: 'stop-color:' + pair[0]! }, g);
+      mk('stop', { offset: 1, style: 'stop-color:' + pair[1]! }, g);
     }
     const tube = mk<SVGPathElement>('path', {
       d: curve(L.a, L.b, 0), fill: 'none', stroke: `url(#${gid})`,
@@ -338,7 +341,7 @@ export function mountNetFlow(): { update: (d: NetFlowUpdate) => void } | null {
       });
       // The upload lane is the paler tint, so the two directions read apart
       // without a legend.
-      path.dataset.colour = dir > 0 ? tint(L.color, .55) : L.color;
+      path.dataset.colour = dir > 0 ? tint(L.color, .55) : paletteCss(L.color);
     });
   });
 
@@ -347,10 +350,10 @@ export function mountNetFlow(): { update: (d: NetFlowUpdate) => void } | null {
     if (!p) {
       const g = mk<SVGGElement>('g', {}, gDots);
       const dots: SVGCircleElement[] = [];
-      const colour = l.path.dataset.colour || LINKS[l.key].color;
+      const colour = l.path.dataset.colour || paletteCss(LINKS[l.key].color);
       for (let i = 0; i < TRAIL; i++) {
         dots.push(mk<SVGCircleElement>('circle',
-          { r: (2.6 * (1 - (i / TRAIL) * .7)).toFixed(2), fill: colour }, g));
+          { r: (2.6 * (1 - (i / TRAIL) * .7)).toFixed(2), style: 'fill:' + colour }, g));
       }
       p = { g, dots, s: 0, v: 0 };
     }

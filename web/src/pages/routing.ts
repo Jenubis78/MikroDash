@@ -15,6 +15,7 @@
 // it is the identical file rather than a second copy.
 
 import { esc, el, resRow, sparkPoints } from '../dom';
+import { paletteColour, paletteCss, onPaletteChange, type PaletteToken } from '../palette';
 import { mountAdds, mountRows } from '../resource';
 import type { Socket } from '../socket';
 import type { RoutingPayload, Peer, Route, RouteCounts, PeerSummary } from '../gen/payloads';
@@ -28,12 +29,14 @@ interface ChartLike {
 }
 declare const Chart: undefined | (new (canvas: HTMLCanvasElement, cfg: unknown) => ChartLike);
 
-const DONUT_COLORS: Record<string, string> = {
-  static: 'rgba(56,189,248,.85)',
-  dynamic: 'rgba(251,191,36,.85)',
-  bgp: 'rgba(167,139,250,.85)',
-  ospf: 'rgba(251,113,133,.85)',
-  other: 'rgba(99,130,190,.4)',
+// Palette tokens, resolved at draw time: the doughnut is a canvas, so it takes
+// the concrete colour and is redrawn when the palette changes.
+const DONUT_COLORS: Record<string, [PaletteToken, number]> = {
+  static: ['--accent-rx', 0.85],
+  dynamic: ['--accent-warn', 0.85],
+  bgp: ['--accent-alt', 0.85],
+  ospf: ['--accent-err', 0.85],
+  other: ['--border', 0.4],
 };
 const DONUT_LABELS: Record<string, string> = {
   static: 'Static', dynamic: 'Dynamic', bgp: 'BGP', ospf: 'OSPF', other: 'Other',
@@ -66,7 +69,7 @@ function sparkSvg(history: number[] | undefined): string {
   if (!history || history.length < 2) return '<svg width="80" height="20"></svg>';
   const w = 80, h = 20;
   return '<svg class="rt-spark" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' +
-    '<polyline points="' + sparkPoints(history, w, h, 2, true) + '" fill="none" stroke="rgba(167,139,250,.7)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<polyline points="' + sparkPoints(history, w, h, 2, true) + '" fill="none" style="stroke:' + paletteCss('--accent-alt', 0.7) + '" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>' +
     '</svg>';
 }
 
@@ -83,6 +86,10 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
 
   let donut: ChartLike | null = null;
   let donutTotal = 0;
+  let donutCounts: Partial<RouteCounts> | null = null;
+
+  // The slices hold resolved colours, so a palette or theme change recolours them.
+  onPaletteChange(() => { if (donut && donutCounts) updateDonut(donutCounts); });
 
   // ── peers: filter + sort ───────────────────────────────────────────────────
 
@@ -132,6 +139,7 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
   function updateDonut(rc: Partial<RouteCounts>): void {
     const canvas = el<HTMLCanvasElement>('rtDonutCanvas');
     if (!canvas) return;
+    donutCounts = rc;
 
     // Connected is EXCLUDED from the doughnut and shown in the count grid only -
     // but it is still counted as "known", so Other means unclassified rather
@@ -143,7 +151,10 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
     const vals = keys.map((k) => rc[k] || 0).concat(other > 0 ? [other] : []);
     // dataKeys only ever holds keys DONUT_COLORS defines, so the fallback is
     // unreachable - it is here because the compiler cannot know that.
-    const colors = dataKeys.map((k) => DONUT_COLORS[k] ?? DONUT_COLORS.other ?? '');
+    const colors = dataKeys.map((k) => {
+      const [tok, alpha] = DONUT_COLORS[k] ?? DONUT_COLORS.other ?? ['--border', 0.4];
+      return paletteColour(tok, alpha);
+    });
 
     donutTotal = rc.total || 0;
 
@@ -187,7 +198,7 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
             const cx = (chart.chartArea.left + chart.chartArea.right) / 2;
             const cy = (chart.chartArea.top + chart.chartArea.bottom) / 2;
             const color = getComputedStyle(document.documentElement)
-              .getPropertyValue('--text-main').trim() || 'rgba(200,215,240,.9)';
+              .getPropertyValue('--text-main').trim();
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -243,16 +254,13 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
     }
 
     tbody.innerHTML = peers.map((p) => {
-      const typeColors: Record<string, string> = {
-        upstream: 'rgba(56,189,248,.1)', ix: 'rgba(167,139,250,.1)', private: 'rgba(251,191,36,.1)',
-      };
-      const typeText: Record<string, string> = {
-        upstream: 'rgba(56,189,248,.8)', ix: 'rgba(167,139,250,.8)', private: 'rgba(251,191,36,.8)',
+      const typeTok: Record<string, PaletteToken> = {
+        upstream: '--accent-rx', ix: '--accent-alt', private: '--accent-warn',
       };
       const typeLabel: Record<string, string> = { upstream: 'Upstream', ix: 'IX', private: 'Private' };
       const ptype = p.peerType || 'upstream';
       const typeBadge = '<span style="font-size:.6rem;font-family:var(--font-ui);padding:.1rem .35rem;border-radius:3px;' +
-        'background:' + (typeColors[ptype] || 'rgb(from var(--border) r g b / .1)') + ';color:' + (typeText[ptype] || 'var(--text-muted)') + '">' +
+        'background:' + paletteCss(typeTok[ptype] || '--border', 0.1) + ';color:' + (typeTok[ptype] ? paletteCss(typeTok[ptype]!, 0.8) : 'var(--text-muted)') + '">' +
         (typeLabel[ptype] || esc(ptype)) + '</span>';
       const nameCell = '<div class="rt-peer-name">' + esc(p.name) + ' ' + typeBadge + '</div>' +
         (p.description ? '<div class="rt-peer-desc">' + esc(p.description) + '</div>' : '');

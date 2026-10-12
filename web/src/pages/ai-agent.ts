@@ -26,6 +26,7 @@
 
 import type { Socket } from '../socket';
 import { el } from '../dom';
+import { paletteCss } from '../palette';
 import { renderMarkdown } from '../markdown';
 import { warningText } from '../resource';
 
@@ -124,7 +125,7 @@ export function initAiAgentPage(socket: Socket, isVisible: (page: string) => boo
     body.style.padding = '.55rem .75rem';
     body.style.borderRadius = '.5rem';
     body.style.border = '1px solid var(--border)';
-    if (role === 'you') body.style.background = 'rgba(56,189,248,.08)';
+    if (role === 'you') body.style.background = paletteCss('--accent-rx', 0.08);
     if (role === 'error') body.style.borderColor = 'var(--accent-err)';
 
     if (role === 'assistant') {

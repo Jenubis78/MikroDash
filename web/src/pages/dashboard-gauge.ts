@@ -20,6 +20,7 @@
 // difference from a formatting one.
 
 import { esc } from '../dom';
+import { paletteCss, type PaletteToken } from '../palette';
 
 type Pt = [number, number];
 
@@ -38,13 +39,24 @@ function v(p: Pt): string {
   return p[0].toFixed(2) + ',' + p[1].toFixed(2);
 }
 
-const COLOURS: Record<string, [string, string]> = {
-  cpu: ['#38bdf8', '#818cf8'],   // sky → indigo
-  mem: ['#34d399', '#34d399'],   // solid green
-  hdd: ['#fb923c', '#f59f00'],   // orange → amber
-  warn: ['#f59f00', '#fb923c'],  // amber → orange
-  crit: ['#f87171', '#ef4444'],  // red
+// Each class is a ramp between two palette colours, so a gauge follows the
+// chosen palette and theme. The ramp is mixed by the browser (`color-mix`), the
+// same way the stylesheets tint a pill; the arc is markup, not a canvas.
+const COLOURS: Record<string, [PaletteToken, PaletteToken]> = {
+  cpu: ['--accent-rx', '--accent-alt'],     // Rx blue → violet
+  mem: ['--accent-tx', '--accent-tx'],      // solid green
+  hdd: ['--accent-warn', '--accent-warn'],  // amber
+  warn: ['--accent-warn', '--accent-warn'], // amber
+  crit: ['--accent-err', '--accent-err'],   // red
 };
+
+/** The ramp's colour at `t` (0..1) across the whole arc. */
+function rampColour(cols: [PaletteToken, PaletteToken], t: number): string {
+  if (cols[0] === cols[1] || t <= 0) return paletteCss(cols[0]);
+  if (t >= 1) return paletteCss(cols[1]);
+  const pct = Math.round((1 - t) * 1000) / 10;
+  return 'color-mix(in srgb, ' + paletteCss(cols[0]) + ' ' + pct + '%, ' + paletteCss(cols[1]) + ')';
+}
 
 export function gauge(label: string, pct: number, cls: string): string {
   const activeCls = pct > 90 ? 'crit' : pct > 75 ? 'warn' : cls;
@@ -55,10 +67,6 @@ export function gauge(label: string, pct: number, cls: string): string {
   const cx = 50, cy = 45, r = 38, segW = 3.2, segH = 10, RN = 0.15;
   const litSegs = Math.round((pct / 100) * SEGS);
 
-  const r1 = parseInt(cols[0].slice(1, 3), 16), g1 = parseInt(cols[0].slice(3, 5), 16),
-        b1 = parseInt(cols[0].slice(5, 7), 16);
-  const r2 = parseInt(cols[1].slice(1, 3), 16), g2 = parseInt(cols[1].slice(3, 5), 16),
-        b2 = parseInt(cols[1].slice(5, 7), 16);
   const hw = segW / 2, hh = segH / 2;
   const paths: string[] = [];
 
@@ -72,12 +80,10 @@ export function gauge(label: string, pct: number, cls: string): string {
       // The gradient runs across the WHOLE arc, not across the lit part, so a
       // gauge at 40% shows the first 40% of the same ramp rather than a
       // compressed copy of all of it.
-      const ri = Math.round(r1 + (r2 - r1) * t), gi = Math.round(g1 + (g2 - g1) * t),
-            bi = Math.round(b1 + (b2 - b1) * t);
-      colour = 'rgb(' + ri + ',' + gi + ',' + bi + ')';
+      colour = rampColour(cols, t);
       opacity = 1;
     } else {
-      colour = 'rgba(99,130,190,0.12)';
+      colour = paletteCss('--border', 0.12);
       opacity = 0.7;
     }
     const rotRad = (angleDeg + 90) * Math.PI / 180;
@@ -89,7 +95,9 @@ export function gauge(label: string, pct: number, cls: string): string {
       'Q', v(br), v(lp(br, bl, RN)), 'L', v(lp(bl, br, RN)),
       'Q', v(bl), v(lp(bl, tl, RN)), 'L', v(lp(tl, bl, RN)),
       'Q', v(tl), v(lp(tl, tr, RN)), 'Z'].join(' ');
-    paths.push('<path d="' + d + '" fill="' + colour + '" opacity="' + opacity + '"/>');
+    // A STYLE, not a `fill` attribute: the colour is CSS (a variable, a mix),
+    // and a presentation attribute is not where a browser reliably resolves one.
+    paths.push('<path d="' + d + '" style="fill:' + colour + '" opacity="' + opacity + '"/>');
   }
 
   return '<div class="gauge-arc-wrap">' +

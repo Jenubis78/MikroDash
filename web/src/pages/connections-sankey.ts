@@ -13,24 +13,33 @@
 // than quoting a count.
 
 import type { ConnDestEntry, ConnSource } from '../gen/payloads';
+import { paletteCss, type PaletteToken } from '../palette';
 
 const NS = 'http://www.w3.org/2000/svg';
 
 /** Category colours, matching the svc-badge palette so a service reads the same
- *  colour in the list and in the diagram. */
-const CAT_COLOUR: Record<string, string> = {
-  cdn: '#38bdf8',
-  cloud: '#fb923c',
-  social: '#c084fc',
-  streaming: '#ec4899',
-  messaging: '#34d399',
-  video: '#fbbf24',
-  dns: '#2dd4bf',
-  other: '#6382be',
+ *  colour in the list and in the diagram. Palette tokens, resolved where drawn. */
+const CAT_COLOUR: Record<string, PaletteToken> = {
+  cdn: '--accent-rx',
+  cloud: '--accent-warn',
+  social: '--accent-alt',
+  streaming: '--accent-pink',
+  messaging: '--accent-tx',
+  video: '--accent-warn',
+  dns: '--accent-tx',
+  other: '--border',
 };
 
-/** Source nodes cycle a palette: they are hosts, with no category to colour by. */
-const SRC_COLOURS = ['#38bdf8', '#818cf8', '#a78bfa', '#67e8f9', '#93c5fd', '#6ee7b7'];
+function catColour(cat: string | null | undefined): string {
+  return paletteCss(CAT_COLOUR[cat || 'other'] || '--border');
+}
+
+/** Source nodes cycle a palette: they are hosts, with no category to colour by.
+ *  Where two neighbours share a token, the alpha tells them apart. */
+const SRC_COLOURS: Array<[PaletteToken, number]> = [
+  ['--accent-rx', 1], ['--accent-alt', 0.75], ['--accent-alt', 1],
+  ['--accent-rx', 0.75], ['--accent-rx', 0.55], ['--accent-tx', 1],
+];
 
 /** A source bar: a `topSources` row - or, under a client filter, one the page
  *  BUILDS by summing that client's destinations, which has no MAC. */
@@ -95,8 +104,9 @@ function short(label: string): string {
 }
 
 function nodeColour(node: Node, idx: number): string {
-  if (node.side === 'dst') return CAT_COLOUR[node.cat || 'other'] || CAT_COLOUR['other']!;
-  return SRC_COLOURS[idx % SRC_COLOURS.length]!;
+  if (node.side === 'dst') return catColour(node.cat);
+  const [tok, alpha] = SRC_COLOURS[idx % SRC_COLOURS.length]!;
+  return paletteCss(tok, alpha);
 }
 
 /**
@@ -184,10 +194,10 @@ export function renderSankey(
   // Links first, so the nodes sit on top of them.
   const linkG = el('g', {});
   links.forEach((lk) => {
-    const colour = CAT_COLOUR[lk.cat || 'other'] || CAT_COLOUR['other']!;
+    // Colour in the style: a fill attribute cannot hold a palette colour.
     const p = el('path', {
       d: linkPath(lk.src.x + NODE_W, lk.sy, lk.dst.x, lk.dy, lk.sw, lk.dw),
-      fill: colour, class: 'sk-link',
+      style: 'fill:' + catColour(lk.cat), class: 'sk-link',
     });
     const title = document.createElementNS(NS, 'title');
     // The PAIR, not a count: the ribbon's width is an estimate, and quoting a
@@ -201,7 +211,7 @@ export function renderSankey(
   const drawNode = (n: Node, i: number, labelLeft: boolean): void => {
     const g = el('g', { class: 'sk-node', transform: 'translate(' + n.x + ',' + n.y + ')' });
     g.appendChild(el('rect', {
-      width: NODE_W, height: Math.max(4, n.h), fill: nodeColour(n, i), rx: '3', ry: '3',
+      width: NODE_W, height: Math.max(4, n.h), style: 'fill:' + nodeColour(n, i), rx: '3', ry: '3',
     }));
     const lbl = el('text', {
       x: labelLeft ? -6 : NODE_W + 6,

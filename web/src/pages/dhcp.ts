@@ -13,6 +13,7 @@
 
 import { netFlowUpdate } from './dashboard-card-netflow';
 import { esc, el, resRow } from '../dom';
+import { paletteCss } from '../palette';
 import type { Socket } from '../socket';
 import { mountAdds, mountRows } from '../resource';
 import type { Lease, LeaseServer, Network } from '../gen/payloads';
@@ -178,11 +179,14 @@ export function initDhcpPage(socket: Socket, isVisible: (page: string) => boolea
     } else {
       fill.setAttribute('d', '');
     }
-    const colour = usedPct >= 90 ? '#f87171' : usedPct >= 70 ? '#fbbf24' : '#38bdf8';
-    fill.setAttribute('stroke', colour);
+    // In the style, not the stroke attribute: a presentation attribute cannot
+    // hold a palette colour.
+    const colour = paletteCss(usedPct >= 90 ? '--accent-err' : usedPct >= 70 ? '--accent-warn' : '--accent-rx');
+    fill.style.stroke = colour;
+    // The percentage keeps the text colour: `.dhcp-gauge-pct` always set its
+    // fill, and the fill attribute this once wrote never showed through it.
     if (pctEl) {
       pctEl.textContent = totalPoolSize > 0 ? (usedPct + '%') : '-';
-      pctEl.setAttribute('fill', colour);
     }
   }
 
@@ -230,7 +234,7 @@ export function initDhcpPage(socket: Socket, isVisible: (page: string) => boolea
       const used = n.leaseCount || 0;
       const pool = n.poolSize || 0;
       const pct = pool > 0 ? Math.round((used / pool) * 100) : 0;
-      const fillColour = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : '#34d399';
+      const fillColour = paletteCss(pct >= 90 ? '--accent-err' : pct >= 70 ? '--accent-warn' : '--accent-tx');
       const poolLabel = pool > 0 ? (used + ' / ' + pool) : ('' + used + ' leases');
       const pctLabel = pool > 0 ? (' (' + pct + '%)') : '';
       return '<tr>' +

@@ -16,9 +16,9 @@
           <div class="dhcp-gauge-wrap">
             <svg class="dhcp-gauge-svg" id="dhcpGaugeSvg" viewBox="0 0 200 130">
               <!-- Track arc -->
-              <path id="dhcpGaugeTrack" d="" fill="none" stroke="rgba(99,130,190,.12)" stroke-width="16" stroke-linecap="round"/>
+              <path id="dhcpGaugeTrack" d="" fill="none" stroke-width="16" stroke-linecap="round" style="stroke:rgb(from var(--border) r g b / .12)"/>
               <!-- Fill arc -->
-              <path id="dhcpGaugeFill"  d="" fill="none" stroke="#38bdf8"             stroke-width="16" stroke-linecap="round"/>
+              <path id="dhcpGaugeFill"  d="" fill="none" style="stroke:var(--accent-rx)" stroke-width="16" stroke-linecap="round"/>
               <!-- Percentage -->
               <text id="dhcpGaugePct"   class="dhcp-gauge-pct"   x="100" y="96">-</text>
               <!-- "used" label -->

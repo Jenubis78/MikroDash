@@ -14,6 +14,7 @@
 // something the app it replaces does not.
 
 import { el } from '../dom';
+import { paletteCss } from '../palette';
 
 /**
  * Escape by round-tripping through a text node, NOT by substitution.
@@ -125,10 +126,10 @@ export function dcDrawGauge(pct: number): void {
     gaugeFill.setAttribute('d', '');
   }
 
-  const colour = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : '#38bdf8';
-  gaugeFill.setAttribute('stroke', colour);
-  if (gaugePct) {
-    gaugePct.textContent = pct > 0 ? (pct + '%') : '-';
-    gaugePct.setAttribute('fill', colour);
-  }
+  // A STYLE, not the `stroke` attribute: the colour is the palette's CSS, which
+  // the browser resolves and re-resolves on a palette change by itself.
+  gaugeFill.style.stroke = paletteCss(pct >= 90 ? '--accent-err' : pct >= 70 ? '--accent-warn' : '--accent-rx');
+  // The figure is NOT coloured. It used to be given a `fill` attribute, which
+  // `.dhcp-gauge-pct{fill:var(--text-main)}` always overrode, so it never showed.
+  if (gaugePct) gaugePct.textContent = pct > 0 ? (pct + '%') : '-';
 }

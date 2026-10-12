@@ -22,6 +22,7 @@
 // See internal/collect/ifstatus.go and live issue #108.
 
 import { esc, el, fmtMbps, fmtBytes, sparkPoints } from '../dom';
+import { paletteCss, type PaletteToken } from '../palette';
 import { mountRows } from '../resource';
 import type { Socket } from '../socket';
 import { portSvg } from './port-svg';
@@ -35,24 +36,26 @@ const IFACE_SPARK_LEN = 30;
 const IP_PLACEHOLDER = '\u00a0';
 const IFACE_SIZE_KEY = 'mikrodash_iface_size';
 
-// Colour palette for type badges - cycles for types beyond the named set.
-const IF_TYPE_COLOURS: Record<string, string> = {
-  ether: 'rgba(56,189,248,.9)',
-  wlan: 'rgba(167,139,250,.9)',
+// Colours for type badges, as palette tokens and alphas - cycles for types
+// beyond the named set.
+type Tone = [PaletteToken, number];
+const IF_TYPE_COLOURS: Record<string, Tone> = {
+  ether: ['--accent-rx', 0.9],
+  wlan: ['--accent-alt', 0.9],
   // RouterOS reports the newer drivers as 'wifi' and 'wg', not 'wlan' and
   // 'wireguard'. Without these two, the most common types on current hardware
   // fell through to the rotating fallback palette.
-  wifi: 'rgba(167,139,250,.9)',
-  bridge: 'rgba(52,211,153,.9)',
-  vlan: 'rgba(251,191,36,.9)',
-  wireguard: 'rgba(99,190,130,.9)',
-  wg: 'rgba(99,190,130,.9)',
-  'pppoe-client': 'rgba(251,113,133,.9)',
-  lte: 'rgba(245,159,0,.9)',
-  loopback: 'rgba(99,130,190,.6)',
+  wifi: ['--accent-alt', 0.9],
+  bridge: ['--accent-tx', 0.9],
+  vlan: ['--accent-warn', 0.9],
+  wireguard: ['--accent-tx', 0.9],
+  wg: ['--accent-tx', 0.9],
+  'pppoe-client': ['--accent-err', 0.9],
+  lte: ['--accent-warn', 0.9],
+  loopback: ['--border', 0.6],
 };
-const IF_TYPE_FALLBACKS = ['rgba(56,189,248,.7)', 'rgba(167,139,250,.7)', 'rgba(52,211,153,.7)',
-  'rgba(251,191,36,.7)', 'rgba(251,113,133,.7)', 'rgba(245,159,0,.7)'];
+const IF_TYPE_FALLBACKS: Tone[] = [['--accent-rx', 0.7], ['--accent-alt', 0.7], ['--accent-tx', 0.7],
+  ['--accent-warn', 0.7], ['--accent-err', 0.7], ['--accent-warn', 0.7]];
 
 /**
  * A stable colour for a type name.
@@ -63,19 +66,19 @@ const IF_TYPE_FALLBACKS = ['rgba(56,189,248,.7)', 'rgba(167,139,250,.7)', 'rgba(
  * across every render. `>>> 0` is carried over verbatim - it coerces to unsigned
  * 32-bit, which is what keeps the index positive.
  */
-function ifTypeColour(t: string): string {
+function ifTypeColour(t: string): Tone {
   if (IF_TYPE_COLOURS[t]) return IF_TYPE_COLOURS[t]!;
   let h = 0;
   for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
   return IF_TYPE_FALLBACKS[h % IF_TYPE_FALLBACKS.length]!;
 }
 
-// The palette is rgba, so the pill background is the same colour at low alpha.
+// The pill background is the same token at low alpha.
 function ifTypePill(t: string): string {
   if (!t) return '<span class="ifl-na">-</span>';
-  const col = ifTypeColour(t);
-  const bg = col.replace(/,\s*[\d.]+\)$/, ',.14)');
-  return '<span class="ifl-type-pill" style="color:' + col + ';background:' + bg + '">' + esc(t) + '</span>';
+  const [tok, alpha] = ifTypeColour(t);
+  return '<span class="ifl-type-pill" style="color:' + paletteCss(tok, alpha) + ';background:' +
+    paletteCss(tok, 0.14) + '">' + esc(t) + '</span>';
 }
 
 function ifaceSparkSvg(history: number[]): string {
@@ -83,7 +86,7 @@ function ifaceSparkSvg(history: number[]): string {
   // Always baseline at zero so rising traffic is visually obvious.
   const w = 56, h = 18;
   return '<svg class="iface-spark" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' +
-    '<polyline points="' + sparkPoints(history, w, h, 1.5) + '" fill="none" stroke="rgba(56,189,248,.6)" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<polyline points="' + sparkPoints(history, w, h, 1.5) + '" fill="none" style="stroke:' + paletteCss('--accent-rx', 0.6) + '" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>' +
     '</svg>';
 }
 
@@ -380,7 +383,8 @@ export function initInterfacesPage(socket: Socket, isVisible: (page: string) => 
     }
     let fallbackIdx = 0;
     panel.innerHTML = order.map((t) => {
-      const col = IF_TYPE_COLOURS[t] || IF_TYPE_FALLBACKS[fallbackIdx++ % IF_TYPE_FALLBACKS.length];
+      const [tok, alpha] = IF_TYPE_COLOURS[t] || IF_TYPE_FALLBACKS[fallbackIdx++ % IF_TYPE_FALLBACKS.length]!;
+      const col = paletteCss(tok, alpha);
       return '<div class="if-type-item">' +
         '<span class="if-type-label" title="' + esc(t) + '">' + esc(t) + '</span>' +
         '<span class="if-type-count" style="color:' + col + '">' + counts[t] + '</span>' +

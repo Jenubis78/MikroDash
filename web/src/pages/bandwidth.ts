@@ -16,7 +16,10 @@ import {
   pruneAndMax, smoothMax, type XYPoint,
 } from './dashboard-traffic-buffer';
 import type { BandwidthDevice, TrafficPoint } from '../gen/payloads';
-import { sharedClock, sharedPoints } from './dashboard-traffic';
+import {
+  sharedClock, sharedPoints, paintTrafficChart, DASHBOARD_ALPHAS, type TrafficPaint,
+} from './dashboard-traffic';
+import { onPaletteChange } from '../palette';
 
 /** Only what this page touches on a Chart.js instance. */
 interface BwChart {
@@ -132,6 +135,9 @@ export function bwSyncState(
   return { rx, tx, yMax, xMin: win.min, xMax: win.max };
 }
 
+/** The Dashboard's colours, with a fainter grid. */
+const BW_ALPHAS = { ...DASHBOARD_ALPHAS, grid: 0.06 };
+
 /**
  * The compact chart's config - `_makeBwChart` (app.js:6918).
  *
@@ -146,12 +152,12 @@ export function bwSyncState(
  * cannot be compared as values, so the gate CALLS them.
  */
 export function bwChartConfig(nowMs: number, windowSecs: number, rightBufferMs: number): unknown {
-  return {
+  const cfg = {
     type: 'line',
     data: {
       datasets: [
-        { label: 'RX', data: [], borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,.08)', borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
-        { label: 'TX', data: [], borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,.06)', borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
+        { label: 'RX', data: [], borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
+        { label: 'TX', data: [], borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
       ],
     },
     options: {
@@ -166,7 +172,7 @@ export function bwChartConfig(nowMs: number, windowSecs: number, rightBufferMs: 
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: 'rgba(7,9,15,.9)', borderColor: 'rgba(99,130,190,.2)', borderWidth: 1,
+          borderWidth: 1,
           titleFont: { family: "'JetBrains Mono',monospace", size: 10 },
           bodyFont: { family: "'JetBrains Mono',monospace", size: 10 },
           callbacks: {
@@ -183,9 +189,8 @@ export function bwChartConfig(nowMs: number, windowSecs: number, rightBufferMs: 
         },
         y: {
           beginAtZero: true,
-          grid: { color: 'rgba(99,130,190,.06)' },
+          grid: {},
           ticks: {
-            color: 'rgba(148,163,190,.4)',
             font: { family: "'JetBrains Mono',monospace", size: 9 },
             callback: (v: number) => fmtMbps(v),
             maxTicksLimit: 4,
@@ -194,6 +199,8 @@ export function bwChartConfig(nowMs: number, windowSecs: number, rightBufferMs: 
       },
     },
   };
+  paintTrafficChart(cfg as TrafficPaint, BW_ALPHAS);
+  return cfg;
 }
 
 /**
@@ -385,6 +392,13 @@ export function initBandwidthPage(socket: Socket, isVisible: (page: string) => b
   // THE BUFFER IS THE DASHBOARD'S, read through `sharedPoints()`. Not a copy:
   // see that function for why a second array fed from the same stream drifts.
   let chart: BwChart | null = null;
+  // A palette or theme change re-reads the colours onto the live chart; a chart
+  // built later reads them in `bwChartConfig`.
+  onPaletteChange(() => {
+    if (!chart) return;
+    paintTrafficChart(chart as unknown as TrafficPaint, BW_ALPHAS);
+    chart.update('none');
+  });
   let yCurrent = 0;
   let keepaliveId: number | null = null;
 

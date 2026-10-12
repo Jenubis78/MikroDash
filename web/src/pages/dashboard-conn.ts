@@ -31,6 +31,7 @@
 
 import { esc, el, svcBadge } from '../dom';
 import type { ConnsUpdate } from '../gen/payloads';
+import { paletteColour, onPaletteChange } from '../palette';
 
 const MAX_CONN_HIST = 60;
 
@@ -70,6 +71,10 @@ function connHistory(): ConnPoint[] {
   return h;
 }
 
+// A canvas cannot read a CSS variable, so the line's colour is resolved per
+// draw, and a palette or theme change redraws it.
+onPaletteChange(() => drawSparkline(connHistory()));
+
 let srcFp = '', dstFp = '', protoFp = '';
 let pending: ConnsUpdate | null = null;
 let rafId: number | null = null;
@@ -104,7 +109,7 @@ export function drawSparkline(history: { total?: number }[]): void {
   // put every point at NaN.
   const maxV = Math.max.apply(null, vals) || 1;
   c.ctx.beginPath();
-  c.ctx.strokeStyle = '#38bdf8';
+  c.ctx.strokeStyle = paletteColour('--accent-rx');
   c.ctx.lineWidth = 1.5;
   c.ctx.lineJoin = 'round';
   for (let i = 0; i < vals.length; i++) {

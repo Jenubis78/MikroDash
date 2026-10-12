@@ -36,18 +36,31 @@ import { el } from '../dom';
 import { notePayload } from '../stale';
 import type { PingPayload, PingPoint } from '../gen/payloads';
 import type { HandEvents } from '../events-hand';
+import { paletteColour, onPaletteChange } from '../palette';
 
 interface ChartLike {
   destroy(): void;
   update(mode?: string): void;
   data: { labels: string[]; datasets: { data: (number | null)[]; backgroundColor: string[] }[] };
-  options: { scales: { y: { max?: number } } };
+  options: PingAxis;
+}
+/** The y axis as this module touches it: its clipped top and its colours. */
+interface PingAxis {
+  scales: { y: { max?: number; grid?: { color?: string }; ticks?: { color?: string } } };
 }
 declare const Chart: undefined | (new (canvas: HTMLElement, cfg: unknown) => ChartLike);
 
 const MAX_PING_HIST = 60;
 let pingHistory: PingPoint[] = [];
 let pingChart: ChartLike | null = null;
+
+// A palette or theme change re-reads the axis colours and repaints the bars,
+// whose colours `updatePingChart` resolves on every update anyway.
+onPaletteChange(() => {
+  if (!pingChart) return;
+  paintPingAxis(pingChart.options);
+  updatePingChart(pingChart, pingHistory);
+});
 
 /**
  * A round-trip figure as the card shows it: whole milliseconds, rounded.
@@ -70,14 +83,21 @@ export function rttClass(rtt: number | null | undefined): string {
 
 /** The bar colour for a round-trip figure. A timeout is drawn grey, not red. */
 export function pingColor(rtt: number | null | undefined): string {
-  if (rtt == null) return 'rgba(148,163,190,.4)';
-  if (rtt < 50) return 'rgba(74,222,128,.8)';
-  if (rtt < 150) return 'rgba(251,146,60,.8)';
-  return 'rgba(248,113,113,.8)';
+  if (rtt == null) return paletteColour('--text-muted', 0.4);
+  if (rtt < 50) return paletteColour('--accent-ok', 0.8);
+  if (rtt < 150) return paletteColour('--accent-warn', 0.8);
+  return paletteColour('--accent-err', 0.8);
+}
+
+/** The palette's colours for the y axis, on the config or on the live chart. */
+function paintPingAxis(o: PingAxis): void {
+  const y = o.scales.y;
+  (y.grid ??= {}).color = paletteColour('--border', 0.08);
+  (y.ticks ??= {}).color = paletteColour('--text-muted', 0.5);
 }
 
 export function pingChartConfig(): unknown {
-  return {
+  const cfg = {
     type: 'bar',
     data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderRadius: 2, borderSkipped: false }] },
     options: {
@@ -99,15 +119,16 @@ export function pingChartConfig(): unknown {
         x: { display: false },
         y: {
           display: true, min: 0,
-          grid: { color: 'rgba(99,130,190,.08)' },
           ticks: {
-            color: 'rgba(148,163,190,.5)', font: { size: 9 }, maxTicksLimit: 3,
+            font: { size: 9 }, maxTicksLimit: 3,
             callback: (v: number) => v + 'ms',
           },
         },
       },
     },
   };
+  paintPingAxis(cfg.options as PingAxis);
+  return cfg;
 }
 
 function makePingChart(canvasId: string): ChartLike | null {

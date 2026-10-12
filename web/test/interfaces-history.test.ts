@@ -149,7 +149,11 @@ function open(reply, readOnly, identity, rangeKey) {
     setItem: (k, v) => { storage[k] = String(v); },
     removeItem: (k) => { delete storage[k]; },
   };
-  global.getComputedStyle = () => ({ getPropertyValue: () => '#38bdf8' });
+  // RE-AIMED 2026-10-12: the panel took its Rx/Tx colours from a private
+  // `cssVar` (getPropertyValue on the root); it now takes them from
+  // `paletteColour`, which reads the COMPUTED `color` of a probe element. So the
+  // stub answers that, as a browser would, in the rgb() form it computes.
+  global.getComputedStyle = () => ({ getPropertyValue: () => '#38bdf8', color: 'rgb(56, 189, 248)' });
   // A Chart stub that keeps the config, so the AXIS is assertable. Without it
   // the panel silently skips drawing and a mislabelled axis is invisible here -
   // which is how "12:59 … 13:53" came to mean fifty-four seconds.

@@ -14,6 +14,7 @@
 
 import type { WifiscanRow } from '../gen/payloads';
 import type { HandEvents } from '../events-hand';
+import { paletteCss, paletteColour, toRgba, type PaletteToken } from '../palette';
 
 /** One radio in the picker, as `wifiscan:interfaces` lists it. */
 export type FaIface = HandEvents['wifiscan:interfaces']['interfaces'][number];
@@ -24,14 +25,43 @@ export type FaIface = HandEvents['wifiscan:interfaces']['interfaces'][number];
  * A LADDER OF THRESHOLDS, not a gradient, and the live comment gives the reason:
  * two channels a percent apart should not read as meaningfully different. A
  * gradient would invite an operator to pick between 41% and 43%.
+ *
+ * Five steps from three palette colours: ok, warn and err, and the half-way mix
+ * of each neighbouring pair between them, so the ladder follows the palette and
+ * keeps its five steps.
  */
+function congestionStep(load: number | null): [PaletteToken, PaletteToken?] {
+  if (load == null) return ['--text-muted'];
+  if (load < 20) return ['--accent-ok'];
+  if (load < 40) return ['--accent-ok', '--accent-warn'];
+  if (load < 60) return ['--accent-warn'];
+  if (load < 80) return ['--accent-warn', '--accent-err'];
+  return ['--accent-err'];
+}
+
+/** The congestion colour as CSS, for markup: the grid and the stat figure. */
 export function congestionColour(load: number | null, alpha = 0.85): string {
-  if (load == null) return `rgba(148,163,190,${alpha * 0.45})`;
-  if (load < 20) return `rgba(74,222,128,${alpha})`;
-  if (load < 40) return `rgba(163,230,53,${alpha})`;
-  if (load < 60) return `rgba(251,191,36,${alpha})`;
-  if (load < 80) return `rgba(251,146,60,${alpha})`;
-  return `rgba(248,113,113,${alpha})`;
+  const a = load == null ? alpha * 0.45 : alpha;
+  const [t1, t2] = congestionStep(load);
+  return t2 ? 'color-mix(in srgb, ' + paletteCss(t1, a) + ', ' + paletteCss(t2, a) + ')' : paletteCss(t1, a);
+}
+
+/** The same colour resolved for the canvas, which cannot read CSS. */
+export function congestionCanvasColour(load: number | null, alpha = 0.85): string {
+  const a = load == null ? alpha * 0.45 : alpha;
+  const [t1, t2] = congestionStep(load);
+  const c1 = paletteColour(t1, a);
+  if (!t2) return c1;
+  const p1 = channels(c1), p2 = channels(paletteColour(t2, a));
+  if (!p1 || !p2) return c1;
+  const mid = (i: number): number => Math.round((p1[i]! + p2[i]!) / 2);
+  return 'rgba(' + mid(0) + ', ' + mid(1) + ', ' + mid(2) + ', ' + a + ')';
+}
+
+/** `rgba(r, g, b, a)` as its channels, or null for anything else. */
+function channels(c: string): number[] | null {
+  const m = (toRgba(c) || '').match(/rgba\(([^)]+)\)/);
+  return m ? m[1]!.split(',').map(Number) : null;
 }
 
 /**
@@ -543,7 +573,7 @@ export function spectrumData(rows: WifiscanRow[]): {
     signal: rows.map((r) => (r.maxSig == null ? null : [FA_FLOOR_DBM, r.maxSig])),
     // Bar height is signal strength; its COLOUR carries congestion, so one
     // glance answers both "is anything there" and "how busy is it".
-    colours: rows.map((r) => congestionColour(r.load)),
+    colours: rows.map((r) => congestionCanvasColour(r.load)),
     noise: rows.map((r) => r.nf),
   };
 }
@@ -579,7 +609,7 @@ export function spectrumConfig(deps: {
           backgroundColor: [], borderRadius: 2, borderSkipped: false },
         // The reference the signal is measured against.
         { label: 'Noise floor', type: 'line', data: [], yAxisID: 'y', order: 2,
-          borderColor: 'rgba(148,163,190,.75)', borderDash: [4, 3],
+          borderColor: paletteColour('--text-muted', 0.75), borderDash: [4, 3],
           borderWidth: 1.5, pointRadius: 0, tension: 0.25, fill: false, spanGaps: true },
       ],
     },
@@ -590,7 +620,7 @@ export function spectrumConfig(deps: {
         legend: {
           display: true,
           labels: {
-            color: 'rgba(148,163,190,.8)', boxWidth: 10, font: { size: 10 },
+            color: paletteColour('--text-muted', 0.8), boxWidth: 10, font: { size: 10 },
             usePointStyle: true,
             // The current-channel band is drawn by a plugin, so it has no
             // dataset for the legend to pick up. Appended by hand, or the one
@@ -617,14 +647,14 @@ export function spectrumConfig(deps: {
         },
       },
       scales: {
-        x: { ticks: { color: 'rgba(148,163,190,.5)', font: { size: 9 }, maxRotation: 0,
+        x: { ticks: { color: paletteColour('--text-muted', 0.5), font: { size: 9 }, maxRotation: 0,
                       autoSkipPadding: 12 },
              grid: { display: false } },
         y: { position: 'left', min: FA_FLOOR_DBM, max: -20,
-             title: { display: true, text: 'dBm', color: 'rgba(148,163,190,.5)',
+             title: { display: true, text: 'dBm', color: paletteColour('--text-muted', 0.5),
                       font: { size: 9 } },
-             grid: { color: 'rgba(99,130,190,.08)' },
-             ticks: { color: 'rgba(148,163,190,.5)', font: { size: 9 } } },
+             grid: { color: paletteColour('--border', 0.08) },
+             ticks: { color: paletteColour('--text-muted', 0.5), font: { size: 9 } } },
       },
     },
   };
@@ -650,7 +680,7 @@ export function faLegendLabels(chart: unknown): LegendItem[] {
   // NO CHART.JS, NO DEFAULTS - and the band item alone is still the right
   // answer, not an empty legend: it is the item this function exists to add.
   const items = typeof gen === 'function' ? gen(chart) : [];
-  items.push(FA_BAND_LEGEND);
+  items.push(faBandLegend());
   return items;
 }
 
@@ -684,15 +714,20 @@ interface ChartDefaults {
   };
 }
 
-/** The legend item the band plugin has no dataset for. */
-export const FA_BAND_LEGEND: LegendItem = {
-  text: 'Active Channel',
-  fillStyle: 'rgba(56,189,248,.35)',
-  strokeStyle: 'rgba(56,189,248,.85)',
-  lineWidth: 1.5,
-  pointStyle: 'rect',
-  hidden: false,
-};
+/**
+ * The legend item the band plugin has no dataset for. A function, so its
+ * colours are the palette's when the legend is built rather than at load.
+ */
+export function faBandLegend(): LegendItem {
+  return {
+    text: 'Active Channel',
+    fillStyle: paletteColour('--accent-rx', 0.35),
+    strokeStyle: paletteColour('--accent-rx', 0.85),
+    lineWidth: 1.5,
+    pointStyle: 'rect',
+    hidden: false,
+  };
+}
 
 export interface LegendItem {
   text: string;

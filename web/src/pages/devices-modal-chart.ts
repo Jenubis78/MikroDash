@@ -23,7 +23,8 @@ import {
   RIGHT_BUFFER_MS, anchorMs, axisWindow, easeBuffer, needsFullRedraw, pruneAndMax,
   rightBufferFor, smoothMax, smoothOffset, windowedPoints, type XYPoint,
 } from './dashboard-traffic-buffer';
-import { trafficTickPlugin } from './dashboard-traffic';
+import { trafficTickPlugin, paintTrafficChart, type TrafficPaint } from './dashboard-traffic';
+import { onPaletteChange } from '../palette';
 
 /** The chart's window: the first frame's ring, five minutes. */
 export const WAN_WINDOW_SECS = 300;
@@ -42,23 +43,26 @@ let points: TrafficPoint[] = [];
 let lastSampleTs = 0, serverOffset = 0, yCurrent = 0, rbCurrent = RIGHT_BUFFER_MS, lastTickMs = 0;
 let rafId: number | null = null;
 
-function css(name: string, fallback: string): string {
-  const v = typeof getComputedStyle === 'function'
-    ? getComputedStyle(document.documentElement).getPropertyValue(name).trim() : '';
-  return v || fallback;
-}
+// The Dashboard's colours, with stronger fills and ticks. Rx and Tx are the
+// app's fixed pair, from the palette, so every palette and theme applies here.
+const ALPHAS = { rxFill: 0.14, txFill: 0.10, grid: 0.07, ticks: 0.55 };
+
+// A palette or theme change re-reads the colours onto the live chart; a chart
+// built later reads them in `config`.
+onPaletteChange(() => {
+  if (!chart) return;
+  paintTrafficChart(chart as unknown as TrafficPaint, ALPHAS);
+  chart.update('none');
+});
 
 function config(nowMs: number): unknown {
-  // Rx and Tx are the app's fixed pair, read from the theme so the light
-  // palette's darker blue and green apply here too.
-  const rx = css('--accent-rx', '#38bdf8'), tx = css('--accent-tx', '#34d399');
-  return {
+  const cfg = {
     type: 'line',
     plugins: [trafficTickPlugin],
     data: {
       datasets: [
-        { label: 'RX', data: [], borderColor: rx, backgroundColor: 'color-mix(in srgb,' + rx + ' 14%,transparent)', borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
-        { label: 'TX', data: [], borderColor: tx, backgroundColor: 'color-mix(in srgb,' + tx + ' 10%,transparent)', borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
+        { label: 'RX', data: [], borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
+        { label: 'TX', data: [], borderWidth: 1.5, tension: 0.3, pointRadius: 0, fill: true },
       ],
     },
     options: {
@@ -71,7 +75,7 @@ function config(nowMs: number): unknown {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: 'rgba(7,9,15,.9)', borderColor: 'rgba(99,130,190,.2)', borderWidth: 1,
+          borderWidth: 1,
           titleFont: { family: "'JetBrains Mono',monospace", size: 11 },
           bodyFont: { family: "'JetBrains Mono',monospace", size: 11 },
           callbacks: {
@@ -91,9 +95,8 @@ function config(nowMs: number): unknown {
         },
         y: {
           beginAtZero: true,
-          grid: { color: 'rgba(99,130,190,.07)' },
+          grid: {},
           ticks: {
-            color: 'rgba(148,163,190,.55)',
             font: { family: "'JetBrains Mono',monospace", size: 10 },
             callback: (v: number) => fmtMbps(v),
           },
@@ -101,6 +104,8 @@ function config(nowMs: number): unknown {
       },
     },
   };
+  paintTrafficChart(cfg as TrafficPaint, ALPHAS);
+  return cfg;
 }
 
 /** Rebuild the datasets from the buffer at the current time. A discontinuity,

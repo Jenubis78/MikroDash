@@ -15,6 +15,10 @@
 // different innerHTML for the same interface. The port reproduces each side as
 // it stands rather than unifying them.
 
+import { paletteCss } from '../palette';
+
+// Colours are in each element's style, not its fill/stroke attributes: a
+// presentation attribute cannot hold a palette colour.
 export function portSvg(sz: number): string {
   // Ethernet port - RJ-45 front view. Outer housing, inner socket recess, 8
   // contact pins across the bottom of the socket, one LED dot top-right.
@@ -35,14 +39,15 @@ export function portSvg(sz: number): string {
   for (let p = 0; p < 8; p++) {
     const px = sox + pinGap + p * (pinW + pinGap);
     pins += '<rect x="' + px.toFixed(1) + '" y="' + pinY + '" width="' + pinW +
-            '" height="' + pinH + '" rx="0.5" fill="rgba(200,215,240,.35)"/>';
+            '" height="' + pinH + '" rx="0.5" style="fill:' + paletteCss('--text-main', 0.35) + '"/>';
   }
   return '<svg class="if-port-svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h +
     '" xmlns="http://www.w3.org/2000/svg">' +
     '<rect class="port-body" x="0.5" y="0.5" width="' + (w - 1) + '" height="' + (h - 1) + '" rx="' + rx +
       '" stroke-width="1.5" fill-opacity="1"/>' +
     '<rect x="' + sox + '" y="' + soy + '" width="' + sow + '" height="' + soh +
-      '" rx="2" fill="rgba(5,8,16,.5)" stroke="rgba(99,130,190,.2)" stroke-width="0.8"/>' +
+      '" rx="2" style="fill:' + paletteCss('--bg-deep', 0.5) + ';stroke:' + paletteCss('--border', 0.2) +
+      '" stroke-width="0.8"/>' +
     pins +
     '<circle class="port-led" cx="' + ledX + '" cy="' + ledY + '" r="' + ledR + '"/>' +
   '</svg>';
