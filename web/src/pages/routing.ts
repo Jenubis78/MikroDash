@@ -14,8 +14,8 @@
 // /vendor/chart.umd.min.js - the Go server proxies everything outside /next, so
 // it is the identical file rather than a second copy.
 
-import { esc, el, resRow, sparkPoints } from '../dom';
-import { paletteColour, paletteCss, onPaletteChange, type PaletteToken } from '../palette';
+import { esc, el, resRow, sparkPoints, pill } from '../dom';
+import { paletteColour, paletteCss, onPaletteChange, type PaletteToken, type PillTone } from '../palette';
 import { mountAdds, mountRows } from '../resource';
 import type { Socket } from '../socket';
 import type { RoutingPayload, Peer, Route, RouteCounts, PeerSummary } from '../gen/payloads';
@@ -57,11 +57,16 @@ function fmtUptime(sec: number): string {
   return m + 'm';
 }
 
+// The tone of each BGP session state. A state this table does not name - a
+// future RouterOS's - is muted rather than guessed at.
+const BGP_STATE_TONE: Record<string, PillTone> = {
+  established: 'ok', active: 'warn', idle: 'err',
+  connect: 'rx', opensent: 'rx', openconfirm: 'rx',
+};
+
 function stateBadge(state: string, flapping: boolean): string {
-  if (flapping) return '<span class="bgp-state flap">Flapping</span>';
-  // The class is the state with everything but letters and hyphens removed, so
-  // an unrecognised state from a future RouterOS cannot inject a class name.
-  return '<span class="bgp-state ' + state.replace(/[^a-z-]/gi, '') + '">' + esc(state) + '</span>';
+  if (flapping) return '<span class="pill pill-err pill-dot">Flapping</span>';
+  return pill(state, BGP_STATE_TONE[state.toLowerCase()] || 'muted');
 }
 
 // Inline SVG sparkline from the prefix-count history.
@@ -254,14 +259,10 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
     }
 
     tbody.innerHTML = peers.map((p) => {
-      const typeTok: Record<string, PaletteToken> = {
-        upstream: '--accent-rx', ix: '--accent-alt', private: '--accent-warn',
-      };
+      const typeTone: Record<string, PillTone> = { upstream: 'rx', ix: 'alt', private: 'warn' };
       const typeLabel: Record<string, string> = { upstream: 'Upstream', ix: 'IX', private: 'Private' };
       const ptype = p.peerType || 'upstream';
-      const typeBadge = '<span style="font-size:.6rem;font-family:var(--font-ui);padding:.1rem .35rem;border-radius:3px;' +
-        'background:' + paletteCss(typeTok[ptype] || '--border', 0.1) + ';color:' + (typeTok[ptype] ? paletteCss(typeTok[ptype]!, 0.8) : 'var(--text-muted)') + '">' +
-        (typeLabel[ptype] || esc(ptype)) + '</span>';
+      const typeBadge = pill(typeLabel[ptype] || ptype, typeTone[ptype] || 'muted');
       const nameCell = '<div class="rt-peer-name">' + esc(p.name) + ' ' + typeBadge + '</div>' +
         (p.description ? '<div class="rt-peer-desc">' + esc(p.description) + '</div>' : '');
       const errCell = p.lastError
@@ -366,11 +367,10 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
         ? '<span style="color:rgb(from var(--accent-tx) r g b / .9);font-size:.7rem">&#10003; Active</span>'
         : '<span style="color:var(--text-muted);font-size:.7rem">-</span>';
       const typeCell = r.type === 'static'
-        ? '<span style="font-size:.65rem;padding:.1rem .35rem;border-radius:3px;background:rgb(from var(--accent-rx) r g b / .1);color:rgb(from var(--accent-rx) r g b / .8)">Static</span>'
-        : '<span style="font-size:.65rem;padding:.1rem .35rem;border-radius:3px;background:rgb(from var(--accent-warn) r g b / .1);color:rgb(from var(--accent-warn) r g b / .8)">' +
-          (r.protocol !== r.type ? esc(r.protocol.toUpperCase()) : 'Dynamic') + '</span>';
+        ? pill('Static', 'rx')
+        : pill(r.protocol !== r.type ? r.protocol.toUpperCase() : 'Dynamic', 'warn');
       const familyBadge = r.family === 'ipv6'
-        ? '<span style="font-size:.6rem;padding:.1rem .3rem;border-radius:3px;background:rgb(from var(--accent-alt) r g b / .12);color:rgb(from var(--accent-alt) r g b / .8);margin-right:.3rem">IPv6</span>'
+        ? '<span class="pill pill-alt" style="margin-right:.3rem">IPv6</span>'
         : '';
       // The family picks the RouterOS menu, so a v6 row overrides the table's
       // default resource on itself.

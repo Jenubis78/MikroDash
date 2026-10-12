@@ -22,6 +22,16 @@ export type PaletteToken =
   | '--accent-alt' | '--accent-pink' | '--text-main' | '--text-muted' | '--border'
   | '--bg-deep' | '--bg-card';
 
+/** A label pill's tone (app.css PILLS): a palette role, never a colour. */
+export type PillTone = 'rx' | 'tx' | 'ok' | 'warn' | 'err' | 'alt' | 'pink' | 'muted';
+
+/** The palette token a tone draws with, for a chart or diagram that colours
+ *  something the way a pill elsewhere colours it. */
+export const TONE_TOKEN: Record<PillTone, PaletteToken> = {
+  rx: '--accent-rx', tx: '--accent-tx', ok: '--accent-ok', warn: '--accent-warn',
+  err: '--accent-err', alt: '--accent-alt', pink: '--accent-pink', muted: '--text-muted',
+};
+
 /** A CSS colour for `token` at `alpha`: the palette's own, as the browser styles it. */
 export function paletteCss(token: PaletteToken, alpha = 1): string {
   return 'rgb(from var(' + token + ') r g b / ' + alpha + ')';

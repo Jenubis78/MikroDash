@@ -5,7 +5,7 @@
 // acceptance criterion for this page is that it renders identically, not that
 // it renders correctly.
 
-import { esc, el, resRow, debounce, renderSortHeader, sortMul, type SortCol, type SortState, kv } from '../dom';
+import { esc, el, resRow, debounce, renderSortHeader, sortMul, pill, type SortCol, type SortState, kv } from '../dom';
 import type { Socket } from '../socket';
 import { mountAdds, mountRows, openResource } from '../resource';
 import { initDnsFleet } from './dns-fleet';
@@ -82,7 +82,7 @@ export function initDnsPage(socket: Socket, isVisible: (page: string) => boolean
     table.innerHTML = list.length ? sorted(list, sortS).map((e) =>
       '<tr' + (e.disabled ? ' style="opacity:.55"' : '') + resRow(e.id, e.name) + '>' +
       '<td>' + esc(e.name || e.regexp) +
-        (e.regexp ? ' <span class="wl-band wl-band-24">regexp</span>' : '') + '</td>' +
+        (e.regexp ? ' ' + pill('regexp', 'alt') : '') + '</td>' +
       '<td class="mono">' + esc(e.address) + '</td>' +
       '<td>' + esc(e.type) + '</td>' +
       '<td>' + esc(e.ttl || '-') + '</td>' +

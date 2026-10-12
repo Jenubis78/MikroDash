@@ -9,7 +9,7 @@
 // acceptance criterion is that it renders identically, not that it renders
 // correctly.
 
-import { esc, el, resRow, debounce, renderSortHeader, sortMul, fmtMbps, fmtBytes, parseUptime, type SortCol, type SortState, mutedDash } from '../dom';
+import { esc, el, resRow, debounce, renderSortHeader, sortMul, fmtMbps, fmtBytes, parseUptime, pill, type SortCol, type SortState, mutedDash } from '../dom';
 import type { Socket } from '../socket';
 import { mountAdds, mountRows } from '../resource';
 /*
@@ -141,7 +141,7 @@ export function initPppPage(socket: Socket, isVisible: (page: string) => boolean
           '<span style="color:var(--accent-tx)">' + fmtMbps(((s.txRate as number) * 8) / 1e6) + '</span>';
       return '<tr>' +
         '<td>' + esc(s.name) + '</td>' +
-        '<td><span class="vpn-proto-pill">' + esc(s.service || 'PPP') + '</span></td>' +
+        '<td>' + pill(s.service || 'PPP', 'rx') + '</td>' +
         '<td>' + esc(s.address) + '</td>' +
         '<td>' + esc(s.callerId) + '</td>' +
         '<td>' + esc(s.uptime) + '</td>' +
@@ -196,17 +196,17 @@ export function initPppPage(socket: Socket, isVisible: (page: string) => boolean
       : 'This router has no PPP service configured.';
 
     tb.innerHTML = rows.length ? rows.map((s) => {
-      const pill = s.disabled
-        ? '<span class="lease-pill expired">disabled</span>'
+      const state = s.disabled
+        ? pill('disabled', 'warn')
         : s.connected
-          ? '<span class="lease-pill bound">online</span>'
-          : '<span class="lease-pill">offline</span>';
+          ? pill('online', 'ok')
+          : pill('offline', 'muted');
       const dash = mutedDash();
       const cell = (v: string): string => '<td>' + (v ? esc(v) : dash) + '</td>';
       return '<tr' + (s.disabled ? ' style="opacity:.55"' : '') + resRow(s.id, s.name) + '>' +
-        '<td>' + pill + '</td>' +
+        '<td>' + state + '</td>' +
         '<td>' + esc(s.name) + '</td>' +
-        '<td><span class="vpn-proto-pill">' + esc(s.service || 'any') + '</span></td>' +
+        '<td>' + pill(s.service || 'any', 'rx') + '</td>' +
         cell(s.profile) + cell(s.localAddress) + cell(s.remoteAddress) + cell(s.comment) +
       '</tr>';
     }).join('') : '<tr><td colspan="7" class="empty-state">' +
@@ -244,8 +244,8 @@ export function initPppPage(socket: Socket, isVisible: (page: string) => boolean
       cell(s.interface) +
       cell(s.maxSessions ? 'max ' + s.maxSessions : '') +
       '<td>' + (s.disabled
-        ? '<span class="lease-pill expired">disabled</span>'
-        : '<span class="lease-pill bound">enabled</span>') + '</td>' +
+        ? pill('disabled', 'warn')
+        : pill('enabled', 'ok')) + '</td>' +
       '</tr>').join('')
       : '<tr><td colspan="4" class="empty-state">No PPPoE servers.</td></tr>';
   }

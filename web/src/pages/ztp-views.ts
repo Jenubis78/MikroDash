@@ -2,23 +2,24 @@
 // Provisioning section and its cards, the wizards' steps, the script panel
 // and Settings → Provisioning's status. `ztp.ts` wires them.
 
-import { esc } from '../dom';
+import { esc, pill } from '../dom';
+import type { PillTone } from '../palette';
 import { fieldHtml } from '../form';
 import type { ZTPBatchView, ZTPDeviceView, ZTPPayload, ZTPStatus } from '../gen/payloads';
 import { valuesGrid, type RouterOpt } from './config-management-deploy';
 import type { VarDef } from './config-management-editor';
 
 /** Each state as a person reads it, and its pill. */
-export const STATE: Record<string, { word: string; pill: string; hint: string }> = {
-  awaiting: { word: 'Waiting for device', pill: 'ztp-pill-wait',
+export const STATE: Record<string, { word: string; tone: PillTone; hint: string }> = {
+  awaiting: { word: 'Waiting for device', tone: 'rx',
     hint: 'Run its script on the router. It calls home within a minute of running it.' },
-  pending: { word: 'Not yet provisioned', pill: 'ztp-pill-pending',
+  pending: { word: 'Not yet provisioned', tone: 'warn',
     hint: 'It called home without being expected. Onboard it to add it to the fleet, or reject it.' },
-  enrolled: { word: 'Onboarding', pill: 'ztp-pill-busy', hint: 'Connecting to it through its tunnel.' },
-  provisioning: { word: 'Applying its template', pill: 'ztp-pill-busy', hint: 'Deploying through Config Management.' },
-  provisioned: { word: 'Provisioned', pill: 'ztp-pill-ok', hint: '' },
-  failed: { word: 'Provisioning failed', pill: 'ztp-pill-bad', hint: '' },
-  rejected: { word: 'Rejected', pill: 'ztp-pill-off', hint: 'It can no longer reach this MikroDash.' },
+  enrolled: { word: 'Onboarding', tone: 'alt', hint: 'Connecting to it through its tunnel.' },
+  provisioning: { word: 'Applying its template', tone: 'alt', hint: 'Deploying through Config Management.' },
+  provisioned: { word: 'Provisioned', tone: 'tx', hint: '' },
+  failed: { word: 'Provisioning failed', tone: 'err', hint: '' },
+  rejected: { word: 'Rejected', tone: 'muted', hint: 'It can no longer reach this MikroDash.' },
 };
 
 /** The devices the section shows: every one not yet a working router. A
@@ -46,7 +47,7 @@ const btn = (act: string, id: string, label: string, cls = 'sbtn-ghost'): string
 
 /** One device's card. */
 export function deviceCard(d: ZTPDeviceView, now: number): string {
-  const s = STATE[d.state] ?? { word: d.state, pill: 'ztp-pill-off', hint: '' };
+  const s = STATE[d.state] ?? { word: d.state, tone: 'muted', hint: '' };
   const mode = d.mode === 'local' ? 'Local' : d.mode === 'remote' ? 'Remote' : 'Called home';
   const facts: [string, string][] = [];
   if (d.serial) facts.push(['Serial', d.serial]);
@@ -80,9 +81,9 @@ export function deviceCard(d: ZTPDeviceView, now: number): string {
   const title = d.label || d.identity || d.serial || 'Unnamed device';
   return '<div class="ztp-card state-' + esc(d.state) + '">' +
     '<div class="ztp-card-head"><div class="ztp-card-name">' + esc(title) + '</div>' +
-    '<span class="vpn-hs-badge ' + s.pill + '">' + (busy ? '<span class="ztp-spin" aria-hidden="true"></span>' : '') +
+    '<span class="pill pill-' + s.tone + '">' + (busy ? '<span class="ztp-spin" aria-hidden="true"></span>' : '') +
     esc(s.word) + '</span></div>' +
-    '<div class="ztp-card-mode"><span class="vpn-hs-badge ztp-pill-mode">' + mode + '</span></div>' +
+    '<div class="ztp-card-mode">' + pill(mode, 'muted') + '</div>' +
     (d.error ? '<div class="ztp-card-err">' + esc(d.error) + '</div>' : s.hint ? '<div class="ztp-card-hint">' + esc(s.hint) + '</div>' : '') +
     (facts.length ? '<dl class="ztp-facts">' + facts.map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>').join('') + '</dl>' : '') +
     (d.runId ? '<div class="ztp-card-hint">Its deploy is in Config Management → History.</div>' : '') +
@@ -292,9 +293,9 @@ export function scriptPanel(r: ScriptResult, now: number, what: string): string 
 
 /** Settings → Provisioning's status line. */
 export function statusLine(s: ZTPStatus): string {
-  if (!s.enabled) return '<span class="vpn-hs-badge ztp-pill-off">Off</span> Routers cannot call home.';
-  if (!s.up) return '<span class="vpn-hs-badge ztp-pill-bad">Not running</span> ' + esc(s.error || 'Save to start it.');
-  return '<span class="vpn-hs-badge ztp-pill-ok">Running</span> Listening on UDP ' + s.port + ' · ' +
+  if (!s.enabled) return pill('Off', 'muted') + ' Routers cannot call home.';
+  if (!s.up) return pill('Not running', 'err') + ' ' + esc(s.error || 'Save to start it.');
+  return pill('Running', 'tx') + ' Listening on UDP ' + s.port + ' · ' +
     s.peers + (s.peers === 1 ? ' peer' : ' peers') + ', ' + s.handshakes + ' seen in the last 3 minutes';
 }
 
@@ -302,10 +303,10 @@ export function statusLine(s: ZTPStatus): string {
 export function batchRows(batches: ZTPBatchView[], now: number): string {
   if (!batches.length) return '<tr><td colspan="4" class="ztp-help">No generic scripts yet.</td></tr>';
   return batches.map((b) => '<tr><td>' + esc(b.name) + '</td><td>' +
-    (b.revokedAt ? '<span class="vpn-hs-badge ztp-pill-off">Revoked</span>'
-      : b.live ? '<span class="vpn-hs-badge ztp-pill-ok">Live</span> <span class="ztp-help">expires ' +
+    (b.revokedAt ? pill('Revoked', 'muted')
+      : b.live ? pill('Live', 'tx') + ' <span class="ztp-help">expires ' +
         esc(relTime(b.expiresAt, now)) + '</span>'
-        : '<span class="vpn-hs-badge ztp-pill-off">Expired</span>') + '</td><td>' + b.devices + '</td><td>' +
+        : pill('Expired', 'muted')) + '</td><td>' + b.devices + '</td><td>' +
     (b.live ? '<button class="sbtn sbtn-danger ztp-btn" type="button" data-ztp-revoke="' + esc(b.id) + '">Revoke</button>' : '') +
     '</td></tr>').join('');
 }

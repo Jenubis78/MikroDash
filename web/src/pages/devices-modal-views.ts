@@ -2,7 +2,7 @@
 // be asserted without a DOM. `devices-modal.ts` owns the lifecycle and the
 // socket; this owns what is drawn.
 
-import { esc, fmtMbps } from '../dom';
+import { esc, fmtMbps, pill } from '../dom';
 import { fmtTs } from '../timefmt';
 import type { RouterStatsRow, Live, LiveClient, TrafficPoint } from '../gen/payloads';
 import { cardState, type CardState } from './devices-card';
@@ -32,7 +32,7 @@ export function headerHtml(r: RouterStatsRow, canEdit: boolean): string {
     + '<span class="dv-status">' + STATE_TEXT[st] + '</span>'
     + (r.isActive ? '<span class="dv-active">active</span>' : '') + '</div>'
     + '<div class="dvm-sub"><span class="dvm-mono">' + esc(r.host) + '</span>'
-    + sites.map((s) => '<span class="dvm-pill">' + esc(s) + '</span>').join('') + '</div></div></div>'
+    + sites.map((s) => pill(s, 'muted')).join('') + '</div></div></div>'
     + '<div class="dvm-actions">'
     + (r.isActive ? '' : '<button type="button" class="sbtn sbtn-primary" data-dvm="dashboard">Open dashboard</button>')
     + (canEdit ? '<button type="button" class="sbtn sbtn-ghost" data-dvm="edit">Edit</button>' : '')
@@ -86,7 +86,7 @@ export function connectivityHtml(o: DeviceOverview | undefined, range: Range): s
  */
 export function usageHeadHtml(live: Live | null, last: TrafficPoint | undefined): string {
   const head = '<div class="dvm-sec-head"><h3>Live usage</h3>'
-    + (live && live.wanIf ? '<span class="dvm-pill">' + esc(live.wanIf) + '</span>' : '') + '</div>';
+    + (live && live.wanIf ? pill(live.wanIf, 'muted') : '') + '</div>';
   if (!live) return head + '<div class="dvm-skel" style="height:56px"></div>';
   if (!last) {
     return head + '<div class="dvm-none">' + (live.connected
@@ -102,7 +102,7 @@ export function usageHeadHtml(live: Live | null, last: TrafficPoint | undefined)
 /** CPU, RAM and disk as the dashboard's gauges, plus temperature. */
 export function resourcesHtml(live: Live | null): string {
   const head = '<div class="dvm-sec-head"><h3>Resources</h3>'
-    + (live && live.tempC != null ? '<span class="dvm-pill">' + esc(live.tempC.toFixed(0)) + ' °C</span>' : '')
+    + (live && live.tempC != null ? pill(live.tempC.toFixed(0) + ' °C', 'muted') : '')
     + '</div>';
   if (!live) return head + '<div class="dvm-skel" style="height:96px"></div>';
   if (live.cpu == null) {
@@ -117,8 +117,8 @@ export function portsSectionHtml(live: Live | null): string {
   const up = live ? live.ports.filter((p) => p.running && !p.disabled).length : 0;
   const head = '<div class="dvm-sec-head"><h3>Ports</h3>'
     + (live && live.portsRead && live.ports.length
-      ? '<span class="dvm-pill">' + up + ' of ' + live.ports.length + ' up</span>' : '')
-    + (live && live.leases != null ? '<span class="dvm-pill">' + live.leases + ' client' + (live.leases === 1 ? '' : 's') + '</span>' : '')
+      ? pill(up + ' of ' + live.ports.length + ' up', 'muted') : '')
+    + (live && live.leases != null ? pill(live.leases + ' client' + (live.leases === 1 ? '' : 's'), 'muted') : '')
     + '</div>';
   if (!live || !live.portsRead) {
     return head + (live && !live.connected
@@ -138,7 +138,7 @@ export function alertsHtml(rows: AlertRow[] | null | undefined): string {
   const newest = rows.slice().sort((a, b) => b.fired_at - a.fired_at).slice(0, 6);
   return '<ul class="dvm-alerts">' + newest.map((r) => {
     const open = !r.resolved_at;
-    return '<li><span class="' + (open ? 'dv-alerts' : 'dvm-pill') + '">' + (open ? 'Open' : 'Resolved') + '</span>'
+    return '<li>' + (open ? pill('Open', 'warn') : pill('Resolved', 'muted'))
       + '<span class="dvm-alert-type">' + esc(r.alert_label || r.alert_type) + '</span>'
       + '<span class="dvm-alert-sub">' + esc(r.subject || r.detail || '') + '</span>'
       + '<span class="dvm-mono text-muted">' + esc(fmtTs(r.fired_at, false)) + '</span></li>';
@@ -172,6 +172,6 @@ export function clientsBodyHtml(rows: readonly ClientRow[] | null, connected: bo
     + '<td class="dvm-client-host">' + (c.hostName ? esc(c.hostName) : dash) + '</td>'
     + '<td class="dvm-mono">' + esc(c.ip) + '</td>'
     + '<td class="dvm-mono">' + (c.mac ? esc(c.mac) : dash) + '</td>'
-    + '<td>' + (c.vlanId ? '<span class="dvm-pill">' + esc(c.vlanId) + '</span>' : dash) + '</td>'
+    + '<td>' + (c.vlanId ? pill(c.vlanId, 'muted') : dash) + '</td>'
     + '</tr>').join('');
 }

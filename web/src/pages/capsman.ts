@@ -21,7 +21,7 @@
 // capsman can override a value on one interface and cannot edit the shared
 // profile every CAP follows.
 
-import { esc, el, resRow, debounce, renderSortHeader, sortMul,
+import { esc, el, resRow, debounce, renderSortHeader, sortMul, pill, bandTone,
   type SortCol, type SortState } from '../dom';
 import type { Socket } from '../socket';
 import type {
@@ -74,7 +74,7 @@ const MUTED = 'style="color:var(--text-muted)"';
  * differs: a v1 row cannot be edited here, and the title says why so nobody
  * spends a minute clicking one.
  */
-const V1_PILL = '<span class="badge bg-orange-lt" style="margin-left:.35rem;font-size:.6rem"' +
+const V1_PILL = '<span class="pill pill-warn" style="margin-left:.35rem"' +
   ' title="Legacy CAPsMAN (/caps-man) - shown here, configured on the router">v1</span>';
 
 /** The v1 pill, or nothing. */
@@ -112,15 +112,14 @@ export function initCapsmanPage(socket: Socket, isVisible: (page: string) => boo
     // `ok`; `/caps-man/remote-cap` says `Run`. Matching only the first painted
     // every legacy CAP amber on a fleet that was entirely healthy.
     const ok = /^(ok|run)$/i.test((state || '').trim());
-    return '<span class="wl-band ' + (ok ? 'wl-band-6' : 'wl-band-24') + '">' +
-           esc(state || 'unknown') + '</span>';
+    return pill(state || 'unknown', ok ? 'ok' : 'warn');
   }
 
   function clientRow(c: CapsClient): string {
     return '<tr class="cap-client"><td class="tbl-indent" colspan="8">' +
       '<span ' + MUTED + '>' + esc(c.interface) + '</span> &nbsp; ' +
       '<span class="mono">' + esc(c.mac) + '</span> &nbsp; ' +
-      (c.ssid ? '<span class="wl-band wl-band-5">' + esc(c.ssid) + '</span> &nbsp; ' : '') +
+      (c.ssid ? pill(c.ssid, 'rx') + ' &nbsp; ' : '') +
       (c.signal === null ? '' : '<span ' + MUTED + '>' + String(c.signal) + ' dBm</span> &nbsp; ') +
       '<span ' + MUTED + '>' + esc(c.uptime) + '</span>' +
       '</td></tr>';
@@ -194,7 +193,7 @@ export function initCapsmanPage(socket: Socket, isVisible: (page: string) => boo
           // a rendering failure.
           '<td>' + dash(c.connectedTime) + '</td>' +
           '<td>' + (c.radios.length
-            ? c.radios.map((r) => '<span class="wl-band wl-band-5">' + esc(r.interface) + '</span>').join(' ')
+            ? c.radios.map((r) => pill(r.interface, 'rx')).join(' ')
             : '<span ' + MUTED + '>-</span>') + '</td>' +
           '<td>' + String(c.clientCount) + '</td>' +
         '</tr>';
@@ -298,8 +297,7 @@ export function initCapsmanPage(socket: Socket, isVisible: (page: string) => boo
     return '<tr' + resRow(p.id, p.identity, 'capsProvisioning') +
              (p.disabled ? ' style="opacity:.5"' : '') + '>' +
       '<td class="fw-movecell">' + (p.legacy ? v1(true) : move) + '</td>' +
-      '<td>' + ((p.supportedBands || []).map((b) =>
-        '<span class="wl-band wl-band-24" style="margin-right:.2rem">' + esc(b) + '</span>').join('') ||
+      '<td>' + ((p.supportedBands || []).map((b) => pill(b, bandTone(b))).join(' ') ||
         '<span class="muted-note">any</span>') + '</td>' +
       '<td>' + dash(p.action) + '</td>' +
       '<td>' + dash(p.masterConfiguration) + '</td>' +
@@ -314,9 +312,9 @@ export function initCapsmanPage(socket: Socket, isVisible: (page: string) => boo
       '<td>' + esc(c.name) + v1(c.legacy) +
         // A profile carrying `manager` is the CAP-side setting MikroTik warns
         // must never be provisioned onward. Worth flagging where it appears.
-        (c.manager ? '<span class="badge bg-yellow-lt" style="margin-left:.35rem">manager</span>' : '') + '</td>' +
+        (c.manager ? '<span class="pill pill-warn" style="margin-left:.35rem">manager</span>' : '') + '</td>' +
       '<td>' + dash(c.ssid) +
-        (c.hideSsid ? '<span class="badge bg-secondary-lt" style="margin-left:.35rem">Hidden</span>' : '') + '</td>' +
+        (c.hideSsid ? '<span class="pill pill-muted" style="margin-left:.35rem">Hidden</span>' : '') + '</td>' +
       '<td>' + dash(c.country) + '</td>' +
       '<td>' + dash(c.security) + '</td>' +
       '<td>' + dash(c.channel) + '</td>' +
@@ -330,8 +328,7 @@ export function initCapsmanPage(socket: Socket, isVisible: (page: string) => boo
     const isOpen = !String(s.authTypes || '').trim();
     return '<tr' + resRow(s.id, s.name, 'capsSecurity') + (s.disabled ? ' style="opacity:.5"' : '') + '>' +
       '<td>' + esc(s.name) + v1(s.legacy) + '</td>' +
-      '<td><span class="badge ' + (isOpen ? 'bg-red-lt' : 'bg-azure-lt') + '">' +
-        esc(isOpen ? 'Open' : s.authTypes) + '</span></td>' +
+      '<td>' + (isOpen ? pill('Open', 'err') : pill(s.authTypes, 'rx')) + '</td>' +
       '<td>' + dash(s.wps) + '</td>' +
       '<td>' + yesNo(s.ft) + '</td>' +
     '</tr>';

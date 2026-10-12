@@ -8,7 +8,7 @@
 // certificate), which are the router's text, so every one goes through esc().
 // The catalogue's own words (title, why, fix) are ours, and escaped anyway.
 
-import { esc } from '../dom';
+import { esc, pill } from '../dom';
 import { scoreGrade } from './tools-ping-cards';
 import type { Finding, Report, CategoryScore } from '../gen/payloads';
 
@@ -33,12 +33,12 @@ export function scoreLabel(r: Report): string {
   return GRADE_WORD[scoreGrade(r.score)] + ' · ' + (issues === 1 ? '1 issue' : issues + ' issues');
 }
 
-/** A severity as a pill, by kind: the vpn-hs-badge colours, with high its own
- *  orange between critical's red and medium's amber. */
+/** A severity as a pill, by tone: critical red, high and medium amber, low
+ *  blue, anything else muted. */
 export function sevPill(sev: string): string {
-  const kind = sev === 'critical' ? 'hs-stale' : sev === 'high' ? 'sec-sev-high'
-    : sev === 'medium' ? 'hs-warn' : sev === 'low' ? 'hs-info' : 'hs-never';
-  return '<span class="vpn-hs-badge ' + kind + '">' + esc(sev) + '</span>';
+  const tone = sev === 'critical' ? 'err' : sev === 'high' || sev === 'medium' ? 'warn'
+    : sev === 'low' ? 'rx' : 'muted';
+  return pill(sev, tone);
 }
 
 /** The page a finding is fixed on, as an Open link; nothing when it has none. */
@@ -100,9 +100,9 @@ function checks(r: Report, ids: string[]): string {
 export function surfaceCard(r: Report): string {
   const svc = r.facts.services;
   const pills = svc.length ? svc.map((s) => {
-    const kind = !s.enabled ? 'hs-never' : s.plaintext ? 'hs-stale' : s.restricted ? 'hs-ok' : 'hs-warn';
+    const tone = !s.enabled ? 'muted' : s.plaintext ? 'err' : s.restricted ? 'ok' : 'warn';
     const tip = !s.enabled ? 'disabled' : s.plaintext ? 'plaintext' : s.restricted ? 'restricted' : 'open to any address';
-    return '<span class="vpn-hs-badge ' + kind + ' sec-svc" title="' + esc(s.name + ': ' + tip) + '">' + esc(s.name) +
+    return '<span class="pill pill-' + tone + ' sec-svc" title="' + esc(s.name + ': ' + tip) + '">' + esc(s.name) +
       (s.port ? ' <small>' + esc(s.port) + '</small>' : '') + '</span>';
   }).join('') : '<div class="sec-empty">The service list could not be read.</div>';
   return '<div class="sec-svc-row">' + pills + '</div>' +
@@ -154,15 +154,15 @@ export function findingRow(f: Finding): string {
     '<td><div class="sec-finding-title">' + esc(f.title) + '</div>' +
     (f.detail.length ? '<div class="sec-finding-detail">' + esc(f.detail.join(', ')) + '</div>' : '') +
     '<div class="sec-finding-why">' + esc(f.why) + '</div></td>' +
-    '<td><span class="vpn-hs-badge hs-info">' + esc(f.category) + '</span></td>' +
+    '<td>' + pill(f.category, 'rx') + '</td>' +
     '<td class="sec-fix">' + esc(f.fix) + '</td>' +
     '<td>' + openLink(f) + '</td></tr>';
 }
 
 /** One passed-check row. */
 export function passedRow(f: Finding): string {
-  return '<tr><td>' + esc(f.title) + '</td><td><span class="vpn-hs-badge hs-info">' + esc(f.category) +
-    '</span></td><td>' + sevPill(f.severity) + '</td></tr>';
+  return '<tr><td>' + esc(f.title) + '</td><td>' + pill(f.category, 'rx') +
+    '</td><td>' + sevPill(f.severity) + '</td></tr>';
 }
 
 const SEV_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };

@@ -26,7 +26,7 @@
 // asymmetry belongs to the payload, not to this page, and the dedicated pages
 // are where a configuration count would be truthful.
 
-import { esc, el, fmtBytes } from '../dom';
+import { esc, el, fmtBytes, pill } from '../dom';
 import type { Socket } from '../socket';
 import type { VPNPayload } from '../gen/payloads';
 
@@ -202,9 +202,9 @@ export function initVpnPage(socket: Socket, isVisible: (page: string) => boolean
     const body = el('vpnOverviewTbody');
     if (body) {
       body.innerHTML = rows.map((r) => {
-        const pill = r.active > 0
-          ? '<span class="vpn-hs-badge hs-ok">' + r.active + ' active</span>'
-          : '<span class="vpn-hs-badge hs-never">idle</span>';
+        const state = r.active > 0
+          ? pill(r.active + ' active', 'ok')
+          : pill('idle', 'muted');
         // THE LINK IS GATED. A row pointing at a page the viewer may not open
         // is an invitation to a permission error, so it renders as nothing
         // instead. See navReachable for why it is not `isVisible`.
@@ -215,7 +215,7 @@ export function initVpnPage(socket: Socket, isVisible: (page: string) => boolean
           '<td style="font-weight:600">' + esc(r.label) + '</td>' +
           '<td>' + count(r.configured) + '</td>' +
           '<td>' + r.active + '</td>' +
-          '<td>' + pill + '</td>' +
+          '<td>' + state + '</td>' +
           '<td style="text-align:right">' + link + '</td>' +
           '</tr>';
       }).join('');
@@ -246,7 +246,7 @@ export function initVpnPage(socket: Socket, isVisible: (page: string) => boolean
           return '<div class="vpn-tile up">' +
             '<div class="vpn-tile-name"><span class="iface-dot up"></span>' +
               '<span class="vpn-tile-name-text">' + esc(c.name) + '</span></div>' +
-            '<div class="vpn-tile-iface"><span class="vpn-proto-pill">' + esc(c.tech) + '</span>' +
+            '<div class="vpn-tile-iface">' + pill(c.tech, 'rx') +
               (c.where ? ' ' + esc(c.where) : '') + '</div>' +
             (c.age ? '<div class="vpn-tile-hs">' + esc(c.age) + '</div>' : '') +
             (c.detail ? '<div class="vpn-tile-ip">' + esc(c.detail) + '</div>' : '') +
@@ -272,7 +272,7 @@ export function initVpnPage(socket: Socket, isVisible: (page: string) => boolean
       pppBody.innerHTML = ppp.map((s) =>
         '<tr>' +
         '<td style="font-weight:600">' + esc(s.name || '-') + '</td>' +
-        '<td><span class="vpn-proto-pill">' + esc(s.service || '-') + '</span></td>' +
+        '<td>' + pill(s.service || '-', 'rx') + '</td>' +
         '<td>' + esc(s.address || '-') + '</td>' +
         '<td style="color:var(--text-muted)">' + esc(s.callerId || '-') + '</td>' +
         '<td>' + esc(s.uptime || '-') + '</td>' +
@@ -292,7 +292,7 @@ export function initVpnPage(socket: Socket, isVisible: (page: string) => boolean
       ipBody.innerHTML = ipsec.map((p) =>
         '<tr>' +
         '<td style="font-weight:600">' + esc(p.name || '-') + '</td>' +
-        '<td><span class="vpn-proto-pill">' + esc(p.state || '-') + '</span></td>' +
+        '<td>' + pill(p.state || '-', 'rx') + '</td>' +
         '<td style="color:var(--text-muted)">' + esc(p.side || '-') + '</td>' +
         '<td>' + esc(p.uptime || '-') + '</td>' +
         '<td>' + esc(p.enc || '-') + '</td>' +

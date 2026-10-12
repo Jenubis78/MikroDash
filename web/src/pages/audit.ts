@@ -66,9 +66,9 @@ const COLS: SortCol[] = [
 const MUTED = '<span style="color:var(--text-muted)">-</span>';
 
 function outcomeCell(o: string): string {
-  if (o === 'denied') return '<span class="wl-band wl-band-24">refused</span>';
-  if (o === 'failed') return '<span class="wl-band wl-band-24">failed</span>';
-  return '<span class="wl-band wl-band-6">ok</span>';
+  if (o === 'denied') return '<span class="pill pill-warn">refused</span>';
+  if (o === 'failed') return '<span class="pill pill-err">failed</span>';
+  return '<span class="pill pill-ok">ok</span>';
 }
 
 /** A value, shortened. Not a string becomes its JSON, as `String(v)` would not. */
@@ -194,7 +194,7 @@ export function initAuditPage(): void {
         // A router deleted since the event was recorded has no name left, so it
         // falls back to that old generic marker rather than to a bare uuid.
         (r.router_id
-          ? ' <span class="wl-band wl-band-5">' + esc(r.router_name || 'router') + '</span>'
+          ? ' <span class="pill pill-rx">' + esc(r.router_name || 'router') + '</span>'
           : '') + '</td>' +
       '<td>' + outcomeCell(r.outcome) + '</td>' +
       '<td>' + detailCell(r.detail) + '</td>' +

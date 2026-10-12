@@ -336,7 +336,7 @@ mount((w) => {
   check('a row reads right', {
     escaped: html.includes('&lt;b&gt;pc1&lt;/b&gt;') && !html.includes('<b>pc1</b>'),
     txColoured: html.includes('conn-rate conn-tx'), rxColoured: html.includes('conn-rate conn-rx'),
-    statePill: html.includes('conn-st conn-st-ok'), service: html.includes('HTTPS'),
+    statePill: html.includes('pill pill-ok">established<'), service: html.includes('HTTPS'),
     lan: html.includes('>LAN<'), noRate: html.includes('>-<'),
     status: w.doc.nodes.connListStatus.textContent,
   }, { escaped: true, txColoured: true, rxColoured: true, statePill: true, service: true, lan: true,

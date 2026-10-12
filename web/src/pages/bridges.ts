@@ -6,7 +6,7 @@
 // re-render, with no second data path to keep in step and no request behind a
 // tab.
 
-import { esc, el, resRow, debounce, renderSortHeader, sortMul, fmtMbps,
+import { esc, el, resRow, debounce, renderSortHeader, sortMul, fmtMbps, pill,
          type SortCol, type SortState } from '../dom';
 import type { Socket } from '../socket';
 import { mountAdds, mountRows } from '../resource';
@@ -40,7 +40,7 @@ const COLS_H: SortCol[] = [
 ];
 
 function onOff(v: boolean, label: string): string {
-  return v ? '<span class="wl-band wl-band-6">' + label + '</span>'
+  return v ? pill(label, 'ok')
     : '<span style="color:var(--text-muted)">off</span>';
 }
 
@@ -96,8 +96,8 @@ export function initBridgesPage(socket: Socket, isVisible: (page: string) => boo
     }
     tbody!.innerHTML = bridges.length ? bridges.map((b) =>
       '<tr' + (b.disabled ? ' style="opacity:.55"' : '') + resRow(b.id, b.name) + '>' +
-      '<td>' + esc(b.name) + (b.running ? '' : ' <span class="wl-band wl-band-24">down</span>') + '</td>' +
-      '<td>' + (b.protocolMode ? '<span class="wl-band wl-band-5">' + esc(b.protocolMode) + '</span>'
+      '<td>' + esc(b.name) + (b.running ? '' : ' ' + pill('down', 'err')) + '</td>' +
+      '<td>' + (b.protocolMode ? pill(b.protocolMode, 'rx')
         : '<span style="color:var(--text-muted)">-</span>') + '</td>' +
       '<td>' + onOff(b.vlanFiltering, 'on') + '</td>' +
       '<td>' + onOff(b.igmpSnooping, 'on') + '</td>' +
@@ -121,13 +121,13 @@ export function initBridgesPage(socket: Socket, isVisible: (page: string) => boo
     const pTable = el('bridgesPortTable');
     if (pTable) {
       pTable.innerHTML = ports.length ? ports.map((p) => {
-        const state = p.disabled ? '<span class="wl-band wl-band-24">disabled</span>'
+        const state = p.disabled ? pill('disabled', 'warn')
           : p.inactive ? '<span style="color:var(--text-muted)">inactive</span>'
-          : '<span class="wl-band wl-band-6">active</span>';
+          : pill('active', 'ok');
         return '<tr' + resRow(p.id, p.interface) + '>' +
-          '<td>' + esc(p.interface) + (p.dynamic ? ' <span class="wl-band wl-band-6">dyn</span>' : '') + '</td>' +
+          '<td>' + esc(p.interface) + (p.dynamic ? ' ' + pill('dyn', 'rx') : '') + '</td>' +
           '<td>' + esc(p.bridge) + '</td>' +
-          '<td>' + (p.pvid === null ? '-' : '<span class="wl-band wl-band-24">' + p.pvid + '</span>') + '</td>' +
+          '<td>' + (p.pvid === null ? '-' : pill(String(p.pvid), 'alt')) + '</td>' +
           // A bridge with protocol-mode=none reports no role at all, which is
           // not the same as a port whose role is unknown.
           '<td>' + (p.role ? esc(p.role) : '<span style="color:var(--text-muted)">no STP</span>') + '</td>' +
@@ -167,14 +167,14 @@ export function initBridgesPage(socket: Socket, isVisible: (page: string) => boo
     if (hTable) {
       hTable.innerHTML = hosts.length ? hosts.map((h) => {
         const type = h.local ? '<span style="color:var(--text-muted)">local</span>'
-          : h.external ? '<span class="wl-band wl-band-24">external</span>'
-          : h.dynamic ? '<span class="wl-band wl-band-6">learned</span>'
-          : '<span class="wl-band wl-band-5">static</span>';
+          : h.external ? pill('external', 'alt')
+          : h.dynamic ? pill('learned', 'rx')
+          : pill('static', 'muted');
         return '<tr>' +
           '<td class="mono">' + esc(h.mac) + '</td>' +
           '<td>' + esc(h.onInterface) + '</td>' +
           '<td>' + esc(h.bridge) + '</td>' +
-          '<td>' + (h.vid === null ? '-' : '<span class="wl-band wl-band-24">' + h.vid + '</span>') + '</td>' +
+          '<td>' + (h.vid === null ? '-' : pill(String(h.vid), 'alt')) + '</td>' +
           '<td>' + type + '</td>' +
           '</tr>';
       }).join('') : '<tr><td colspan="5" class="empty-state">' +

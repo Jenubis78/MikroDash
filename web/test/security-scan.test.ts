@@ -134,7 +134,7 @@ assert.ok(/may not/.test(String(n.secScanStatus.textContent)), 'a denied scan do
 const c = mod.cards;
 assert.ok(/Firmware behind/.test(c.coverageCard(report)), 'coverage does not list what could not be answered');
 assert.ok(/class="sec-bad">enabled/.test(c.accountsCard(report)), 'an enabled admin is not marked');
-assert.ok(/hs-stale sec-svc/.test(c.surfaceCard(report)), 'a plaintext service is not a red pill');
+assert.ok(/pill-err sec-svc/.test(c.surfaceCard(report)), 'a plaintext service is not a red pill');
 assert.strictEqual(c.sortValue(report.findings[1], 'severity'), 0, 'critical does not sort first');
 assert.strictEqual(c.openLink(report.findings[2]), '', 'a finding with no page got a link');
 

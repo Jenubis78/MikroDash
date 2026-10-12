@@ -21,8 +21,8 @@
 // the traffic chart's picker and the sidebar badge are chrome on every page.
 // See internal/collect/ifstatus.go and live issue #108.
 
-import { esc, el, fmtMbps, fmtBytes, sparkPoints } from '../dom';
-import { paletteCss, type PaletteToken } from '../palette';
+import { esc, el, fmtMbps, fmtBytes, sparkPoints, pill } from '../dom';
+import { paletteCss, TONE_TOKEN, type PillTone } from '../palette';
 import { mountRows } from '../resource';
 import type { Socket } from '../socket';
 import { portSvg } from './port-svg';
@@ -36,29 +36,27 @@ const IFACE_SPARK_LEN = 30;
 const IP_PLACEHOLDER = '\u00a0';
 const IFACE_SIZE_KEY = 'mikrodash_iface_size';
 
-// Colours for type badges, as palette tokens and alphas - cycles for types
-// beyond the named set.
-type Tone = [PaletteToken, number];
-const IF_TYPE_COLOURS: Record<string, Tone> = {
-  ether: ['--accent-rx', 0.9],
-  wlan: ['--accent-alt', 0.9],
+// The tone of each type's pill, which the Types card's counts share - cycles
+// for types beyond the named set.
+const IF_TYPE_TONES: Record<string, PillTone> = {
+  ether: 'rx',
+  wlan: 'alt',
   // RouterOS reports the newer drivers as 'wifi' and 'wg', not 'wlan' and
   // 'wireguard'. Without these two, the most common types on current hardware
   // fell through to the rotating fallback palette.
-  wifi: ['--accent-alt', 0.9],
-  bridge: ['--accent-tx', 0.9],
-  vlan: ['--accent-warn', 0.9],
-  wireguard: ['--accent-tx', 0.9],
-  wg: ['--accent-tx', 0.9],
-  'pppoe-client': ['--accent-err', 0.9],
-  lte: ['--accent-warn', 0.9],
-  loopback: ['--border', 0.6],
+  wifi: 'alt',
+  bridge: 'tx',
+  vlan: 'warn',
+  wireguard: 'tx',
+  wg: 'tx',
+  'pppoe-client': 'err',
+  lte: 'warn',
+  loopback: 'muted',
 };
-const IF_TYPE_FALLBACKS: Tone[] = [['--accent-rx', 0.7], ['--accent-alt', 0.7], ['--accent-tx', 0.7],
-  ['--accent-warn', 0.7], ['--accent-err', 0.7], ['--accent-warn', 0.7]];
+const IF_TYPE_FALLBACKS: PillTone[] = ['rx', 'alt', 'tx', 'warn', 'err', 'warn'];
 
 /**
- * A stable colour for a type name.
+ * A stable tone for a type name.
  *
  * The Types card assigns fallbacks BY POSITION within a single render, which is
  * fine for a legend but would make a list-view pill change colour whenever an
@@ -66,19 +64,16 @@ const IF_TYPE_FALLBACKS: Tone[] = [['--accent-rx', 0.7], ['--accent-alt', 0.7], 
  * across every render. `>>> 0` is carried over verbatim - it coerces to unsigned
  * 32-bit, which is what keeps the index positive.
  */
-function ifTypeColour(t: string): Tone {
-  if (IF_TYPE_COLOURS[t]) return IF_TYPE_COLOURS[t]!;
+function ifTypeTone(t: string): PillTone {
+  if (IF_TYPE_TONES[t]) return IF_TYPE_TONES[t]!;
   let h = 0;
   for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
   return IF_TYPE_FALLBACKS[h % IF_TYPE_FALLBACKS.length]!;
 }
 
-// The pill background is the same token at low alpha.
 function ifTypePill(t: string): string {
   if (!t) return '<span class="ifl-na">-</span>';
-  const [tok, alpha] = ifTypeColour(t);
-  return '<span class="ifl-type-pill" style="color:' + paletteCss(tok, alpha) + ';background:' +
-    paletteCss(tok, 0.14) + '">' + esc(t) + '</span>';
+  return pill(t, ifTypeTone(t));
 }
 
 function ifaceSparkSvg(history: number[]): string {
@@ -117,7 +112,7 @@ function iflCounter(v: number | null, delta: number | null): string {
   const cls = v > 0 ? 'ifl-bad' : 'ifl-zero';
   let body = '<span class="' + cls + '">' + v.toLocaleString() + '</span>';
   if (delta !== null && delta > 0) {
-    body += '<span class="ifl-delta" title="' + delta.toLocaleString() +
+    body += '<span class="pill pill-err" style="margin-left:.3rem" title="' + delta.toLocaleString() +
             ' since the last poll">+' + delta.toLocaleString() + '</span>';
   }
   return body;
@@ -383,8 +378,8 @@ export function initInterfacesPage(socket: Socket, isVisible: (page: string) => 
     }
     let fallbackIdx = 0;
     panel.innerHTML = order.map((t) => {
-      const [tok, alpha] = IF_TYPE_COLOURS[t] || IF_TYPE_FALLBACKS[fallbackIdx++ % IF_TYPE_FALLBACKS.length]!;
-      const col = paletteCss(tok, alpha);
+      const tone = IF_TYPE_TONES[t] || IF_TYPE_FALLBACKS[fallbackIdx++ % IF_TYPE_FALLBACKS.length]!;
+      const col = paletteCss(TONE_TOKEN[tone], 0.9);
       return '<div class="if-type-item">' +
         '<span class="if-type-label" title="' + esc(t) + '">' + esc(t) + '</span>' +
         '<span class="if-type-count" style="color:' + col + '">' + counts[t] + '</span>' +

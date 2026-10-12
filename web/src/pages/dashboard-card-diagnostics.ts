@@ -44,7 +44,7 @@
 // in separate stores - so under `web/test/` it returns `''` and the card renders
 // nothing. `esc` is a string replace and needs no DOM.
 
-import { el, esc, renderSortHeader, sortRows } from '../dom';
+import { el, esc, pill, renderSortHeader, sortRows } from '../dom';
 import type { SortState } from '../dom';
 import type { Diagnostics, MenuRate, SourceLoad } from '../gen/payloads';
 
@@ -74,16 +74,16 @@ function row(label: string, value: string, active: boolean, title?: string): str
  * A new feature therefore gets a colour without this file learning its name.
  */
 function sourcePill(src: string): string {
-  const cls = src === 'Collectors' ? 'hs-info'
-    : src === 'Other' || src === 'Devices' ? 'hs-never' : 'hs-warn';
-  return '<span class="vpn-hs-badge ' + cls + '">' + esc(src) + '</span>';
+  const tone = src === 'Collectors' ? 'rx'
+    : src === 'Other' || src === 'Devices' ? 'muted' : 'warn';
+  return pill(src, tone);
 }
 
 /** How a subscribed menu is delivered, as a pill: pushed green, polled blue. */
 function deliveryPill(streamed: boolean): string {
   return streamed
-    ? '<span class="vpn-hs-badge hs-ok">pushed</span>'
-    : '<span class="vpn-hs-badge hs-info">polled</span>';
+    ? pill('pushed', 'ok')
+    : pill('polled', 'rx');
 }
 
 /**

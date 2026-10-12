@@ -134,16 +134,17 @@ func TestBothGeoDatabasesAreCreditedInTheNotices(t *testing.T) {
 
 // ── THE SERVICE CATEGORY LEDGER ────────────────────────────────────────────
 //
-// A category is named in three places: `internal/asn/categories.go` produces
-// it, `app.css` colours `.svc-<cat>`, and `CAT_COLOUR` in the Sankey repeats
-// the palette so a service reads the same colour in the list and the diagram.
-// Three copies of one list, and nothing made them agree.
+// A category is named in two places: `internal/asn/categories.go` produces
+// it, and `SVC_TONE` in web/src/dom.ts gives it the pill tone that both the
+// service pill and the Connections diagram draw with. It was three copies
+// (an app.css rule per category and the diagram's own map as well) until the
+// pills became one pill; nothing made those agree either.
 //
 // Both directions matter, and each has already gone wrong once:
 //
-//	a category with no colour   renders an unstyled word on the badge
-//	a colour with no category   is dead paint - `.svc-dns` sat in app.css and
-//	                            in CAT_COLOUR for months while no organisation
+//	a category with no tone     renders as the grey fallback on the pill
+//	a tone with no category     is dead paint - `.svc-dns` sat in app.css and
+//	                            in the diagram's map for months while no organisation
 //	                            could ever carry that class, because the org
 //	                            table it was written for never had a resolver
 //	                            in it
@@ -170,32 +171,27 @@ func TestEveryServiceCategoryHasAColourAndEveryColourHasACategory(t *testing.T) 
 		t.Fatalf("read %d categories from internal/asn/categories.go; the parse broke", len(cats))
 	}
 
-	css := read("web/public/app.css")
-	sankey := read("web/src/pages/connections-sankey.ts")
-
+	dom := read("web/src/dom.ts")
+	block := reSvcToneBlock.FindStringSubmatch(dom)
+	if block == nil {
+		t.Fatalf("web/src/dom.ts no longer declares SVC_TONE; the parse broke")
+	}
+	toned := map[string]bool{}
+	for _, m := range reSvcTone.FindAllStringSubmatch(block[1], -1) {
+		toned[m[1]] = true
+	}
 	for cat := range cats {
-		if !strings.Contains(css, ".svc-"+cat) {
-			t.Errorf("internal/asn can return the category %q, which app.css has no "+
-				".svc-%s rule for; the badge renders as an unstyled word", cat, cat)
-		}
-		if !strings.Contains(sankey, "\n  "+cat+":") {
-			t.Errorf("internal/asn can return the category %q, which CAT_COLOUR in "+
-				"connections-sankey.ts has no entry for; that node falls back to grey "+
-				"while its badge is coloured", cat)
+		if !toned[cat] {
+			t.Errorf("internal/asn can return the category %q, which SVC_TONE in "+
+				"web/src/dom.ts has no tone for; its pill and its diagram node fall back to grey", cat)
 		}
 	}
 
-	// AND THE OTHER WAY. A colour nothing can produce is dead paint.
-	for _, m := range reSankeyCategory.FindAllStringSubmatch(sankey, -1) {
-		if !cats[m[1]] {
-			t.Errorf("CAT_COLOUR colours %q, which no autonomous system in "+
-				"internal/asn/categories.go is given; it is unreachable", m[1])
-		}
-	}
-	for _, m := range reCSSCategory.FindAllStringSubmatch(css, -1) {
-		if !cats[m[1]] {
-			t.Errorf("app.css styles .svc-%s, which no autonomous system in "+
-				"internal/asn/categories.go is given; it is unreachable", m[1])
+	// AND THE OTHER WAY. A tone nothing can produce is dead paint.
+	for cat := range toned {
+		if !cats[cat] {
+			t.Errorf("SVC_TONE gives %q a tone, which no autonomous system in "+
+				"internal/asn/categories.go is given; it is unreachable", cat)
 		}
 	}
 }
@@ -203,9 +199,8 @@ func TestEveryServiceCategoryHasAColourAndEveryColourHasACategory(t *testing.T) 
 var (
 	// `13335:  "cdn", // Cloudflare`
 	reCategory = regexp.MustCompile(`(?m)^\s*\d+:\s*"([a-z]+)"`)
-	// `  cdn: '#38bdf8',` inside CAT_COLOUR
-	reSankeyCategory = regexp.MustCompile(`(?m)^  ([a-z]+): '#[0-9a-fA-F]{6}',`)
-	// `.svc-cdn      {background:…}` - the dark-theme rules only; the
-	// light-theme overrides repeat the same names behind a selector prefix.
-	reCSSCategory = regexp.MustCompile(`(?m)^\s{4}\.svc-([a-z]+)\s`)
+	// `export const SVC_TONE: Record<string, PillTone> = { ... };`
+	reSvcToneBlock = regexp.MustCompile(`(?s)export const SVC_TONE[^=]*= \{(.*?)\};`)
+	// `cdn: 'rx',`
+	reSvcTone = regexp.MustCompile(`([a-z]+): '[a-z]+'`)
 )

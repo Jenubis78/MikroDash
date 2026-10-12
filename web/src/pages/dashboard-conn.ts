@@ -178,14 +178,14 @@ export function flushConnUpdate(): void {
           }
           return '<div class="top-row">' +
             '<div style="flex:1;min-width:0;overflow:hidden">' +
-              '<div style="display:flex;align-items:center;gap:0;overflow:hidden">' +
+              '<div style="display:flex;align-items:center;gap:.35rem;overflow:hidden">' +
                 '<span class="top-name text-truncate has-ip-tip" data-ip="' + esc(d.key) +
                   '" data-org="' + (d.org ? esc(d.org) : '') +
                   '" data-cat="' + esc(d.cat || '') + '">' + esc(d.key) + '</span>' +
                 (d.org ? svcBadge(d.org, d.cat || null) : '') +
               '</div>' +
             '</div>' +
-            (geoLabel ? '<div class="top-geo">' + geoLabel + '</div>' : '') +
+            (geoLabel ? '<span class="pill pill-alt" style="flex-shrink:0;margin-right:.9rem">' + geoLabel + '</span>' : '') +
             '<div class="top-count">' + d.count + '</div>' +
           '</div>';
         }).join('');

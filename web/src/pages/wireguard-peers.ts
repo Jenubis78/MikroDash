@@ -31,7 +31,7 @@
 // peer count itself while it is shown, and `render` in area.ts takes the badge
 // back on the way to a table tab.
 
-import { copyText, el, esc, fmtBytes, renderSortHeader, resRow, sortRows } from '../dom';
+import { copyText, el, esc, fmtBytes, pill, renderSortHeader, resRow, sortRows } from '../dom';
 import type { SortState } from '../dom';
 import type { Socket } from '../socket';
 import type { Tunnel } from '../gen/payloads';
@@ -73,11 +73,11 @@ function hsToSecs(s: string): number {
  */
 function hsBadge(handshake: string, state: string): string {
   if (state === 'never' || !handshake || handshake === 'never') {
-    return '<span class="vpn-hs-badge hs-never">Never connected</span>';
+    return pill('Never connected', 'muted');
   }
   const secs = hsToSecs(handshake);
-  const cls = secs < 180 ? 'hs-ok' : secs < 600 ? 'hs-warn' : 'hs-stale';
-  return '<span class="vpn-hs-badge ' + cls + '">● ' + esc(handshake) + '</span>';
+  const tone = secs < 180 ? 'ok' : secs < 600 ? 'warn' : 'err';
+  return '<span class="pill pill-dot pill-' + tone + '">' + esc(handshake) + '</span>';
 }
 
 /**
@@ -226,10 +226,10 @@ export function initWireguardPeers(socket: Socket): void {
       const config = '<button class="sbtn sbtn-outline is-sm" data-wg-config="' + esc(t.publicKey) +
         '" title="Show this peer\'s client configuration and QR code">Config</button>';
       const flags =
-        (t.disabled ? '<span class="vpn-hs-badge hs-warn">disabled</span> ' : '') +
-        (t.responder ? '<span class="vpn-hs-badge hs-info">responder</span> ' : '') +
+        (t.disabled ? pill('disabled', 'warn') + ' ' : '') +
+        (t.responder ? pill('responder', 'rx') + ' ' : '') +
         (clashing.has(t.publicKey)
-          ? '<span class="vpn-hs-badge hs-stale" title="Another peer on this interface claims the same allowed address. WireGuard routes by longest prefix, so only one of them will ever receive that traffic.">overlap</span>'
+          ? '<span class="pill pill-err" title="Another peer on this interface claims the same allowed address. WireGuard routes by longest prefix, so only one of them will ever receive that traffic.">overlap</span>'
           : '');
       return '<tr' + resRow(t.id, t.publicKey, 'wgPeer') + '>' +
         '<td style="font-weight:600">' + esc(t.name || '-') + '</td>' +

@@ -71,7 +71,7 @@ function leaseCell(w: WAN): string {
   if (!w.dhcp) return '<span class="muted-note">no DHCP client</span>';
   const d = w.dhcp;
   const ok = d.status === 'bound';
-  return '<div><span class="wl-band ' + (ok ? 'wl-band-6' : 'wl-band-24') + '">' + esc(d.status || '?') + '</span>' +
+  return '<div><span class="pill pill-' + (ok ? 'ok' : 'warn') + '">' + esc(d.status || '?') + '</span>' +
     (d.expiresAfter ? '<div class="muted-note">expires in ' + esc(d.expiresAfter) + '</div>' : '') +
     (d.invalid ? '<div class="muted-note" style="color:rgb(from var(--accent-err) r g b / .9)">invalid</div>' : '') + '</div>';
 }
@@ -215,7 +215,7 @@ export function initWanPage(socket: Socket, isVisible: (page: string) => boolean
       return '<tr' + (w.running === false ? ' style="opacity:.62"' : '') + '>' +
         '<td>' + esc(w.name) +
         (w.manual
-          ? '<span class="badge bg-orange-lt" style="margin-left:.35rem;font-size:.6rem"' +
+          ? '<span class="pill pill-warn" style="margin-left:.35rem"' +
             ' title="You declared this an uplink. RouterOS ' +
             (w.state === 'internet' ? 'agrees.' : 'does NOT report it as an internet link.') +
             '">declared</span>' : '') +
@@ -228,8 +228,8 @@ export function initWanPage(socket: Socket, isVisible: (page: string) => boolean
         '<td>' + (w.gateway ? esc(w.gateway) : mutedDash()) + '</td>' +
         '<td>' + (w.hasDefaultRoute
           ? (w.routeActive
-            ? '<span class="wl-band wl-band-6">active</span>'
-            : '<span class="wl-band wl-band-24">standby</span>') +
+            ? '<span class="pill pill-ok">active</span>'
+            : '<span class="pill pill-alt">standby</span>') +
           '<div class="muted-note">distance ' + esc(w.routeDistance || '?') + '</div>'
           : mutedDash('No default route via this uplink')) + '</td>' +
         '<td>' + leaseCell(w) + '</td>' +

@@ -56,17 +56,17 @@ export function renderWanStatus(s: WanStatus): void {
   // and this side may render before that markup is injected, which the live app
   // never does.
   if (!badge) return;
-  badge.className = 'wan-badge';
+  badge.className = 'pill pill-dot';
   // `|| '?'` on the NAME only: a status with no interface still says up or down,
   // because which interface it is matters less than whether the link works.
   if (s.disabled) {
-    badge.className += ' wan-disabled';
+    badge.className += ' pill-muted';
     badge.textContent = (s.ifName || '?') + ' · disabled';
   } else if (s.running) {
-    badge.className += ' wan-up';
+    badge.className += ' pill-ok';
     badge.textContent = (s.ifName || '?') + ' · up';
   } else {
-    badge.className += ' wan-down';
+    badge.className += ' pill-err';
     badge.textContent = (s.ifName || '?') + ' · down';
   }
 }

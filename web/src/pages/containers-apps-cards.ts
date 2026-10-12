@@ -15,7 +15,8 @@
 // MikroDash self-hosts its assets, so a tile is the app's initials on a gradient
 // picked from its category: the same app always looks the same.
 
-import { esc, fmtBytes } from '../dom';
+import { esc, fmtBytes, pill } from '../dom';
+import type { PillTone } from '../palette';
 import type { AppRow } from '../gen/payloads';
 
 /** A web address to link to, or '' when the value is not one. */
@@ -60,13 +61,13 @@ export function categoryLabel(c: string): string {
 const STATE_WORD: Record<string, string> = {
   available: 'Available', installing: 'Installing', running: 'Running', stopped: 'Stopped', error: 'Error',
 };
-const STATE_KIND: Record<string, string> = {
-  available: 'hs-never', installing: 'hs-info', running: 'hs-ok', stopped: 'hs-warn', error: 'hs-stale',
+const STATE_TONE: Record<string, PillTone> = {
+  available: 'muted', installing: 'rx', running: 'ok', stopped: 'warn', error: 'err',
 };
 
 /** The state pill: by kind, as every pill on the page is. */
 export function statePill(state: string): string {
-  return '<span class="vpn-hs-badge ' + (STATE_KIND[state] || 'hs-never') + '">' + esc(STATE_WORD[state] || state) + '</span>';
+  return pill(STATE_WORD[state] || state, STATE_TONE[state] || 'muted');
 }
 
 /** The ports a user can reach, from firewall-redirects ("8123:8123:tcp:web,…"):
@@ -131,9 +132,9 @@ export function appCard(a: AppRow, may: boolean, pending: Pending | undefined): 
     statePill(state) + '</div></div></div>' +
     '<p class="apps-card-desc">' + esc(a.description || 'No description.') + '</p>' +
     '<div class="apps-card-meta">' +
-    (a.defaultNetwork ? '<span class="apps-meta">' + esc(a.defaultNetwork === 'lan' ? 'On the LAN' : 'Behind NAT') + '</span>' : '') +
-    ps.slice(0, 3).map((p) => '<span class="apps-meta is-mono">' + esc(p) + '</span>').join('') +
-    (ps.length > 3 ? '<span class="apps-meta">+' + (ps.length - 3) + '</span>' : '') + '</div>' +
+    (a.defaultNetwork ? pill(a.defaultNetwork === 'lan' ? 'On the LAN' : 'Behind NAT', 'muted') : '') +
+    ps.slice(0, 3).map((p) => pill(p, 'muted')).join('') +
+    (ps.length > 3 ? pill('+' + (ps.length - 3), 'muted') : '') + '</div>' +
     (state === 'installing' ? '<div class="apps-shimmer"></div>' : '') +
     (pending?.error ? '<div class="apps-card-error">' + esc(pending.error) + '</div>' : '') +
     (cred && (a.state === 'running' || a.state === 'stopped')

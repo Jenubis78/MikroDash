@@ -3,6 +3,7 @@
 // socket, a fetch or a page.
 
 import { esc } from '../dom';
+import type { PillTone } from '../palette';
 import { tokenizeRouterOS } from '../markdown';
 
 /** One template as the Library shows it: canned or stored, one shape. */
@@ -70,18 +71,18 @@ export function highlight(src: string): string {
 }
 
 function kindPill(t: LibTemplate): string {
-  if (t.canned) return '<span class="vpn-hs-badge cfg-pill-canned">Canned</span>';
-  if (t.kind === 'full-export') return '<span class="vpn-hs-badge cfg-pill-full">Full export</span>';
-  if (t.kind === 'full-binary') return '<span class="vpn-hs-badge cfg-pill-full">Binary clone</span>';
-  return '<span class="vpn-hs-badge cfg-pill-custom">Custom</span>';
+  if (t.canned) return '<span class="pill pill-rx">Canned</span>';
+  if (t.kind === 'full-export') return '<span class="pill pill-alt">Full export</span>';
+  if (t.kind === 'full-binary') return '<span class="pill pill-alt">Binary clone</span>';
+  return '<span class="pill pill-pink">Custom</span>';
 }
 
 /** One Library card. */
 export function templateCard(t: LibTemplate): string {
-  const scope = t.scope.slice(0, 3).map((m) => '<span class="cfg-chip">' + esc(m) + '</span>').join('') +
-    (t.scope.length > 3 ? '<span class="cfg-chip cfg-chip-more">+' + (t.scope.length - 3) + '</span>' : '');
+  const scope = t.scope.slice(0, 3).map((m) => '<span class="pill pill-muted">' + esc(m) + '</span>').join('') +
+    (t.scope.length > 3 ? '<span class="pill pill-muted">+' + (t.scope.length - 3) + '</span>' : '');
   const lock = t.lockClass
-    ? '<span class="vpn-hs-badge cfg-pill-lock" title="Deploying it arms an automatic revert: if MikroDash cannot ' +
+    ? '<span class="pill pill-warn" title="Deploying it arms an automatic revert: if MikroDash cannot ' +
       'log back in, the router puts itself back.">May cut MikroDash off · auto-revert</span>'
     : '';
   const vars = t.variables
@@ -113,7 +114,7 @@ export function generatorCard(): string {
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/>' +
     '<path d="M18 14v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 19V7.5A1.5 1.5 0 0 1 5.5 6H10"/></svg></span>' +
     '<div class="cfg-tpl-titles"><h4 class="cfg-tpl-name">MikroTik config generator</h4>' +
-    '<div class="cfg-tpl-pills"><span class="vpn-hs-badge cfg-pill-external">External site</span></div></div></header>' +
+    '<div class="cfg-tpl-pills"><span class="pill pill-pink">External site</span></div></div></header>' +
     '<p class="cfg-tpl-desc">Describe a setup in plain words and get a RouterOS configuration to start from. ' +
     'It opens in a new tab and needs internet access. MikroDash has not reviewed it: paste what it gives you ' +
     'into a new template, and the editor checks every line before anything reaches a router.</p>' +
@@ -161,10 +162,11 @@ export interface TemplateDetail {
 }
 
 const LEVEL_LABEL: Record<string, string> = { refuse: 'Refused', ack: 'Needs your OK', warn: 'Note' };
+const LEVEL_TONE: Record<string, PillTone> = { refuse: 'err', ack: 'warn', warn: 'rx' };
 
 /** One finding: its level as a pill, its line, and what it means. */
 export function findingRow(f: TemplateDetail['findings'][number]): string {
-  return '<li class="cfg-finding cfg-lvl-' + esc(f.level) + '"><span class="vpn-hs-badge cfg-pill-' + esc(f.level) + '">' +
+  return '<li class="cfg-finding cfg-lvl-' + esc(f.level) + '"><span class="pill pill-' + (LEVEL_TONE[f.level] ?? 'muted') + '">' +
     esc(LEVEL_LABEL[f.level] ?? f.level) + '</span>' + (f.line ? '<span class="cfg-meta">line ' + f.line + '</span>' : '') +
     '<span class="cfg-finding-msg">' + esc(f.message) + '</span></li>';
 }

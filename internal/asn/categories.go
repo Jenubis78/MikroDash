@@ -61,7 +61,7 @@ var categories = map[uint]string{
 	// video
 	30103: "video", // Zoom
 	// dns — the public resolvers a router talks to constantly, and the reason
-	// the `svc-dns` colour in app.css is reachable rather than dead.
+	// the dns tone in SVC_TONE (web/src/dom.ts) is reachable rather than dead.
 	19281:  "dns", // Quad9
 	36692:  "dns", // Cisco OpenDNS
 	34939:  "dns", // NextDNS

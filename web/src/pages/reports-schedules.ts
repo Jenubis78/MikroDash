@@ -166,7 +166,7 @@ export function renderSchedules(): void {
       ? '<div class="bw-mac">' + esc(r.disabledReason) + '</div>' : '';
     return '<tr>' +
       '<td>' + esc(r.name) +
-      (r.enabled ? '' : ' <span class="bw-proto bw-proto-other">off</span>') + why + '</td>' +
+      (r.enabled ? '' : ' <span class="pill pill-muted">off</span>') + why + '</td>' +
       '<td>' + esc(r.frequency) + ' at ' + String(r.sendHour).padStart(2, '0') + ':00</td>' +
       '<td>' + esc(r.sections.join(', ')) +
       (r.iface ? '<div class="bw-mac">' + esc(r.iface) + '</div>' : '') + '</td>' +

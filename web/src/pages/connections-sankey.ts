@@ -13,25 +13,15 @@
 // than quoting a count.
 
 import type { ConnDestEntry, ConnSource } from '../gen/payloads';
-import { paletteCss, type PaletteToken } from '../palette';
+import { paletteCss, TONE_TOKEN, type PaletteToken } from '../palette';
+import { SVC_TONE } from '../dom';
 
 const NS = 'http://www.w3.org/2000/svg';
 
-/** Category colours, matching the svc-badge palette so a service reads the same
- *  colour in the list and in the diagram. Palette tokens, resolved where drawn. */
-const CAT_COLOUR: Record<string, PaletteToken> = {
-  cdn: '--accent-rx',
-  cloud: '--accent-warn',
-  social: '--accent-alt',
-  streaming: '--accent-pink',
-  messaging: '--accent-tx',
-  video: '--accent-warn',
-  dns: '--accent-tx',
-  other: '--border',
-};
-
+/** A destination's colour is its service category's pill tone (SVC_TONE), so a
+ *  service reads the same colour in the list and in the diagram. */
 function catColour(cat: string | null | undefined): string {
-  return paletteCss(CAT_COLOUR[cat || 'other'] || '--border');
+  return paletteCss(TONE_TOKEN[SVC_TONE[cat || 'other'] || 'muted']);
 }
 
 /** Source nodes cycle a palette: they are hosts, with no category to colour by.

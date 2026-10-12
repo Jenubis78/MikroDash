@@ -6,7 +6,7 @@
 // re-render, or sorting or typing in the search box would forge samples the
 // router never sent.
 
-import { esc, el, resRow, debounce, renderSortHeader, sortMul, fmtMbps, type SortCol, type SortState, sparkPoints } from '../dom';
+import { esc, el, resRow, debounce, renderSortHeader, sortMul, fmtMbps, pill, type SortCol, type SortState, sparkPoints } from '../dom';
 import type { Socket } from '../socket';
 import { mountAdds, mountRows } from '../resource';
 import type { Vlan, VlansPayload } from '../gen/payloads';
@@ -37,7 +37,7 @@ function sortVal(v: Vlan, key: string): string | number {
 
 function ports(list: string[]): string {
   if (!list.length) return '<span style="color:var(--text-muted)">-</span>';
-  return list.map((n) => '<span class="wl-band wl-band-5">' + esc(n) + '</span>').join(' ');
+  return list.map((n) => pill(n, 'rx')).join(' ');
 }
 
 // Stroked with currentColor and coloured by class, so the line cannot drift
@@ -140,7 +140,7 @@ export function initVlansPage(socket: Socket, isVisible: (page: string) => boole
       // pvid, with no /interface/vlan row - has nothing to edit, so it gets no
       // data-id and is simply not clickable.
       return '<tr' + resRow(i0 ? i0.id : '', i0 ? i0.name : null) + '>' +
-        '<td><span class="wl-band wl-band-24">' + v.vlanId + '</span></td>' +
+        '<td>' + pill(String(v.vlanId), 'alt') + '</td>' +
         '<td>' + (v.name ? esc(v.name) : '<span style="color:var(--text-muted)">no L3 interface</span>') + '</td>' +
         '<td>' + esc(i0 ? i0.parent : '') + '</td>' +
         '<td>' + (i0 && i0.mtu ? i0.mtu : '-') + '</td>' +
@@ -171,11 +171,11 @@ export function initVlansPage(socket: Socket, isVisible: (page: string) => boole
       // harder to read for no added information.
       '<tr>' +
       '<td>' + esc(r.bridge) + '</td>' +
-      '<td><span class="wl-band wl-band-24">' + esc(r.raw) + '</span></td>' +
+      '<td>' + pill(r.raw, 'alt') + '</td>' +
       '<td>' + ports(r.tagged) + '</td>' +
       '<td>' + ports(r.untagged) + '</td>' +
-      '<td>' + (r.dynamic ? '<span class="wl-band wl-band-6">dynamic</span>'
-        : '<span class="wl-band wl-band-5">static</span>') + '</td>' +
+      '<td>' + (r.dynamic ? pill('dynamic', 'rx')
+        : pill('static', 'muted')) + '</td>' +
       '</tr>').join('') : '<tr><td colspan="5" class="empty-state">No bridge VLAN entries.</td></tr>';
   }
 

@@ -119,7 +119,7 @@ function card(c: ChannelView): string {
     + '<strong>' + esc(c.name) + '</strong>'
     + '<span class="apps-card-sub">' + esc(where) + ' &middot; ' + esc(c.kind) + '</span>'
     + '</div>'
-    + '<span class="vpn-hs-badge ' + (c.enabled ? 'hs-ok' : 'hs-stale') + '">'
+    + '<span class="pill pill-' + (c.enabled ? 'ok' : 'err') + '">'
     + (c.enabled ? 'ON' : 'OFF') + '</span></div>'
     + '<div class="apps-card-desc">' + dest + '</div>'
     + '<div class="apps-card-meta">' + esc(evs) + ' &middot; ' + esc(scope) + '</div>'

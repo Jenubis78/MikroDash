@@ -86,7 +86,7 @@ export function previewCard(label: string, p: RouterPreview, acked: Set<string>)
     const fields = p.fields ? Object.entries(p.fields).map(([k, v]) => '<li><span class="cfg-var">{{' + esc(k) + '}}</span> ' +
       esc(v) + '</li>').join('') : '';
     return '<div class="cfg-prev is-bad"><div class="cfg-prev-head"><strong>' + esc(label) + '</strong>' +
-      '<span class="vpn-hs-badge cfg-pill-refuse">Cannot deploy</span></div><div class="cfg-prev-msg">' + esc(p.error) +
+      '<span class="pill pill-err">Cannot deploy</span></div><div class="cfg-prev-msg">' + esc(p.error) +
       '</div>' + (fields ? '<ul class="cfg-prev-fields">' + fields + '</ul>' : '') + '</div>';
   }
   const findings = p.findings ?? [];
@@ -101,8 +101,8 @@ export function previewCard(label: string, p: RouterPreview, acked: Set<string>)
   const t = p.target;
   return '<div class="cfg-prev' + (refused ? ' is-bad' : '') + '"><div class="cfg-prev-head"><strong>' + esc(label) + '</strong>' +
     (t ? '<span class="cfg-meta">' + esc(t.board) + ' · RouterOS ' + esc(t.osVersion) + '</span>' : '') +
-    (p.lockClass ? '<span class="vpn-hs-badge cfg-pill-lock">Auto-revert armed</span>' : '') +
-    (refused ? '<span class="vpn-hs-badge cfg-pill-refuse">Refused</span>' : '') + '</div>' +
+    (p.lockClass ? '<span class="pill pill-warn">Auto-revert armed</span>' : '') +
+    (refused ? '<span class="pill pill-err">Refused</span>' : '') + '</div>' +
     (findings.length ? '<ul class="cfg-findings">' + checks + '</ul>' : '<div class="cfg-meta">Nothing to flag.</div>') +
     '<details class="cfg-prev-text"><summary>What this router will receive</summary><pre class="cfg-code md-ros">' +
     highlight(p.rendered ?? '') + '</pre></details></div>';
@@ -147,7 +147,7 @@ export function deployTile(t: CfgDeployTarget): string {
   const detail = t.state === 'applying' ? STEP[t.step] ?? t.step
     : t.message || (t.state === 'applied' && t.reconnectMs ? 'Back in ' + (t.reconnectMs / 1000).toFixed(1) + ' s' : '');
   return '<div class="cfg-tile ' + k.cls + '"><div class="cfg-tile-ring"></div><div class="cfg-tile-body">' +
-    '<div class="cfg-tile-name">' + esc(t.label) + (t.canary ? '<span class="vpn-hs-badge cfg-pill-canary">Canary</span>' : '') +
+    '<div class="cfg-tile-name">' + esc(t.label) + (t.canary ? '<span class="pill pill-alt">Canary</span>' : '') +
     '</div><div class="cfg-tile-state">' + esc(k.word) + (t.reverted ? ' · reverted' : '') + '</div>' +
     (detail ? '<div class="cfg-tile-detail">' + esc(detail) + '</div>' : '') +
     (t.backupId ? '<div class="cfg-meta">Restore point #' + t.backupId + '</div>' : '') + '</div></div>';

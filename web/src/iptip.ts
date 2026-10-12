@@ -20,7 +20,7 @@
 // mouseleave handler's write authoritative, and reproducing it keeps a single
 // source of truth rather than adding a second one that can disagree.
 
-import { esc } from './dom';
+import { esc, SVC_TONE } from './dom';
 
 export function initIpTip(): void {
   const tip = document.createElement('div');
@@ -31,7 +31,7 @@ export function initIpTip(): void {
     const ip = target.dataset.ip || '', org = target.dataset.org || '', cat = target.dataset.cat || '';
     if (!ip) { tip.style.display = 'none'; return; }
     tip.innerHTML = esc(ip) + (org ? '<span class="ip-tip-org">' + esc(org) + '</span>' +
-      '<span class="ip-tip-cat svc-badge svc-' + (cat || 'other') + '">' + esc(cat) + '</span>' : '');
+      '<span class="ip-tip-cat pill pill-' + (SVC_TONE[cat || 'other'] || 'muted') + '">' + esc(cat) + '</span>' : '');
     tip.style.transform = 'translate(' + (e.clientX + 14) + 'px,' + (e.clientY - 32) + 'px)';
     tip.style.display = 'block';
   }

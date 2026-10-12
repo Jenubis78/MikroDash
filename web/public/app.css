@@ -168,7 +168,7 @@
     #pageTitleIcon svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
     #pageTitle{font-family:var(--font-ui);font-weight:600;font-size:.85rem;color:var(--text-muted);letter-spacing:.01em}
     .topbar-right{margin-left:auto;display:flex;align-items:center;gap:.65rem}
-    #uptimeChip{font-family:var(--font-mono);font-size:.67rem;color:var(--text-muted);background:rgb(from var(--border) r g b / .08);border:1px solid var(--border);border-radius:5px;padding:2px 8px;white-space:nowrap;display:none}
+    #uptimeChip{display:none}
     #routerTag{font-family:var(--font-mono);font-size:.68rem;color:var(--text-muted)}
     /* kbd hint */
     #kbdHint{position:fixed;bottom:.85rem;right:.85rem;z-index:400;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.55rem .8rem;font-family:var(--font-mono);font-size:.66rem;color:var(--text-muted);opacity:0;pointer-events:none;transition:opacity .25s}
@@ -230,12 +230,7 @@
     .conn-rate{font-family:var(--font-mono);font-weight:600}
     .conn-tx{color:var(--accent-tx)}
     .conn-rx{color:var(--accent-rx)}
-    .conn-svc{display:inline-block;padding:.1rem .45rem;border-radius:999px;font-size:.64rem;font-weight:600;font-family:var(--font-mono);color:var(--accent-alt);background:color-mix(in srgb,var(--accent-alt) 13%,transparent);border:1px solid color-mix(in srgb,var(--accent-alt) 30%,transparent)}
-    .conn-st{display:inline-block;padding:.1rem .45rem;border-radius:999px;font-size:.64rem;font-weight:600;font-family:var(--font-mono);border:1px solid transparent}
-    .conn-st-ok{color:var(--accent-ok);background:color-mix(in srgb,var(--accent-ok) 13%,transparent);border-color:color-mix(in srgb,var(--accent-ok) 30%,transparent)}
-    .conn-st-warn{color:var(--accent-warn);background:color-mix(in srgb,var(--accent-warn) 13%,transparent);border-color:color-mix(in srgb,var(--accent-warn) 30%,transparent)}
-    .conn-st-muted{color:var(--text-muted);background:color-mix(in srgb,var(--text-muted) 12%,transparent);border-color:color-mix(in srgb,var(--text-muted) 26%,transparent)}
-    .conn-st-other{color:var(--accent-rx);background:color-mix(in srgb,var(--accent-rx) 12%,transparent);border-color:color-mix(in srgb,var(--accent-rx) 28%,transparent)}
+
     .conn-pager{display:flex;align-items:center;gap:.4rem}
     .conn-pager-end{justify-content:flex-end;margin-top:.4rem}
 
@@ -255,11 +250,7 @@
     .bw-name{color:var(--text-main);font-weight:500;max-width:130px;overflow:hidden;text-overflow:ellipsis}
     .bw-ip{color:var(--text-muted);font-family:var(--font-mono);font-size:.7rem}
     .bw-mac{color:rgb(from var(--text-muted) r g b / .5);font-family:var(--font-mono);font-size:.65rem}
-    .bw-proto{display:inline-block;padding:.1rem .4rem;border-radius:3px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-family:var(--font-mono)}
-    .bw-proto-tcp{background:rgb(from var(--accent-rx) r g b / .12);color:var(--accent-rx);border:1px solid rgb(from var(--accent-rx) r g b / .2)}
-    .bw-proto-udp{background:rgb(from var(--accent-tx) r g b / .12);color:var(--accent-tx);border:1px solid rgb(from var(--accent-tx) r g b / .2)}
-    .bw-proto-icmp{background:rgb(from var(--accent-warn) r g b / .1);color:var(--accent-warn);border:1px solid rgb(from var(--accent-warn) r g b / .2)}
-    .bw-proto-other{background:rgb(from var(--text-muted) r g b / .1);color:var(--text-muted);border:1px solid var(--border)}
+
     .bw-flag{font-size:.85rem;margin-right:.2rem}
     .nav-items{display:flex;flex-direction:column}
     .sform-label{font-size:.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;display:block}
@@ -393,14 +384,7 @@
     .sbtn-danger:disabled:hover{background:rgb(from var(--accent-err) r g b / .12)}
     /* Selection column. Sized and coloured to match .stoggle rather than left as
        browser chrome, which is the reason the rest of this page was reworked. */
-    /* The row's database id. Mono and cyan rather than a Tabler bg-*-lt badge,
-       because the Result column two along already uses those and a second
-       badge in the same language would read as a second status. One colour for
-       every id on purpose: tinting them per-row would imply a grouping that
-       does not exist. */
-    .bk-id-pill{display:inline-block;font-family:var(--font-mono);font-size:.68rem;font-weight:600;
-      padding:.1rem .45rem;border-radius:4px;background:rgb(from var(--accent-rx) r g b / .13);
-      color:var(--accent-rx);border:1px solid rgb(from var(--accent-rx) r g b / .28);line-height:1.5;white-space:nowrap}
+    
     .bk-pick{vertical-align:middle}
     .bk-pick:disabled{opacity:.35;cursor:not-allowed}
     tr.bk-row-picked{background:rgb(from var(--accent-rx) r g b / .07)}
@@ -663,11 +647,7 @@
     .legend-rate{font-weight:600;font-size:.88rem}
     #liveRx{color:var(--accent-rx)} #liveTx{color:var(--accent-tx)}
     /* wan */
-    .wan-badge{font-family:var(--font-mono);font-size:.72rem;padding:.2em .6em;border-radius:4px;display:inline-flex;align-items:center;gap:.35rem;white-space:nowrap;flex-shrink:0}
-    .wan-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
-    .wan-up{background:rgb(from var(--accent-ok) r g b / .1);color:var(--accent-ok);border:1px solid rgb(from var(--accent-ok) r g b / .2)}
-    .wan-down{background:rgb(from var(--accent-err) r g b / .1);color:var(--accent-err);border:1px solid rgb(from var(--accent-err) r g b / .2)}
-    .wan-disabled{background:rgb(from var(--text-muted) r g b / .08);color:var(--text-muted);border:1px solid var(--border)}
+
     /* segmented arc gauges */
     .gauge-row{display:flex;gap:.5rem;align-items:flex-end;justify-content:space-between;max-height:70px;overflow:hidden;margin-bottom:.5rem}
     .gauge-arc-wrap{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;max-height:70px;overflow:hidden}
@@ -943,8 +923,7 @@
     .dv-foot-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.72rem;min-width:0}
     .dv-model{color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .dv-up{color:var(--text-muted);font-family:var(--font-mono)}
-    .dv-update{flex:0 0 auto;display:inline-flex;align-items:center;gap:.2rem;font-size:.64rem;font-weight:600;padding:.08rem .45rem;border-radius:20px;
-      color:var(--accent-alt);background:color-mix(in srgb,var(--accent-alt) 12%,transparent);border:1px solid color-mix(in srgb,var(--accent-alt) 32%,transparent)}
+    .dv-update{flex:0 0 auto}
     .dv-backup{flex:0 0 auto;display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem}
     .dv-backup-ok{color:var(--text-muted)} .dv-backup-ok svg{color:var(--dv-good)}
     .dv-backup-bad{color:var(--dv-bad);font-weight:600}
@@ -981,8 +960,7 @@
     .dvm-card[hidden]{display:none}
     .dvm-sec-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.65rem;flex-wrap:wrap}
     .dvm-sec-head h3{margin:0 auto 0 0;font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-muted)}
-    .dvm-pill{display:inline-flex;align-items:center;font-size:.66rem;padding:.08rem .5rem;border-radius:20px;color:var(--text-main);
-      background:color-mix(in srgb,var(--text-muted) 14%,transparent);border:1px solid var(--border)}
+    
     .dvm-mono{font-family:var(--font-mono)}
     .dvm-current{font-size:.64rem;color:var(--dv-good)}
     .dvm-details{margin:0;display:flex;flex-direction:column}
@@ -1154,9 +1132,7 @@
     .iface-list tr.down td{opacity:.6}
     .iface-list tr.disabled td{opacity:.38}
     .ifl-num{text-align:right;font-variant-numeric:tabular-nums}
-    /* Colour is carried inline, from the same palette the Interface Types card
-       uses, so a type reads the same in both places. */
-    .ifl-type-pill{display:inline-block;padding:.03rem .32rem;border-radius:3px;font-size:.6rem;font-weight:600;letter-spacing:.02em}
+    
     /* Scoped to `.iface-list td` on purpose. Tabler sets a colour on every cell
        via `.table>:not(caption)>*>*`, which outranks a bare class, so an
        unscoped `.ifl-rx` was being overridden and the rate columns rendered in
@@ -1173,10 +1149,7 @@
        an unsupported counter never reads as a clean bill of health. */
     .ifl-na{color:var(--text-muted);opacity:.4}
     .ifl-bad{color:var(--accent-err)}
-    /* Movement since the previous poll - the part that says a fault is live
-       rather than historical. */
-    .ifl-delta{margin-left:.3rem;font-size:.6rem;padding:0 .25rem;border-radius:3px;
-               background:rgb(from var(--accent-err) r g b / .16);color:var(--accent-err)}
+    
     /* ── Router modal & management ─────────────────────────────── */
     .rtr-modal-bg{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center}
     .rtr-modal-bg.open{display:flex}
@@ -1209,25 +1182,12 @@
     /* Router list table */
     .rtr-list{width:100%;border-collapse:collapse;font-size:.76rem}
     .rtr-list th{border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
-    .rtr-status-badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:.65rem;font-weight:600;border-radius:4px;padding:1px 6px;white-space:nowrap;transition:color .3s,background .3s,border-color .3s}
-    .rtr-status-badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0;transition:background .3s}
-    .rtr-status-badge--on{color:var(--accent-ok);background:rgb(from var(--accent-ok) r g b / .08);border:1px solid rgb(from var(--accent-ok) r g b / .2)}
-    .rtr-status-badge--on::before{background:var(--accent-ok)}
-    .rtr-status-badge--off{color:var(--accent-err);background:rgb(from var(--accent-err) r g b / .08);border:1px solid rgb(from var(--accent-err) r g b / .2)}
-    .rtr-status-badge--off::before{background:var(--accent-err)}
-    .rtr-status-badge--unknown{color:var(--text-muted);background:rgb(from var(--border) r g b / .07);border:1px solid var(--border)}
-    .rtr-status-badge--unknown::before{background:var(--text-muted);opacity:.4}
-    .rtr-status-badge--disabled{color:rgb(from var(--accent-warn) r g b / .9);background:rgb(from var(--accent-warn) r g b / .08);border:1px solid rgb(from var(--accent-warn) r g b / .2)}
-    .rtr-status-badge--disabled::before{display:none}
+
     .rtr-list td{border-bottom:1px solid rgb(from var(--border) r g b / .07);vertical-align:middle}
     .rtr-list tr:last-child td{border-bottom:none}
-    .rtr-active-badge{font-size:.6rem;font-family:var(--font-ui);padding:.1rem .45rem;border-radius:4px;background:rgb(from var(--accent-rx) r g b / .15);color:var(--accent-rx);border:1px solid rgb(from var(--accent-rx) r g b / .25);white-space:nowrap}
+    
     .rtr-host{font-family:var(--font-mono);font-size:.7rem;color:var(--text-muted)}
-    /* PRIMARY reads as the stronger statement of the two, so it is the filled
-       amber pill and Active stays the outlined blue one. They sit side by side
-       on the same row often - the primary device is usually the one you are
-       looking at - so they must not look like two of the same thing. */
-    .rtr-primary-badge{font-size:.6rem;font-family:var(--font-ui);padding:.1rem .45rem;border-radius:4px;background:rgb(from var(--accent-warn) r g b / .15);color:rgb(from var(--accent-warn) r g b / .95);border:1px solid rgb(from var(--accent-warn) r g b / .3);white-space:nowrap;margin-right:.25rem}
+    
     /* The order column: two arrows, no heading, and a fixed width so the rows
        do not shift sideways as a device moves up or down the list. */
     .rtr-order-th{width:3.4rem}
@@ -1238,20 +1198,7 @@
     .rtr-move:disabled{opacity:.25;cursor:default}
     /* Sites: one chip per membership, wrapping inside its own cell. */
     .rtr-site-cell{display:flex;flex-wrap:wrap;gap:.2rem}
-    .rtr-site-chip{font-size:.6rem;padding:.1rem .4rem;border-radius:4px;
-                   background:rgb(from var(--border) r g b / .12);color:var(--text-muted);
-                   border:1px solid var(--border);white-space:nowrap}
 
-    /* Same purple the rest of the UI uses, at low alpha for the pill ground.
-       Literal rather than a var because this colour is a literal everywhere else. */
-    .rtr-ver-pill{display:inline-block;padding:.05rem .38rem;border-radius:3px;font-family:var(--font-mono);
-                  font-size:.65rem;font-weight:600;color:rgb(from var(--accent-alt) r g b / .95);background:rgb(from var(--accent-alt) r g b / .14);
-                  border:1px solid rgb(from var(--accent-alt) r g b / .28)}
-    /* The light palettes need a darker violet: measured against the card ground,
-       rgba(167,139,250,.95) lands at ~2.5:1 there versus 6.9:1 on dark, which is
-       under the 3:1 floor. This shade measures ~7:1 on the light cards. */
-    :root[data-theme="light"] .rtr-ver-pill{color:rgb(from var(--accent-alt) r g b / .95);background:rgb(from var(--accent-alt) r g b / .1);
-                                            border-color:rgb(from var(--accent-alt) r g b / .3)}
     .rtr-switching-overlay{position:fixed;inset:0;z-index:950;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:none;flex-direction:column;align-items:center;justify-content:center;gap:1rem}
     .rtr-switching-overlay.open{display:flex}
     .rtr-switching-spinner{width:28px;height:28px;border:2.5px solid rgb(from var(--accent-rx) r g b / .2);border-top-color:var(--accent-rx);border-radius:50%;animation:spin .7s linear infinite}
@@ -1312,6 +1259,29 @@
       font-weight:700;letter-spacing:.06em;text-transform:uppercase;
       color:var(--text-muted);white-space:nowrap;overflow:hidden}
     .rtr-dd-head-n{font-family:var(--font-mono);font-weight:600;opacity:.75}
+    /* ── PILLS: one label pill ──────────────────────────────────────────────
+       A state, a kind, a flag, a protocol, an action, a version: every label in
+       a row or beside a name is this one pill. One size and shape, and one tint
+       recipe - the tone's colour as text, at .1 as the fill, at .25 as the
+       border - so a tone reads the same on every page and follows the palette.
+       The tone is a palette role (.pill-ok, .pill-err...), never a colour.
+       .pill-dot adds the status dot. Two pills are deliberately not this one:
+       .card-badge counts the rows of a title, and .wn-ssid-pill is a network's
+       name, a step larger on purpose. internal/verify holds the rest to it. */
+    .pill{--pill:var(--text-muted);display:inline-flex;align-items:center;gap:.3rem;vertical-align:middle;
+      font-family:var(--font-mono);font-size:.64rem;font-weight:400;line-height:1.4;letter-spacing:normal;text-transform:none;
+      padding:.1rem .45rem;border-radius:4px;white-space:nowrap;
+      color:rgb(from var(--pill) r g b / .95);background:rgb(from var(--pill) r g b / .1);border:1px solid rgb(from var(--pill) r g b / .25)}
+    .pill-rx{--pill:var(--accent-rx)}
+    .pill-tx{--pill:var(--accent-tx)}
+    .pill-ok{--pill:var(--accent-ok)}
+    .pill-warn{--pill:var(--accent-warn)}
+    .pill-err{--pill:var(--accent-err)}
+    .pill-alt{--pill:var(--accent-alt)}
+    .pill-pink{--pill:var(--accent-pink)}
+    /* Muted is the palette's own muted text, whose alpha is part of the colour. */
+    .pill-muted{color:var(--text-muted);background:rgb(from var(--border) r g b / .07);border-color:var(--border)}
+    .pill-dot::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
     /* ── TABLES: one density ────────────────────────────────────────────────
        Every table, Tabler's .table or a page's own, has one cell padding, one
        row height and one header. A row is --tbl-row-h tall whatever it holds -
@@ -1439,10 +1409,7 @@
     .data-scroll::-webkit-scrollbar{width:4px}
     .data-scroll::-webkit-scrollbar-thumb{background:rgb(from var(--border) r g b / .2);border-radius:2px}
     /* dhcp */
-    .lease-pill{display:inline-block;font-family:var(--font-mono);font-size:.63rem;padding:1px 6px;border-radius:4px;font-weight:600}
-    .lease-pill.bound{background:rgb(from var(--accent-ok) r g b / .1);color:var(--accent-ok);border:1px solid rgb(from var(--accent-ok) r g b / .2)}
-    .lease-pill.waiting{background:rgb(from var(--accent-warn) r g b / .1);color:var(--accent-warn);border:1px solid rgb(from var(--accent-warn) r g b / .25)}
-    .lease-pill.expired{background:rgb(from var(--text-muted) r g b / .08);color:var(--text-muted);border:1px solid var(--border)}
+
     /* logs */
     .log-count-badge{font-family:var(--font-mono);font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:12px;cursor:pointer;border:1px solid transparent;transition:opacity .15s,transform .1s;user-select:none;white-space:nowrap}
     .log-count-badge:hover{opacity:.8;transform:scale(1.04)}
@@ -1494,34 +1461,15 @@
     .ros-update-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
     .ros-update-row.muted{background:rgb(from var(--border) r g b / .04);border:1px solid var(--border);color:var(--text-muted);opacity:.65}
     /* wg pill */
-    .wg-up{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:.68rem;font-weight:600;color:var(--accent-ok);background:rgb(from var(--accent-ok) r g b / .08);border:1px solid rgb(from var(--accent-ok) r g b / .2);border-radius:4px;padding:1px 6px}
-    .wg-up::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent-ok);flex-shrink:0}
-    .wg-down{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:.68rem;font-weight:600;color:var(--accent-err);background:rgb(from var(--accent-err) r g b / .08);border:1px solid rgb(from var(--accent-err) r g b / .2);border-radius:4px;padding:1px 6px}
-    .wg-down::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent-err);flex-shrink:0}
+
     /* misc */
     .top-row{display:flex;justify-content:space-between;align-items:center;padding:.38rem 0;border-bottom:1px solid var(--border)}
     .top-row:last-child{border-bottom:none}
     .top-name{font-size:.78rem;font-weight:600;color:var(--text-main)}
     .top-count{font-family:var(--font-mono);font-size:.8rem;font-weight:600;color:var(--accent-rx)}
-    .top-geo{font-family:var(--font-mono);font-size:.62rem;color:var(--accent-alt);background:rgb(from var(--accent-alt) r g b / .08);border:1px solid rgb(from var(--accent-alt) r g b / .2);border-radius:4px;padding:1px 6px;white-space:nowrap;flex-shrink:0;margin-right:.9rem}
+    
     /* ── Service badges ───────────────────────────────────────────────────── */
-    .svc-badge{display:inline-block;font-family:var(--font-mono);font-size:.58rem;font-weight:600;padding:.1em .45em;border-radius:4px;vertical-align:middle;white-space:nowrap;line-height:1.5;margin-left:.35rem;flex-shrink:0}
-    .svc-cdn      {background:rgb(from var(--accent-rx) r g b / .15);  color:rgb(from var(--accent-rx) r g b / .95)}   /* sky blue   */
-    .svc-cloud    {background:rgb(from var(--accent-warn) r g b / .15);  color:rgb(from var(--accent-warn) r g b / .95)}   /* orange     */
-    .svc-social   {background:rgb(from var(--accent-alt) r g b / .15); color:rgb(from var(--accent-alt) r g b / .95)}  /* purple     */
-    .svc-streaming{background:rgb(from var(--accent-pink) r g b / .15);  color:rgb(from var(--accent-pink) r g b / .95)}  /* pink       */
-    .svc-messaging{background:rgb(from var(--accent-tx) r g b / .15);  color:rgb(from var(--accent-tx) r g b / .95)}   /* emerald    */
-    .svc-video    {background:rgb(from var(--accent-warn) r g b / .14);  color:rgb(from var(--accent-warn) r g b / .95)}   /* amber      */
-    .svc-dns      {background:rgb(from var(--accent-tx) r g b / .14);  color:rgb(from var(--accent-tx) r g b / .95)}   /* teal       */
-    .svc-other    {background:rgb(from var(--border) r g b / .12);  color:rgb(from var(--text-muted) r g b / .75)}  /* slate      */
-    html[data-theme="light"] .svc-cdn      {background:rgb(from var(--accent-rx) r g b / .12);  color:rgb(from var(--accent-rx) r g b / .9)}
-    html[data-theme="light"] .svc-cloud    {background:rgb(from var(--accent-warn) r g b / .1);     color:rgb(from var(--accent-warn) r g b / .9)}
-    html[data-theme="light"] .svc-social   {background:rgb(from var(--accent-alt) r g b / .12);  color:rgb(from var(--accent-alt) r g b / .9)}
-    html[data-theme="light"] .svc-streaming{background:rgb(from var(--accent-pink) r g b / .1);    color:rgb(from var(--accent-pink) r g b / .9)}
-    html[data-theme="light"] .svc-messaging{background:rgb(from var(--accent-tx) r g b / .1);      color:rgb(from var(--accent-tx) r g b / .9)}
-    html[data-theme="light"] .svc-video    {background:rgb(from var(--accent-warn) r g b / .1);    color:rgb(from var(--accent-warn) r g b / .9)}
-    html[data-theme="light"] .svc-dns      {background:rgb(from var(--accent-tx) r g b / .1);   color:rgb(from var(--accent-tx) r g b / .9)}
-    html[data-theme="light"] .svc-other    {background:rgb(from var(--border) r g b / .1);  color:rgb(from var(--border) r g b / .9)}
+
     /* ── Org sub-rows in country list ──────────────────────────────────────── */
     .svc-sub-rows{display:flex;flex-wrap:wrap;gap:.25rem .4rem;margin-top:.22rem}
     .svc-sub-row{display:inline-flex;align-items:center;gap:.28rem;font-family:var(--font-mono);font-size:.59rem;white-space:nowrap}
@@ -1529,7 +1477,7 @@
     /* ── IP tooltip ─────────────────────────────────────────────────────────── */
     .ip-tip{position:fixed;left:0;top:0;pointer-events:none;z-index:9999;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.28rem .55rem;font-family:var(--font-mono);font-size:.67rem;color:var(--text-main);white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.35);display:none}
     .ip-tip-org{color:var(--accent-rx);margin-left:.5rem;opacity:.85}
-    .ip-tip-cat{margin-left:.3rem;font-size:.6rem}
+    .ip-tip-cat{margin-left:.3rem}
     .section-sep{font-family:var(--font-ui);font-weight:800;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:rgb(from var(--border) r g b / .4);padding:.45rem 0 .2rem}
     .empty-state{font-family:var(--font-mono);font-size:.74rem;color:var(--text-muted);padding:.9rem 0;text-align:center}
     @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
@@ -1716,7 +1664,7 @@
     .wl-ssid-row+.wl-ssid-row{border-top:1px solid var(--border)}
     .wl-ssid-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.76rem}
     .wl-ssid-off .wl-ssid-name{color:var(--text-muted);text-decoration:line-through}
-    .wl-ssid-row .wl-band{flex:0 0 auto}
+    .wl-ssid-row .pill{flex:0 0 auto}
     /* The count is a fixed-width right-aligned column, not free-flowing text.
        It is the last item in the row, so its width sets where everything before
        it ends: a two-digit count pushed the band pills a character to the left
@@ -1902,7 +1850,7 @@
     /* Band split */
     .wl-band-grid{display:flex;flex-direction:column;gap:.5rem;justify-content:center;height:100%}
     .wl-band-item{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
-    .wl-band-pill{font-family:var(--font-mono);font-size:.65rem;border-radius:10px;padding:2px 9px;white-space:nowrap}
+    
     .wl-band-num{font-size:1.35rem;font-weight:700;font-family:var(--font-mono);line-height:1}
     /* A CAP row expands to its CLIENT list, so only a CAP with clients has
        anything to expand to. The class is what the handler binds to as well. */
@@ -1927,10 +1875,7 @@
     .wn-ssid-pill{display:inline-block;font-family:var(--font-mono);font-size:.82rem;font-weight:600;
       padding:.1rem .5rem;border-radius:5px;white-space:nowrap;
       border:1px solid currentColor;background:color-mix(in srgb,currentColor 10%,transparent)}
-    .wl-band{display:inline-block;font-family:var(--font-mono);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap}
-    .wl-band-24{background:rgb(from var(--accent-alt) r g b / .15);color:rgb(from var(--accent-alt) r g b / .9);border:1px solid rgb(from var(--accent-alt) r g b / .25)}
-    .wl-band-5{background:rgb(from var(--accent-rx) r g b / .12);color:var(--accent-rx);border:1px solid rgb(from var(--accent-rx) r g b / .25)}
-    .wl-band-6{background:rgb(from var(--accent-tx) r g b / .12);color:rgb(from var(--accent-tx) r g b / .9);border:1px solid rgb(from var(--accent-tx) r g b / .25)}
+
     /* ── The Standard pill ──────────────────────────────────────────────────
        Sits beside the band pill and answers a different question: the band is
        WHICH RADIO, this is WHICH STANDARD the client negotiated with it. Same
@@ -1942,13 +1887,7 @@
        are warmer and duller, newer ones cooler and brighter, so a table full of
        Wi-Fi 4 clients looks different at a glance from one full of Wi-Fi 6. That
        is the whole reason an operator opens this column. */
-    .wl-std{display:inline-block;font-family:var(--font-mono);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap}
-    .wl-std-legacy{background:rgb(from var(--text-muted) r g b / .12);color:rgb(from var(--text-muted) r g b / .9);border:1px solid rgb(from var(--text-muted) r g b / .25)}
-    .wl-std-4{background:rgb(from var(--accent-err) r g b / .12);color:rgb(from var(--accent-err) r g b / .9);border:1px solid rgb(from var(--accent-err) r g b / .25)}
-    .wl-std-5{background:rgb(from var(--accent-warn) r g b / .12);color:rgb(from var(--accent-warn) r g b / .95);border:1px solid rgb(from var(--accent-warn) r g b / .25)}
-    .wl-std-6{background:rgb(from var(--accent-tx) r g b / .12);color:rgb(from var(--accent-tx) r g b / .95);border:1px solid rgb(from var(--accent-tx) r g b / .25)}
-    .wl-std-6e{background:rgb(from var(--accent-rx) r g b / .12);color:rgb(from var(--accent-rx) r g b / .95);border:1px solid rgb(from var(--accent-rx) r g b / .28)}
-    .wl-std-7{background:rgb(from var(--accent-pink) r g b / .12);color:rgb(from var(--accent-pink) r g b / .95);border:1px solid rgb(from var(--accent-pink) r g b / .28)}
+
     .wl-rate{font-family:var(--font-mono);font-size:.7rem}
     .wl-rate-rx{color:var(--accent-tx);font-size:.65rem}
     /* Interface totals */
@@ -1966,31 +1905,12 @@
     .vpn-summary-row{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap}
     .vpn-stat-tile{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.65rem .9rem;display:flex;flex-direction:column;gap:.1rem;min-width:110px;flex:1}
     .vpn-stat-label{font-family:var(--font-ui);font-weight:600;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.2rem;white-space:nowrap}
-    .vpn-proto-pill{display:inline-block;font-family:var(--font-mono);font-size:.64rem;padding:.1rem .4rem;border-radius:4px;background:rgb(from var(--accent-rx) r g b / .12);color:var(--accent-rx);border:1px solid rgb(from var(--accent-rx) r g b / .25)}
+    
     .vpn-stat-value{font-size:1.5rem;font-weight:700;font-family:var(--font-mono);line-height:1;color:var(--text-main)}
     .vpn-stat-value.connected{color:rgb(from var(--accent-ok) r g b / .9)}
     .vpn-stat-value.idle{color:var(--text-muted)}
     .vpn-stat-value.throughput{color:var(--accent-rx)}
-    /* Handshake age badge */
-    .vpn-hs-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.62rem;font-family:var(--font-mono);padding:.15rem .45rem;border-radius:4px;white-space:nowrap}
-    .vpn-hs-badge.hs-ok    {background:rgb(from var(--accent-ok) r g b / .1); color:rgb(from var(--accent-ok) r g b / .95);border:1px solid rgb(from var(--accent-ok) r g b / .25)}
-    .vpn-hs-badge.hs-warn  {background:rgb(from var(--accent-warn) r g b / .1);  color:rgb(from var(--accent-warn) r g b / .95); border:1px solid rgb(from var(--accent-warn) r g b / .25)}
-    .vpn-hs-badge.hs-stale {background:rgb(from var(--accent-err) r g b / .1);color:rgb(from var(--accent-err) r g b / .9);border:1px solid rgb(from var(--accent-err) r g b / .25)}
-    .vpn-hs-badge.hs-never {background:rgb(from var(--border) r g b / .07);color:var(--text-muted);   border:1px solid var(--border)}
-    .vpn-hs-badge.hs-info  {background:rgb(from var(--accent-rx) r g b / .1); color:rgb(from var(--accent-rx) r g b / .95); border:1px solid rgb(from var(--accent-rx) r g b / .25)}
-    /* Credential profile state pills (#143). The same five-colour vocabulary as
-       .vpn-hs-badge above, which is where CLAUDE.md says the hand-built pages'
-       pill colours live - one scheme, not a second.
 
-       refused and conflict are AMBER, not red. Neither is a fault: both are
-       MikroDash declining to do something, and a red row for "the guard
-       protected your login" reads as a bug report rather than as the feature
-       working. */
-    .cp-pill{display:inline-flex;align-items:center;gap:.3rem;font-size:.62rem;font-family:var(--font-mono);padding:.15rem .45rem;border-radius:4px;white-space:nowrap}
-    .cp-pill.cp-ok  {background:rgb(from var(--accent-ok) r g b / .1); color:rgb(from var(--accent-ok) r g b / .95);border:1px solid rgb(from var(--accent-ok) r g b / .25)}
-    .cp-pill.cp-warn{background:rgb(from var(--accent-warn) r g b / .1);  color:rgb(from var(--accent-warn) r g b / .95); border:1px solid rgb(from var(--accent-warn) r g b / .25)}
-    .cp-pill.cp-bad {background:rgb(from var(--accent-err) r g b / .1);color:rgb(from var(--accent-err) r g b / .9);border:1px solid rgb(from var(--accent-err) r g b / .25)}
-    .cp-pill.cp-wait{background:rgb(from var(--accent-rx) r g b / .1); color:rgb(from var(--accent-rx) r g b / .95); border:1px solid rgb(from var(--accent-rx) r g b / .25)}
     /* The seventeen policies, as a wrapped grid rather than a seventeen-row
        column: the dialog is already tall and a list that long pushes Save off
        the screen on a laptop. */
@@ -2013,14 +1933,7 @@
        precedes it. */
     .cp-note{margin-top:-.5rem}
     .cp-note + .cp-note{margin-top:.55rem}
-    /* THE ROUTEROS ACCOUNT, in the app's purple - the colour-mix on --accent-alt
-       that .rtr-ztp-badge and .cfg-pill-full already use, so there is one purple
-       rather than a second one defined here. */
-    .cp-user{display:inline-flex;align-items:center;font-size:.66rem;font-family:var(--font-mono);padding:.12rem .45rem;border-radius:4px;white-space:nowrap;background:color-mix(in srgb,var(--accent-alt) 14%,transparent);color:var(--accent-alt);border:1px solid color-mix(in srgb,var(--accent-alt) 32%,transparent)}
-    /* A profile on no routers has no state to colour, so it gets the neutral
-       pill rather than bare text - the column then reads as one kind of thing
-       all the way down. */
-    .cp-pill.cp-none{background:rgb(from var(--border) r g b / .07);color:var(--text-muted);border:1px solid var(--border)}
+
     /* ── THE PERMISSIONS COLUMN, AND WHY IT IS CAPPED ──────────────────────
        A custom set can name all seventeen policies. Left to itself the cell
        grew, the row grew with it, and the action buttons wrapped onto separate
@@ -2168,13 +2081,7 @@
     .rt-bgp-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);font-family:var(--font-ui)}
     .rt-bgp-divider{width:1px;height:2.5rem;background:var(--border)}
     /* peers table */
-    /* state badges */
-    .bgp-state{display:inline-block;padding:.1rem .4rem;border-radius:4px;font-size:.65rem;font-weight:600;font-family:var(--font-ui);text-transform:uppercase;letter-spacing:.04em}
-    .bgp-state.established{background:rgb(from var(--accent-tx) r g b / .15);color:rgb(from var(--accent-tx) r g b / .95);border:1px solid rgb(from var(--accent-tx) r g b / .25)}
-    .bgp-state.active{background:rgb(from var(--accent-warn) r g b / .12);color:rgb(from var(--accent-warn) r g b / .95);border:1px solid rgb(from var(--accent-warn) r g b / .25)}
-    .bgp-state.connect,.bgp-state.opensent,.bgp-state.openconfirm{background:rgb(from var(--accent-rx) r g b / .12);color:rgb(from var(--accent-rx) r g b / .95);border:1px solid rgb(from var(--accent-rx) r g b / .2)}
-    .bgp-state.idle{background:rgb(from var(--accent-err) r g b / .12);color:rgb(from var(--accent-err) r g b / .9);border:1px solid rgb(from var(--accent-err) r g b / .2)}
-    .bgp-state.flap{background:rgb(from var(--accent-err) r g b / .2);color:var(--accent-err);border:1px solid rgb(from var(--accent-err) r g b / .4);animation:pulse-banner 1.5s ease infinite}
+
     /* peer name + description */
     .rt-peer-name{font-weight:500;color:var(--text-main)}
     .rt-peer-desc{font-size:.65rem;color:var(--text-muted)}
@@ -2257,7 +2164,7 @@
     .diag-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted)}
     /* Who asked: a source pill, a bar on the headline's scale, the rate. */
     .diag-src{display:grid;grid-template-columns:minmax(5.5rem,auto) 1fr auto;align-items:center;gap:.5rem;padding:.22rem 0;font-size:.8rem}
-    .diag-src .vpn-hs-badge{justify-self:start}
+    .diag-src .pill{justify-self:start}
     .diag-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden}
     .diag-bar-fill{display:block;height:100%;border-radius:3px;background:var(--accent-rx);transition:width .3s}
     /* Busiest menus: a small sortable table. The menu column shrinks and
@@ -2490,11 +2397,6 @@
        is too long is cut rather than pushing the card wide. */
     .tool-card-text .tool-card-value{font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .tool-card-foot{font-size:.66rem;color:var(--text-muted);font-family:var(--font-mono);margin-top:.15rem;min-height:1em}
-    /* rx blue and tx green, the app's fixed directions, on the capture table. */
-    .sniff-dir{display:inline-block;padding:.05rem .4rem;border-radius:5px;font-size:.68rem;font-weight:600;
-      font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.04em}
-    .sniff-dir-rx{background:rgb(from var(--accent-rx) r g b / .14);color:var(--accent-rx);border:1px solid rgb(from var(--accent-rx) r g b / .3)}
-    .sniff-dir-tx{background:rgb(from var(--accent-tx) r g b / .14);color:var(--accent-tx);border:1px solid rgb(from var(--accent-tx) r g b / .3)}
 
     .trace-card{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:.6rem;margin:0 0 .8rem}
     .trace-map-wrap{position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden;
@@ -2568,9 +2470,9 @@
 
     /* ── The Security Scan page (security-scan.ts) ───────────────────────────
        A grid of cards with the score first, so it sits top left. Colours are
-       tokens; the pills are the vpn-hs-badge kinds, with high its own orange
-       between critical's red and medium's amber. */
-    .vpn-hs-badge.sec-sev-high{background:rgb(from var(--accent-warn) r g b / .12);color:rgb(from var(--accent-warn) r g b / .95);border:1px solid rgb(from var(--accent-warn) r g b / .3)}
+       tokens; the severity pills are the one .pill, toned by sevPill in
+       security-scan-cards.ts. */
+    
     /* dense: the wide cards fill the gaps a two-row score card leaves. */
     .sec-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-flow:row dense;gap:.75rem}
     @media (max-width:1300px){.sec-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -2746,8 +2648,7 @@
     .apps-card-desc{margin:0;font-size:.76rem;line-height:1.45;color:var(--text-muted);display:-webkit-box;-webkit-line-clamp:2;
       -webkit-box-orient:vertical;overflow:hidden;min-height:2.2em}
     .apps-card-meta{display:flex;flex-wrap:wrap;gap:.3rem}
-    .apps-meta{font-size:.64rem;padding:.1rem .45rem;border-radius:6px;background:rgb(from var(--border) r g b / .09);color:var(--text-muted)}
-    .apps-meta.is-mono{font-family:var(--font-mono)}
+
     .apps-card-actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:auto;padding-top:.2rem}
     /* Install and the busy state take the row's spare width; .sbtn draws them. */
     .apps-card-actions .is-install,.apps-card-actions .is-busy{flex:1}
@@ -2851,22 +2752,12 @@
     .cfg-tpl-pills{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;margin-top:.3rem}
     .cfg-tpl-desc{margin:0;font-size:.78rem;line-height:1.45;color:var(--text-muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
     .cfg-tpl-scope{display:flex;flex-wrap:wrap;gap:.3rem}
-    .cfg-chip{font-family:var(--font-mono);font-size:.64rem;padding:.1rem .4rem;border-radius:5px;color:var(--text-muted);
-      background:color-mix(in srgb,var(--text-muted) 10%,transparent);border:1px solid var(--border)}
-    .cfg-chip-more{color:var(--cfg-c)}
+
     .cfg-tpl-foot{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:auto;padding-top:.55rem;
       border-top:1px solid var(--border);flex-wrap:wrap}
     .cfg-tpl-actions{display:flex;gap:.35rem;flex-wrap:wrap}
     .cfg-meta{font-size:.68rem;color:var(--text-muted)}
     .cfg-empty{padding:2rem 1rem;text-align:center;color:var(--text-muted);font-size:.82rem}
-
-    /* Pills, by meaning. */
-    .vpn-hs-badge.cfg-pill-canned{background:color-mix(in srgb,var(--accent-rx) 13%,transparent);color:var(--accent-rx);border:1px solid color-mix(in srgb,var(--accent-rx) 32%,transparent)}
-    .vpn-hs-badge.cfg-pill-custom,.vpn-hs-badge.cfg-pill-external{background:color-mix(in srgb,var(--accent-pink) 13%,transparent);color:var(--accent-pink);border:1px solid color-mix(in srgb,var(--accent-pink) 32%,transparent)}
-    .vpn-hs-badge.cfg-pill-full{background:color-mix(in srgb,var(--accent-alt) 14%,transparent);color:var(--accent-alt);border:1px solid color-mix(in srgb,var(--accent-alt) 32%,transparent)}
-    .vpn-hs-badge.cfg-pill-lock,.vpn-hs-badge.cfg-pill-ack{background:color-mix(in srgb,var(--accent-warn) 13%,transparent);color:var(--accent-warn);border:1px solid color-mix(in srgb,var(--accent-warn) 32%,transparent)}
-    .vpn-hs-badge.cfg-pill-refuse{background:color-mix(in srgb,var(--accent-err) 13%,transparent);color:var(--accent-err);border:1px solid color-mix(in srgb,var(--accent-err) 32%,transparent)}
-    .vpn-hs-badge.cfg-pill-warn{background:color-mix(in srgb,var(--accent-rx) 11%,transparent);color:var(--accent-rx);border:1px solid color-mix(in srgb,var(--accent-rx) 28%,transparent)}
 
     /* The external generator: set apart, dashed, its own colour. */
     .cfg-external{--cfg-c:var(--accent-pink);border-style:dashed;border-color:color-mix(in srgb,var(--accent-pink) 45%,var(--border));
@@ -2925,8 +2816,7 @@
     .cfg-ed-status{font-size:.76rem;color:var(--text-muted);min-height:1.3rem;display:flex;align-items:center;gap:.45rem}
     .cfg-ed-status.is-ok{color:var(--accent-ok)}
     .cfg-ed-status.is-bad{color:var(--accent-err)}
-    .cfg-ln-tag{font-family:var(--font-mono);font-size:.68rem;padding:.05rem .4rem;border-radius:5px;
-      background:color-mix(in srgb,var(--accent-err) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent-err) 32%,transparent)}
+    
     .cfg-ed-side{display:flex;flex-direction:column;gap:.4rem;min-width:0;padding:.2rem .1rem}
     .cfg-ed-side .cfg-drawer-h:first-child{margin-top:0}
     .cfg-var-row{display:grid;grid-template-columns:1fr 1fr;gap:.35rem;padding:.55rem;margin-bottom:.4rem;border-radius:10px;
@@ -2955,7 +2845,7 @@
     .cfg-dep-save{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
     .cfg-dep-save .is-ok{color:var(--accent-ok)}
     .cfg-dep-tpl{max-width:28rem}
-    .vpn-hs-badge.cfg-pill-canary{background:color-mix(in srgb,var(--accent-alt) 15%,transparent);color:var(--accent-alt);border:1px solid color-mix(in srgb,var(--accent-alt) 34%,transparent)}
+    
     .cfg-scroll{overflow-x:auto}
     .cfg-grid-vals td,.cfg-grid-vals th{vertical-align:middle;min-width:9rem}
     .cfg-grid-vals td:first-child,.cfg-grid-vals th:first-child{min-width:7rem;color:var(--text-main)}
@@ -2996,11 +2886,7 @@
     .cfg-drift-acts{white-space:nowrap;text-align:right}
     .cfg-drift-acts .sbtn + .sbtn{margin-left:.35rem}
     .cfg-drift-go{display:flex;gap:.5rem;flex-wrap:wrap}
-    .vpn-hs-badge.cfg-run-ok{background:color-mix(in srgb,var(--accent-ok) 13%,transparent);color:var(--accent-ok);border:1px solid color-mix(in srgb,var(--accent-ok) 32%,transparent)}
-    .vpn-hs-badge.cfg-run-bad{background:color-mix(in srgb,var(--accent-err) 13%,transparent);color:var(--accent-err);border:1px solid color-mix(in srgb,var(--accent-err) 32%,transparent)}
-    .vpn-hs-badge.cfg-run-warn{background:color-mix(in srgb,var(--accent-warn) 13%,transparent);color:var(--accent-warn);border:1px solid color-mix(in srgb,var(--accent-warn) 32%,transparent)}
-    .vpn-hs-badge.cfg-run-live{background:color-mix(in srgb,var(--accent-rx) 13%,transparent);color:var(--accent-rx);border:1px solid color-mix(in srgb,var(--accent-rx) 32%,transparent)}
-    .vpn-hs-badge.cfg-run-muted{background:color-mix(in srgb,var(--text-muted) 12%,transparent);color:var(--text-muted);border:1px solid color-mix(in srgb,var(--text-muted) 28%,transparent)}
+
     /* The table scrolls sideways on a phone; an opened row's detail stays in view rather than spanning it. */
     @media (max-width:640px){.cfg-hist-bar{flex-direction:column;align-items:flex-start}.cfg-drift-acts{white-space:normal}
       .cfg-hist-open .cfg-hist-detail{position:sticky;left:.5rem;max-width:calc(100vw - 3.5rem)}}
@@ -3034,12 +2920,7 @@
     }
 
     /* ── Zero-touch provisioning (pages/ztp.ts) and the wizard (wizard.ts) ── */
-    .vpn-hs-badge.ztp-pill-wait{background:color-mix(in srgb,var(--accent-rx) 12%,transparent);color:var(--accent-rx);border:1px solid color-mix(in srgb,var(--accent-rx) 30%,transparent)}
-    .vpn-hs-badge.ztp-pill-pending{background:color-mix(in srgb,var(--accent-warn) 14%,transparent);color:var(--accent-warn);border:1px solid color-mix(in srgb,var(--accent-warn) 36%,transparent)}
-    .vpn-hs-badge.ztp-pill-busy{background:color-mix(in srgb,var(--accent-alt) 14%,transparent);color:var(--accent-alt);border:1px solid color-mix(in srgb,var(--accent-alt) 34%,transparent)}
-    .vpn-hs-badge.ztp-pill-ok{background:color-mix(in srgb,var(--accent-tx) 13%,transparent);color:var(--accent-tx);border:1px solid color-mix(in srgb,var(--accent-tx) 32%,transparent)}
-    .vpn-hs-badge.ztp-pill-bad{background:color-mix(in srgb,var(--accent-err) 13%,transparent);color:var(--accent-err);border:1px solid color-mix(in srgb,var(--accent-err) 32%,transparent)}
-    .vpn-hs-badge.ztp-pill-off,.vpn-hs-badge.ztp-pill-mode{background:color-mix(in srgb,var(--text-muted) 12%,transparent);color:var(--text-muted);border:1px solid var(--border)}
+
     .ztp-spin{width:.6rem;height:.6rem;border-radius:50%;border:1.5px solid currentColor;border-right-color:transparent;animation:ztp-spin .9s linear infinite}
     @keyframes ztp-spin{to{transform:rotate(360deg)}}
     .ztp-section{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem}
@@ -3086,7 +2967,7 @@
     .ztp-script{max-height:16rem;overflow:auto;font-family:var(--font-mono);font-size:.68rem;line-height:1.45;padding:.7rem .8rem;border-radius:8px;border:1px solid var(--border);background:color-mix(in srgb,var(--bg-deep) 70%,transparent);color:var(--text-main);white-space:pre}
     .ztp-steps{font-size:.76rem;color:var(--text-main);padding-left:1.2rem;margin:.7rem 0}
     .ztp-steps li{margin-bottom:.25rem}
-    .rtr-ztp-badge{font-size:.6rem;padding:.1rem .4rem;border-radius:4px;margin-left:.3rem;background:color-mix(in srgb,var(--accent-alt) 14%,transparent);color:var(--accent-alt);border:1px solid color-mix(in srgb,var(--accent-alt) 32%,transparent)}
+    
     .rtr-modal.wiz{width:min(760px,94vw);display:flex;flex-direction:column}
     .rtr-modal.wiz>.rtr-modal-body{display:block;min-height:14rem}
     .wiz .cfg-grid-all{display:none}
@@ -3342,11 +3223,6 @@
 .about-name span { color: var(--accent-rx); }
 .about-slogan { font-family: var(--font-mono); font-size: .72rem; color: var(--accent-rx); margin-top: .2rem; }
 .about-version { margin: .9rem 0 .35rem; }
-.about-version span {
-  font-family: var(--font-mono); font-size: .78rem;
-  background: rgb(from var(--accent-rx) r g b / .1); color: var(--accent-rx);
-  border: 1px solid rgb(from var(--accent-rx) r g b / .25); border-radius: 6px; padding: .2rem .7rem;
-}
 .about-update { font-family: var(--font-mono); font-size: .72rem; }
 .about-update.is-current { color: var(--accent-ok); }
 .about-update.is-behind { color: var(--accent-warn); }
@@ -3400,14 +3276,6 @@
   font-family: var(--font-mono); font-size: .74rem; color: var(--text-main);
 }
 
-.about-pill {
-  font-family: var(--font-mono); font-size: .72rem;
-  background: rgb(from var(--accent-rx) r g b / .1); color: var(--accent-rx);
-  border: 1px solid rgb(from var(--accent-rx) r g b / .25); border-radius: 5px; padding: .1rem .45rem;
-}
-.about-pill-ok {
-  background: rgb(from var(--accent-tx) r g b / .1); color: var(--accent-tx); border-color: rgb(from var(--accent-tx) r g b / .3);
-}
 /* INLINE-FLEX so an icon sits on the text's baseline row rather than below it.
    The links without one are unaffected: a flex row of a single text node lays
    out exactly as inline did. */
@@ -3452,11 +3320,6 @@
 }
 .about-release > summary::-webkit-details-marker { display: none; }
 .about-rel-v { font-weight: 600; }
-.about-latest {
-  font-family: var(--font-mono); font-size: .66rem;
-  background: rgb(from var(--accent-rx) r g b / .15); color: var(--accent-rx);
-  border-radius: 20px; padding: .05rem .5rem;
-}
 /* PUSHED RIGHT so every row's date lines up down the column, whatever the
    version string's length.
 
@@ -3470,22 +3333,16 @@
   margin-left: auto; font-size: .7rem; color: var(--text-muted);
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-/* The version, the Latest badge and the count are fixed facts: they are never
-   the thing that gives way. */
-.about-rel-v, .about-latest, .about-count { flex-shrink: 0; white-space: nowrap; }
+/* The version and the count are fixed facts: they are never the thing that
+   gives way. The Latest pill does not shrink either: a flex item stops at its
+   unwrapped content. */
+.about-rel-v, .about-count { flex-shrink: 0; white-space: nowrap; }
 .about-notes { list-style: none; margin: 0; padding: 0 .75rem .6rem; }
 .about-note-row { display: flex; align-items: flex-start; gap: .55rem; padding: .22rem 0; }
-.about-kind {
-  flex-shrink: 0; min-width: 3.6rem; text-align: center;
-  font-family: var(--font-mono); font-size: .64rem;
-  border-radius: 4px; padding: .1rem .3rem;
-  background: rgb(from var(--border) r g b / .15); color: var(--text-muted);
-}
-/* BY KIND, NOT BY COLOUR AT THE CALL SITE: the section heading in the changelog
-   decides, so a new heading gets the neutral pill rather than a wrong one. */
-.about-kind-new { background: rgb(from var(--accent-tx) r g b / .12); color: var(--accent-tx); }
-.about-kind-fixed { background: rgb(from var(--accent-warn) r g b / .12); color: var(--accent-warn); }
-.about-kind-internal { background: rgb(from var(--accent-alt) r g b / .12); color: var(--accent-alt); }
+/* A release note's kind pill: one width down the column, so the notes line up.
+   The tone is KIND_TONE's in about.ts, by the changelog heading, so a new
+   heading gets the neutral pill rather than a wrong one. */
+.about-kind { flex-shrink: 0; min-width: 3.6rem; justify-content: center; }
 .about-note-text { font-size: .74rem; color: var(--text-main); line-height: 1.55; }
 
 /* ── DEPENDENCIES ──────────────────────────────────────────────────────────── */
@@ -3592,7 +3449,6 @@
   .msg-templates { grid-template-columns: 1fr; }
 }
 .modal-tabs .stab-bar { margin-bottom: 0; }
-
 
     /* ── THE TERMINAL ─────────────────────────────────────────────────────────
        A console built out of the app's own tokens rather than a scheme of its

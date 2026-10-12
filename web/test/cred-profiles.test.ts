@@ -73,16 +73,16 @@ say('  worst state wins over the commonest');
 // ── REFUSAL IS AMBER, FAILURE IS RED ────────────────────────────────────────
 {
   for (const s of ['refused', 'conflict', 'orphaned']) {
-    assert.ok(mod.statePill(s).includes('cp-warn'),
+    assert.ok(mod.statePill(s).includes('pill-warn'),
       s + ' is not amber; MikroDash declining to do something is not a fault, and '
       + 'red reads as a bug report');
   }
   for (const s of ['failed', 'unreachable', 'unknown']) {
-    assert.ok(mod.statePill(s).includes('cp-bad'), s + ' is not red');
+    assert.ok(mod.statePill(s).includes('pill-err'), s + ' is not red');
   }
-  assert.ok(mod.statePill('applied').includes('cp-ok'), 'applied is not green');
+  assert.ok(mod.statePill('applied').includes('pill-ok'), 'applied is not green');
   for (const s of ['pending', 'applying', 'removing']) {
-    assert.ok(mod.statePill(s).includes('cp-wait'), s + ' is not the in-progress colour');
+    assert.ok(mod.statePill(s).includes('pill-rx'), s + ' is not the in-progress colour');
   }
   // A REFUSAL EXPLAINS ITSELF. The state is a word; the title is the sentence,
   // and without it `refused` is a dead end on the page.
@@ -119,9 +119,9 @@ say('  a custom permission set names its policies');
   assert.ok(row.includes('NOC read-only'), 'the row does not name the profile');
   // A PURPLE PILL, not bare text: the column is a set of accounts, and the
   // pill is what makes it read as one.
-  assert.ok(row.includes('class="cp-user">noc<'),
+  assert.ok(row.includes('class="pill pill-alt">noc<'),
     'the RouterOS username is not shown as its own pill');
-  assert.ok(row.includes('cp-warn'), 'the row does not show the refused router');
+  assert.ok(row.includes('pill-warn'), 'the row does not show the refused router');
   assert.ok(row.includes('data-cp-edit="cp1"') && row.includes('data-cp-links="cp1"'),
     'the row has no way into the profile or its routers');
   // DELETE SAYS WHICH KIND IT IS. On a linked profile the accounts come off
@@ -140,9 +140,9 @@ say('  a custom permission set names its policies');
   // ordinary case rather than a failure - so it must not be coloured like one.
   const lonely = mod.profileRow(profile(), []);
   assert.ok(lonely.includes('not linked'), 'an unlinked profile shows no state at all');
-  assert.ok(lonely.includes('cp-none'),
+  assert.ok(lonely.includes('pill-muted'),
     'an unlinked profile was not given the neutral pill');
-  for (const bad of ['cp-bad', 'cp-warn']) {
+  for (const bad of ['pill-err', 'pill-warn']) {
     assert.ok(!lonely.includes(bad),
       'an untouched profile is coloured like a failure (' + bad + ')');
   }

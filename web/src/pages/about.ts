@@ -15,7 +15,8 @@
  * nothing after it reads as a value that failed to load.
  */
 
-import { el, esc } from '../dom';
+import { el, esc, pill } from '../dom';
+import type { PillTone } from '../palette';
 
 interface AboutNote { kind: string; text: string }
 interface AboutRelease { version: string; title?: string; date?: string; entries: AboutNote[] }
@@ -82,9 +83,9 @@ function uptime(sec: number): string {
  * a label with nothing after it reads as a value that failed to load, and half
  * of what is shown here is genuinely absent on some installs.
  */
-function fact(value: string | undefined, icon = '', pill = false): string {
+function fact(value: string | undefined, icon = '', asPill = false): string {
   if (!value) return '';
-  if (pill) return '<span class="about-pill">' + esc(value) + '</span>';
+  if (asPill) return pill(value, 'rx');
   return '<span class="about-fact">' + ico(icon) + esc(value) + '</span>';
 }
 
@@ -147,13 +148,17 @@ function renderSystem(d: AboutPayload): void {
  * COLLAPSED EXCEPT THE FIRST. Fifty releases expanded is a page nobody reads;
  * the newest is the one somebody came for, so it opens and the rest wait.
  */
+/** BY KIND, NOT BY COLOUR AT THE CALL SITE: the changelog's section heading
+ *  decides, so a new heading gets the neutral pill rather than a wrong one. */
+const KIND_TONE: Record<string, PillTone> = { new: 'tx', fixed: 'warn', internal: 'alt' };
+
 function releaseRow(r: AboutRelease, first: boolean): string {
   const n = r.entries.length;
-  const badge = first ? '<span class="about-latest">Latest</span>' : '';
+  const badge = first ? pill('Latest', 'rx') : '';
   const when = r.date || r.title || '';
   const body = r.entries.map((e) =>
     '<li class="about-note-row">'
-    + '<span class="about-kind about-kind-' + esc((e.kind || 'other').toLowerCase()) + '">'
+    + '<span class="about-kind pill pill-' + (KIND_TONE[(e.kind || '').toLowerCase()] || 'muted') + '">'
     + esc(e.kind || 'Change') + '</span>'
     + '<span class="about-note-text">' + esc(e.text) + '</span></li>').join('');
   return '<details class="about-release"' + (first ? ' open' : '') + '>'

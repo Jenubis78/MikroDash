@@ -309,7 +309,7 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
       const any = Object.values(row.on)[0]!;
       return '<tr' + (row.missing.length ? ' class="is-partial"' : '') + '>' +
         '<td>' + esc(row.name) + (row.differs
-          ? '<span class="badge bg-yellow-lt" style="margin-left:.35rem;font-size:.6rem">differs</span>'
+          ? '<span class="pill pill-warn" style="margin-left:.35rem">differs</span>'
           : '') + '</td>' +
         '<td>' + esc(row.type) + '</td>' +
         '<td class="mono">' + esc(any.address) + '</td>' +

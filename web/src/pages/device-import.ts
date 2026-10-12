@@ -16,7 +16,8 @@
  * often outside quotes is the separator.
  */
 
-import { el, esc } from '../dom';
+import { el, esc, pill } from '../dom';
+import type { PillTone } from '../palette';
 
 /** One row as sent: every field the cell's text. */
 export interface ImportRow {
@@ -154,20 +155,20 @@ export interface ImportPlan {
 export interface ImportResultRow { line: number; label: string; state: string; message: string }
 export interface ImportJob { running: boolean; started: number; rows: ImportResultRow[]; summary: string }
 
-const STATUS_PILL: Record<string, [string, string]> = {
-  ready: ['hs-ok', 'Ready'],
-  duplicate: ['hs-never', 'Duplicate'],
-  error: ['hs-stale', 'Error'],
-  pending: ['hs-never', 'Waiting'],
-  working: ['hs-info', 'Working'],
-  added: ['hs-ok', 'Added'],
-  warning: ['hs-warn', 'Warning'],
-  failed: ['hs-stale', 'Failed'],
+const STATUS_PILL: Record<string, [PillTone, string]> = {
+  ready: ['ok', 'Ready'],
+  duplicate: ['muted', 'Duplicate'],
+  error: ['err', 'Error'],
+  pending: ['muted', 'Waiting'],
+  working: ['rx', 'Working'],
+  added: ['ok', 'Added'],
+  warning: ['warn', 'Warning'],
+  failed: ['err', 'Failed'],
 };
 
-const pill = (state: string): string => {
-  const [cls, word] = STATUS_PILL[state] ?? ['hs-never', state];
-  return `<span class="vpn-hs-badge ${cls}">${esc(word)}</span>`;
+const statusPill = (state: string): string => {
+  const [tone, word] = STATUS_PILL[state] ?? ['muted', state];
+  return pill(word, tone);
 };
 
 function loginText(v: ImportVerdict): string {
@@ -193,7 +194,7 @@ export function previewHtml(p: ImportPlan): string {
   const rows = p.rows.map((v) => {
     const sites = v.sites.map((n) => esc(n) + (v.newSites.includes(n) ? ' <em class="dimp-new">new</em>' : ''))
       .join(', ');
-    return `<tr><td class="dimp-line">${v.line}</td><td>${pill(v.status)}</td><td>${esc(v.label)}</td>`
+    return `<tr><td class="dimp-line">${v.line}</td><td>${statusPill(v.status)}</td><td>${esc(v.label)}</td>`
       + `<td class="dimp-mono">${esc(v.host)}${v.port ? ':' + v.port : ''}</td><td>${sites || '-'}</td>`
       + `<td>${esc(loginText(v)) || '-'}</td><td class="dimp-why">${esc(v.reason)}</td></tr>`;
   }).join('');
@@ -202,7 +203,7 @@ export function previewHtml(p: ImportPlan): string {
 }
 
 export function progressHtml(job: ImportJob): string {
-  const rows = job.rows.map((r) => `<tr><td class="dimp-line">${r.line}</td><td>${pill(r.state)}</td>`
+  const rows = job.rows.map((r) => `<tr><td class="dimp-line">${r.line}</td><td>${statusPill(r.state)}</td>`
     + `<td>${esc(r.label)}</td><td class="dimp-why">${esc(r.message)}</td></tr>`).join('');
   return '<table class="rtr-list dimp-table"><thead><tr><th>Line</th><th>Status</th><th>Name</th><th></th></tr>'
     + '</thead><tbody>' + rows + '</tbody></table>';

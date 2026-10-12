@@ -21,7 +21,7 @@
  * therefore OMITS THE KEY rather than sending an empty string, which clears it.
  */
 
-import { el, esc, modalTabs } from '../dom';
+import { el, esc, modalTabs, pill } from '../dom';
 import type { RoleView } from './settings';
 
 interface ProviderView {
@@ -82,12 +82,12 @@ function value(id: string): string {
  */
 function rowHtml(p: ProviderView): string {
   const status = p.enabled
-    ? '<span class="vpn-hs-badge ok">Enabled</span>'
-    : '<span class="vpn-hs-badge off">Disabled</span>';
+    ? pill('Enabled', 'ok')
+    : pill('Disabled', 'muted');
   const n = p.roleMap.length;
   const maps = n
-    ? '<span class="vpn-hs-badge ok">' + n + (n === 1 ? ' rule' : ' rules') + '</span>'
-    : '<span class="vpn-hs-badge warn" title="Nobody can sign in through this provider '
+    ? pill(n + (n === 1 ? ' rule' : ' rules'), 'ok')
+    : '<span class="pill pill-warn" title="Nobody can sign in through this provider '
       + 'until a claim value is mapped to a role">None</span>';
   return '<tr style="border-bottom:1px solid var(--border)">'
     + '<td>' + esc(p.name) + '</td>'

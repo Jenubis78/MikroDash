@@ -20,7 +20,7 @@
 // IS rather than what it is doing, all of it on the stats row or the overview,
 // so the rail renders before the modal's live stream says anything.
 
-import { esc } from '../dom';
+import { esc, pill } from '../dom';
 import { fmtTs } from '../timefmt';
 import type { RouterStatsRow } from '../gen/payloads';
 import { stripHtml, uptimeLabel, type DeviceOverview } from './devices-strip';
@@ -87,7 +87,7 @@ export function backupHtml(o: DeviceOverview | undefined, now: number): string {
 export function updatePill(r: RouterStatsRow): string {
   if (r.updateAvailable !== true) return '';
   const to = r.latestVersion ? ' to ' + r.latestVersion : '';
-  return '<span class="dv-update" title="' + esc('RouterOS update available' + to) + '">'
+  return '<span class="dv-update pill pill-alt" title="' + esc('RouterOS update available' + to) + '">'
     + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Update</span>';
 }
 
@@ -192,7 +192,7 @@ export function detailsHtml(r: RouterStatsRow, o: DeviceOverview | undefined, no
   const dash = '<span class="text-muted">-</span>';
   const ros = r.version
     ? esc(r.version) + (r.updateAvailable === true
-      ? ' <span class="dv-update">' + esc('Update' + (r.latestVersion ? ' to ' + r.latestVersion : '')) + '</span>'
+      ? ' <span class="dv-update pill pill-alt">' + esc('Update' + (r.latestVersion ? ' to ' + r.latestVersion : '')) + '</span>'
       : r.updateAvailable === false ? ' <span class="dvm-current">Current</span>' : '')
     : dash;
   const up = uptimeMs(r.uptime);
@@ -213,7 +213,7 @@ export function detailsHtml(r: RouterStatsRow, o: DeviceOverview | undefined, no
     + row('Serial', r.serial ? '<span class="dvm-mono">' + esc(r.serial) + '</span>' : dash)
     + row('Architecture', r.arch ? esc(r.arch) : dash)
     + row('RouterOS', ros)
-    + row('Licence', r.licenseLevel ? '<span class="dvm-pill">' + esc(licenseLabel(r.licenseLevel)) + '</span>' : dash)
+    + row('Licence', r.licenseLevel ? pill(licenseLabel(r.licenseLevel), 'muted') : dash)
     + row('Uptime', r.uptime ? esc(uptimeText(r.uptime)) : dash)
     // Derived, so it moves by a second or two between refreshes; minutes hide it.
     + row('Last boot', up != null ? esc(fmtTs(now - up, false)) : dash)
@@ -226,9 +226,9 @@ export function detailsHtml(r: RouterStatsRow, o: DeviceOverview | undefined, no
       // the NTP client is on (measured on the hAP AC2), or from DDNS.
       : '<span class="text-muted" title="Not known. Turn on IP &gt; Cloud &gt; DDNS on the router: '
         + 'while its NTP client is on, RouterOS skips the cloud time update that would find it.">-</span>')
-    + (r.loginProfile ? row('Login', '<span class="dvm-mono">mikrodash</span> <span class="dvm-pill">'
+    + (r.loginProfile ? row('Login', '<span class="dvm-mono">mikrodash</span> <span class="pill pill-muted">'
       + esc(r.loginProfile) + '</span>') : '')
-    + row('Sites', sites.length ? sites.map((s) => '<span class="dvm-pill">' + esc(s) + '</span>').join(' ') : dash)
+    + row('Sites', sites.length ? sites.map((s) => pill(s, 'muted')).join(' ') : dash)
     + row('Backup', backup)
     + row('Open alerts', r.openAlerts > 0
       ? '<span class="dv-alerts">' + r.openAlerts + '</span>' : '<span class="text-muted">None</span>')

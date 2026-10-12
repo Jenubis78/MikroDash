@@ -168,9 +168,9 @@ check('the three handshake states are three, not two', () => {
     peer({ publicKey: 'c', name: 'unused', state: 'never', lastHandshake: '' }),
   ]);
   const html = rows();
-  assert.ok(/hs-ok/.test(html), 'a peer that handshook seconds ago is not marked fresh');
-  assert.ok(/hs-stale/.test(html), 'a peer whose handshake went stale is not marked stale');
-  assert.ok(/hs-never[^]*Never connected/.test(html),
+  assert.ok(/pill-dot pill-ok">5s</.test(html), 'a peer that handshook seconds ago is not marked fresh');
+  assert.ok(/pill-dot pill-err">2h13m</.test(html), 'a peer whose handshake went stale is not marked stale');
+  assert.ok(/pill-muted">Never connected</.test(html),
     'a peer that never connected is not distinguished from one that went away');
 });
 
@@ -179,7 +179,7 @@ check('a peer that has just handshaken is the freshest, not the stalest', () => 
   // obvious `|| Infinity` guard turns it into the oldest possible value. That
   // bug shipped once already, in the page this tab replaces.
   update([peer({ publicKey: 'a', state: 'active', lastHandshake: '0s' })]);
-  assert.ok(/hs-ok/.test(rows()), 'a peer handshaking right now was graded stale');
+  assert.ok(/pill-dot pill-ok">0s</.test(rows()), 'a peer handshaking right now was graded stale');
 });
 
 check('the flags render, and the overlap warning with them', () => {

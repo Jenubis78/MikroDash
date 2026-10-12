@@ -130,9 +130,9 @@ function boot() {
     secret({ id: '*3', name: 'disabled-one', connected: false, disabled: true }),
   ]));
   const html = String(doc.nodes.pppSecretTable.innerHTML);
-  assert.ok(/lease-pill bound">online</.test(html), 'no online pill:\n' + html);
-  assert.ok(/lease-pill">offline</.test(html), 'no offline pill:\n' + html);
-  assert.ok(/lease-pill expired">disabled</.test(html), 'no disabled pill:\n' + html);
+  assert.ok(/pill pill-ok">online</.test(html), 'no online pill:\n' + html);
+  assert.ok(/pill pill-muted">offline</.test(html), 'no offline pill:\n' + html);
+  assert.ok(/pill pill-warn">disabled</.test(html), 'no disabled pill:\n' + html);
   // A disabled row is dimmed, which is how the table says "this one is off"
   // without spending a column on it.
   assert.ok(/opacity:\.55/.test(html), 'the disabled row is not dimmed');
@@ -154,7 +154,7 @@ function boot() {
        limitIn: null, limitOut: null, rx: 0, tx: 0, rxRate: null, txRate: null }],
   ));
   const html = String(doc.nodes.pppSecretTable.innerHTML);
-  assert.ok(/lease-pill">offline</.test(html),
+  assert.ok(/pill pill-muted">offline</.test(html),
     'the page re-derived connected from the sessions list instead of reading it:\n' + html);
   restore();
   say('ok  the connected pill reads the server-side join, it does not recompute it');

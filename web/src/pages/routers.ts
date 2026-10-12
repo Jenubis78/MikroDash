@@ -387,7 +387,7 @@ function renderRoutersList(rows: RouterStatsRow[]): void {
       + '" tabindex="0" role="button" aria-label="' + esc('Open overview of ' + r.label) + '">'
       + '<td><span class="rtl-dot" style="background:' + (st === 'unknown' ? 'rgb(from var(--text-muted) r g b / 1)' : st === 'online' ? 'var(--accent-tx)' : 'var(--accent-err)') + '" title="'
         + (st === 'unknown' ? 'Checking\u2026' : st === 'online' ? 'Online' : 'Offline') + '"></span></td>'
-      + '<td>' + esc(r.label) + (r.isActive ? ' <span class="badge badge-outline text-blue">active</span>' : '') + '</td>'
+      + '<td>' + esc(r.label) + (r.isActive ? ' <span class="pill pill-rx">active</span>' : '') + '</td>'
       + '<td class="text-muted">' + esc(r.host || '') + '</td>'
       + '<td>' + (r.boardName ? esc(r.boardName) : dash) + '</td>'
       + '<td>' + (r.version ? esc(r.version) : dash) + ' ' + updatePill(r) + '</td>'

@@ -33,7 +33,7 @@
 // slot and the move arrows are the engine's, and the self-throttle warning is the
 // `queueThrottle` guard answered in the engine's own prompt. This module renders.
 
-import { esc, el, renderSortHeader, fmtBytes, resRow, type SortCol, mutedDash, sparkPoints } from '../dom';
+import { esc, el, renderSortHeader, fmtBytes, resRow, pill, type SortCol, mutedDash, sparkPoints } from '../dom';
 import { mountAdds, mountRows } from '../resource';
 import type { Socket } from '../socket';
 import type { QueuesPayload } from '../gen/payloads';
@@ -212,8 +212,8 @@ export function initQueuesPage(socket: Socket, isVisible: (page: string) => bool
 
     const last = (data?.simple || []).length - 1;
     simpleTb.innerHTML = rows.length ? rows.map((x) => {
-      const flags = (x.disabled ? '<span class="wl-band wl-band-24">disabled</span> ' : '') +
-                    (x.invalid ? '<span class="wl-band wl-band-24">invalid</span> ' : '');
+      const flags = (x.disabled ? pill('disabled', 'warn') + ' ' : '') +
+                    (x.invalid ? pill('invalid', 'err') + ' ' : '');
       return '<tr' + (x.disabled ? ' style="opacity:.62"' : '') +
         (x.dynamic ? '' : resRow(x.id, x.name, 'simpleQueue')) + '>' +
         '<td class="q-order">' + (x.order + 1) + '</td>' +
@@ -236,12 +236,12 @@ export function initQueuesPage(socket: Socket, isVisible: (page: string) => bool
 
     const ftActive = !!(data && data.fasttrack && data.fasttrack.state === 'active');
     treeTb.innerHTML = rows.length ? rows.map((x) => {
-      const flags = (x.disabled ? '<span class="wl-band wl-band-24">disabled</span> ' : '') +
-                    (x.invalid ? '<span class="wl-band wl-band-24">invalid</span> ' : '');
+      const flags = (x.disabled ? pill('disabled', 'warn') + ' ' : '') +
+                    (x.invalid ? pill('invalid', 'err') + ' ' : '');
       // Only a global-parented tree is bypassed by FastTrack; one parented to an
       // interface still works, so the chip is per row rather than per table.
       const ft = (ftActive && x.fasttrackBypassable && !x.disabled)
-        ? ' <span class="wl-band wl-band-24" title="FastTrack bypasses queue trees parented to global">bypassed</span>' : '';
+        ? ' <span class="pill pill-warn" title="FastTrack bypasses queue trees parented to global">bypassed</span>' : '';
       return '<tr' + (x.disabled ? ' style="opacity:.62"' : '') + resRow(x.id, x.name, 'queueTree') + '>' +
         '<td>' + flags + esc(x.name) + (x.comment ? '<div class="muted-note">' + esc(x.comment) + '</div>' : '') + '</td>' +
         '<td>' + esc(x.parent || '-') + ft + '</td>' +

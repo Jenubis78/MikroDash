@@ -34,7 +34,8 @@
 // the SSID aggregate are per-view.
 
 import { esc, el, bandBadge, bandRank, ssidColours, installWifiGlobals,
-  renderSortHeader, lsGet, lsSet, type SortCol, type SortState } from '../dom';
+  renderSortHeader, lsGet, lsSet, pill, type SortCol, type SortState } from '../dom';
+import type { PillTone } from '../palette';
 import type { Socket } from '../socket';
 import type { WifiNetwork, WifiRadio, WifiPayload } from '../gen/payloads';
 
@@ -125,23 +126,22 @@ export function initWifiPage(socket: Socket, isVisible: (page: string) => boolea
   // the same SSID a different colour on each band.
   let colours: Record<string, string> = {};
 
-  function badge(text: string, cls: string): string {
-    return '<span class="badge ' + cls + '" style="margin-left:.35rem">' + esc(text) + '</span>';
+  function badge(text: string, tone: PillTone): string {
+    return '<span class="pill pill-' + tone + '" style="margin-left:.35rem">' + esc(text) + '</span>';
   }
 
   function stateCell(n: WifiNetwork): string {
-    if (n.disabled) return '<span class="badge bg-secondary-lt">Disabled</span>';
-    if (n.running) return '<span class="badge bg-green-lt">Running</span>';
+    if (n.disabled) return pill('Disabled', 'muted');
+    if (n.running) return pill('Running', 'ok');
     // Enabled but not running is its own answer, and the interesting one: a
     // radio with no country set, or no supported channel, sits exactly here.
-    return '<span class="badge bg-yellow-lt">Not running</span>';
+    return pill('Not running', 'warn');
   }
 
   function securityCell(n: WifiNetwork): string {
     // An open network is the thing worth noticing on this page, so it is the
     // one value that gets a colour rather than plain text.
-    const cls = n.security === 'Open' ? 'bg-red-lt' : 'bg-azure-lt';
-    return '<span class="badge ' + cls + '">' + esc(n.security || '-') + '</span>';
+    return pill(n.security || '-', n.security === 'Open' ? 'err' : 'rx');
   }
 
   function radioHeader(radio: Partial<WifiRadio> & { name: string }, count: number): string {
@@ -155,9 +155,9 @@ export function initWifiPage(socket: Socket, isVisible: (page: string) => boolea
         esc(radio.name) +
         (bits.length ? '<span class="muted-note" style="margin-left:.5rem;font-weight:400">' +
                        esc(bits.join(' · ')) + '</span>' : '') +
-        (radio.readOnlyReason === 'capsv1' ? badge('CAPsMAN v1', 'bg-orange-lt')
-          : radio.capsManaged ? badge('CAP', 'bg-purple-lt') : '') +
-        (radio.disabled ? badge('Disabled', 'bg-secondary-lt') : '') +
+        (radio.readOnlyReason === 'capsv1' ? badge('CAPsMAN v1', 'warn')
+          : radio.capsManaged ? badge('CAP', 'alt') : '') +
+        (radio.disabled ? badge('Disabled', 'muted') : '') +
         '<span class="muted-note" style="float:right;font-weight:400">' +
           esc(String(count)) + (count === 1 ? ' network' : ' networks') + '</span>' +
       '</td></tr>';
@@ -196,13 +196,13 @@ export function initWifiPage(socket: Socket, isVisible: (page: string) => boolea
       : '';
     return '<tr' + handle + '>' +
       '<td class="tbl-indent">' + ssidPill(n) +
-        (n.hidden ? badge('Hidden', 'bg-secondary-lt') : '') +
-        (n.isVirtual ? badge('Virtual AP', 'bg-azure-lt') : '') +
+        (n.hidden ? badge('Hidden', 'muted') : '') +
+        (n.isVirtual ? badge('Virtual AP', 'rx') : '') +
         // Says WHY the row will not open, which is the difference between a
         // read-only table and a broken one.
-        (n.readOnlyReason === 'caps' ? badge('CAP', 'bg-purple-lt')
-          : n.readOnlyReason === 'capsv1' ? badge('CAPsMAN v1', 'bg-orange-lt')
-            : n.readOnlyReason === 'provisioned' ? badge('Provisioned', 'bg-purple-lt') : '') +
+        (n.readOnlyReason === 'caps' ? badge('CAP', 'alt')
+          : n.readOnlyReason === 'capsv1' ? badge('CAPsMAN v1', 'warn')
+            : n.readOnlyReason === 'provisioned' ? badge('Provisioned', 'alt') : '') +
         // Saying which profile a value comes from is what makes the override
         // prompt make sense when it appears.
         (n.inherits && n.inherits.ssid
@@ -235,8 +235,8 @@ export function initWifiPage(socket: Socket, isVisible: (page: string) => boolea
     const apNote = r.aps.length
       ? r.aps.length + (r.aps.length === 1 ? ' AP' : ' APs')
       : 'this router';
-    const secCls = r.security === 'Open' ? 'bg-red-lt'
-      : r.security === 'Mixed' ? 'bg-yellow-lt' : 'bg-azure-lt';
+    const secTone: PillTone = r.security === 'Open' ? 'err'
+      : r.security === 'Mixed' ? 'warn' : 'rx';
     return '<tr>' +
       '<td><span class="wn-ssid-pill" style="color:' + col + ';border-color:' + col + '">' +
         esc(r.ssid) + '</span>' +
@@ -246,12 +246,12 @@ export function initWifiPage(socket: Socket, isVisible: (page: string) => boolea
         '<div class="muted-note" style="font-size:.68rem">' +
           esc(r.ifaces.map((n) => n.name).join(', ')) + '</div></td>' +
       '<td>' + (r.bands.map(bandBadge).join(' ') || '<span class="muted-note">-</span>') + '</td>' +
-      '<td><span class="badge ' + secCls + '">' + esc(r.security || '\u2014') + '</span></td>' +
+      '<td>' + pill(r.security || '\u2014', secTone) + '</td>' +
       '<td>' + esc(r.vlanId || '\u2014') + '</td>' +
       '<td>' + esc(String(r.clients)) + '</td>' +
       '<td>' + (r.running
-        ? '<span class="badge bg-green-lt">Running</span>'
-        : '<span class="badge bg-yellow-lt">Not running</span>') + '</td>' +
+        ? pill('Running', 'ok')
+        : pill('Not running', 'warn')) + '</td>' +
     '</tr>';
   }
 
@@ -423,7 +423,7 @@ export function initWifiPage(socket: Socket, isVisible: (page: string) => boolea
       ? rows.map((p) =>
         '<tr data-id="' + esc(p.id) + '" data-identity="' + esc(p.name) + '"' +
           ' data-res="wlSecProfile">' +
-          '<td>' + esc(p.name) + (p.isDefault ? badge('default', 'bg-secondary-lt') : '') + '</td>' +
+          '<td>' + esc(p.name) + (p.isDefault ? badge('default', 'muted') : '') + '</td>' +
           '<td>' + esc(p.mode || '-') + '</td>' +
           '<td>' + esc(p.authTypes || 'none') + '</td>' +
         '</tr>').join('')

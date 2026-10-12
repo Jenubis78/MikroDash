@@ -37,7 +37,7 @@
 // success, and reported that as ToDo item 5. `7e5ac8e` fixed it on all three
 // pages, and this follows. Reproduce, report, follow - three rounds of it.
 
-import { esc, el, renderSortHeader, sortMul, resRow, type SortCol, type SortState, mutedDash } from '../dom';
+import { esc, el, renderSortHeader, sortMul, resRow, pill, type SortCol, type SortState, mutedDash } from '../dom';
 import { mountAdds, mountRows } from '../resource';
 import type { Socket } from '../socket';
 import type { RosUsersPayload } from '../gen/payloads';
@@ -183,9 +183,9 @@ export function initRosUsersPage(socket: Socket, isVisible: (page: string) => bo
     if (badge) badge.textContent = String(all.length);
 
     userTb.innerHTML = rows.length ? rows.map((u) => {
-      const status = u.disabled ? '<span class="wl-band wl-band-24">disabled</span>'
+      const status = u.disabled ? pill('disabled', 'warn')
         : u.expired ? '<span style="color:var(--text-muted)">expired</span>'
-        : '<span class="wl-band wl-band-6">enabled</span>';
+        : pill('enabled', 'ok');
       return '<tr' + (u.protected ? '' : resRow(u.id, u.name, 'rosUser')) + '>' +
         '<td>' + esc(u.name) + (u.comment ? '<div class="muted-note">' + esc(u.comment) + '</div>' : '') + '</td>' +
         '<td>' + esc(u.group) + '</td>' +
@@ -213,7 +213,7 @@ export function initRosUsersPage(socket: Socket, isVisible: (page: string) => bo
       // ONLY WHAT IS GRANTED. The denied half is every other policy, and listing
       // seventeen names per row would bury the four that matter.
       const pol = g.granted.length
-        ? g.granted.map((p) => '<span class="wl-band wl-band-5" style="margin:0 .15rem .15rem 0">' + esc(p) + '</span>').join('')
+        ? g.granted.map((p) => '<span class="pill pill-rx" style="margin:0 .15rem .15rem 0">' + esc(p) + '</span>').join('')
         : '<span class="muted-note">no permissions</span>';
       return '<tr' + (g.protected ? '' : resRow(g.id, g.name, 'rosGroup')) + '>' +
         '<td>' + esc(g.name) + (g.comment ? '<div class="muted-note">' + esc(g.comment) + '</div>' : '') + '</td>' +

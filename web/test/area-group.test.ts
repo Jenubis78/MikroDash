@@ -83,7 +83,7 @@ reply({});
 const rows = String(doc.nodes['areaGroupTable-' + KEY].innerHTML);
 assert.ok(/data-id="\*1"[^>]*data-res="addressList"|data-res="addressList"[^>]*data-id="\*1"/.test(rows.replace(/\n/g, '')) || (rows.includes('data-id="*1"') && rows.includes('data-res="addressList"')),
   'the entries do not carry the engine attributes: ' + rows);
-assert.ok(rows.includes('hs-info">yes'), 'the entries lost their pills');
+assert.ok(rows.includes('pill-rx">yes'), 'the entries lost their pills');
 assert.strictEqual(doc.nodes['areaGroupNote-' + KEY].textContent, 'Showing 2 of 37,111. Search to narrow.');
 say('ok  opening a list asks for it alone, ignores stale answers, and says 2 of 37,111');
 

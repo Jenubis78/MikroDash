@@ -20,6 +20,7 @@
  */
 
 import { el, esc } from '../dom';
+import type { PillTone } from '../palette';
 
 /** One profile, as GET /api/credentials/profiles lists it. */
 export interface CredProfile {
@@ -97,13 +98,16 @@ export function stateKind(state: string): 'ok' | 'wait' | 'warn' | 'bad' | undef
   return k === 'ok' || k === 'wait' || k === 'warn' || k === 'bad' ? k : undefined;
 }
 
+/** The pill tone for each picker kind: in progress is blue, refusal amber. */
+const KIND_TONE: Record<string, PillTone> = { ok: 'ok', wait: 'rx', warn: 'warn', bad: 'err' };
+
 export function statePill(state: string): string {
   // AN UNKNOWN STATE IS NEUTRAL, NOT RED. `not linked` is the ordinary case for
   // a profile nobody has put anywhere yet, and colouring it like a failure
   // would make an untouched profile look broken.
-  const kind = STATE_KIND[state] ?? 'none';
+  const tone = KIND_TONE[STATE_KIND[state] ?? ''] ?? 'muted';
   const title = STATE_TITLE[state] ?? '';
-  return `<span class="cp-pill cp-${kind}" title="${esc(title)}">${esc(state)}</span>`;
+  return `<span class="pill pill-${tone}" title="${esc(title)}">${esc(state)}</span>`;
 }
 
 /**
@@ -158,13 +162,13 @@ export function profileRow(p: CredProfile, links: readonly CredLink[]): string {
     + `<td><strong>${esc(p.name)}</strong>`
     // THE DEFAULT IS MARKED IN THE LIST, because "which one is the default" is
     // otherwise only visible by opening each profile in turn.
-    + (p.isDefault ? ' <span class="cp-pill cp-wait" title="Offered first when a device '
+    + (p.isDefault ? ' <span class="pill pill-rx" title="Offered first when a device '
       + 'is provisioned">default</span>' : '')
     + (p.description ? `<div class="cfg-meta">${esc(p.description)}</div>` : '')
     + '</td>'
     // THE ACCOUNT, as a pill: it is the thing this profile puts on a router,
     // and the column reads as a set of accounts rather than a run of text.
-    + `<td><span class="cp-user">${esc(p.username)}</span></td>`
+    + `<td><span class="pill pill-alt">${esc(p.username)}</span></td>`
     // TRUNCATED, WITH THE WHOLE LIST IN title. Seventeen policies used to wrap
     // the cell, grow the row, and push the buttons beside it onto two lines.
     + `<td><span class="cp-perms" title="${esc(permissionText(p))}">`

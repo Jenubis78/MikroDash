@@ -325,7 +325,7 @@ export function initConfigManagementPage(socket: Socket, isVisible: (page: strin
     // The last checks were of text that no longer reads; do not let them stand.
     const checks = el('cfgEdChecks');
     if (checks) checks.innerHTML = '<div class="cfg-meta">Fix the refused line to see the checks.</div>';
-    setStatus('is-bad', (line ? '<span class="cfg-ln-tag">line ' + line + '</span>' : '') +
+    setStatus('is-bad', (line ? '<span class="pill pill-err">line ' + line + '</span>' : '') +
       esc(e instanceof Error ? e.message : 'The template could not be checked'));
   }
 

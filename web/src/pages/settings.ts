@@ -26,7 +26,7 @@
  * page on a fresh install, and nothing about the code would look wrong.
  */
 
-import { el, esc } from '../dom';
+import { el, esc, pill } from '../dom';
 import { loadAbout } from './about';
 // `siteIdsOf` is the ARRAY-WINS-OUTRIGHT rule, ported once in `routers.ts` and
 // reused rather than restated: a second copy here would drift, and the half that
@@ -575,9 +575,7 @@ export function scopeLabel(g: GrantView, look: PrincipalLookups): string {
  */
 export function accessSummary(grants: GrantView[] | undefined, look: PrincipalLookups): string {
   if (!grants || !grants.length) {
-    return '<span style="padding:.1rem .5rem;border-radius:20px;font-size:.7rem;'
-      + 'background:rgb(from var(--text-muted) r g b / .1);color:var(--text-muted);'
-      + 'border:1px solid rgb(from var(--text-muted) r g b / .15)">No access</span>';
+    return pill('No access', 'muted');
   }
   return grants.map((g) =>
     '<div style="font-size:.72rem">' + esc(roleName(g, look))

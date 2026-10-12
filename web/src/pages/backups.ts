@@ -23,17 +23,18 @@
 
 import { fmtTs } from '../timefmt';
 import { esc, el, fmtBytes } from '../dom';
+import type { PillTone } from '../palette';
 import type { Socket } from '../socket';
 import type { StatePayload } from '../gen/payloads';
 import type { HandEvents } from '../events-hand';
 import { hunksHTML } from '../diffview';
 
 /** Every outcome the runner can record. An unknown one still renders. */
-const OUTCOME: Record<string, { label: string; cls: string }> = {
-  changed: { label: 'Stored', cls: 'bg-green-lt' },
-  unchanged: { label: 'No change', cls: 'bg-azure-lt' },
-  skipped: { label: 'Skipped', cls: 'bg-yellow-lt' },
-  failed: { label: 'Failed', cls: 'bg-red-lt' },
+const OUTCOME: Record<string, { label: string; tone: PillTone }> = {
+  changed: { label: 'Stored', tone: 'ok' },
+  unchanged: { label: 'No change', tone: 'rx' },
+  skipped: { label: 'Skipped', tone: 'warn' },
+  failed: { label: 'Failed', tone: 'err' },
 };
 
 const BTN = 'padding:.3125rem .5rem;font-size:.75rem;line-height:1.3333333333';
@@ -168,7 +169,7 @@ export function initBackupsPage(socket: Socket, isVisible: (page: string) => boo
     const tbody = el('bkTable');
     if (!tbody) return;
     tbody.innerHTML = rows.map((r) => {
-      const o = OUTCOME[r.outcome] || { label: r.outcome, cls: '' };
+      const o = OUTCOME[r.outcome] || { label: r.outcome, tone: 'muted' as PillTone };
       const actions: string[] = [];
       if (r.stem && !r.pruned) {
         actions.push('<button class="sbtn sbtn-ghost" style="' + BTN +
@@ -215,7 +216,7 @@ export function initBackupsPage(socket: Socket, isVisible: (page: string) => boo
         '</td>' +
         // The row id is what an audit entry names and what a support question
         // quotes - so it needs to be readable, not dug out of the DOM.
-        '<td><span class="bk-id-pill">' + esc(String(r.id)) + '</span></td>' +
+        '<td><span class="pill pill-rx">' + esc(String(r.id)) + '</span></td>' +
         '<td>' + esc(fmtWhen(r.takenAt)) +
           (detail ? '<div class="muted-note" style="font-size:.7rem">' + detail + '</div>' : '') + '</td>' +
         // ── A PRUNED ROW SAID "Stored", AND 3.3 MB ─────────────────────────
@@ -236,7 +237,7 @@ export function initBackupsPage(socket: Socket, isVisible: (page: string) => boo
         // The state is applied over the outcome rather than folded into
         // OUTCOME, because they answer different questions and both are worth
         // keeping: the run DID store something, and that something is gone now.
-        '<td><span class="badge ' + (r.pruned ? 'bg-secondary-lt' : o.cls) + '"' +
+        '<td><span class="pill pill-' + (r.pruned ? 'muted' : o.tone) + '"' +
           (r.pruned ? ' title="Stored at the time, then removed by retention"' : '') +
           '>' + esc(r.pruned ? 'Pruned' : o.label) + '</span></td>' +
         '<td>' + esc(r.source === 'manual' ? ('Manual' + (r.actor ? ' · ' + r.actor : '')) : 'Schedule') + '</td>' +

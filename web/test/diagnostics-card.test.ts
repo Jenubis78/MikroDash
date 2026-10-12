@@ -141,9 +141,9 @@ function ok(cond: unknown, msg: string) { assert.ok(cond, msg); checks++; }
   // "· pushed by router" COUNTS row above, so it passes against a renderer that
   // labels every menu the same - measured: that mutation survived the loose
   // version of this check.
-  ok(html.includes('>/interface/wifi/registration-table/print</span><span class="vpn-hs-badge hs-ok">pushed<'),
+  ok(html.includes('>/interface/wifi/registration-table/print</span><span class="pill pill-ok">pushed<'),
     'the streamed menu is not labelled as pushed on its own row');
-  ok(html.includes('>/ip/arp/print</span><span class="vpn-hs-badge hs-info">polled<'),
+  ok(html.includes('>/ip/arp/print</span><span class="pill pill-rx">polled<'),
     'the polled menu is not labelled as polled on its own row');
 }
 
@@ -244,11 +244,11 @@ function ok(cond: unknown, msg: string) { assert.ok(cond, msg); checks++; }
 {
   const { html } = render(full());
   ok(html.includes('Who asked'), 'the per-source section is missing');
-  ok(html.includes('<span class="vpn-hs-badge hs-info">Collectors</span>'),
+  ok(html.includes('<span class="pill pill-rx">Collectors</span>'),
     'the collectors are not a blue pill');
-  ok(html.includes('<span class="vpn-hs-badge hs-warn">Security Scan</span>'),
+  ok(html.includes('<span class="pill pill-warn">Security Scan</span>'),
     'an on-demand feature is not an amber pill');
-  ok(html.includes('<span class="vpn-hs-badge hs-never">Other</span>'),
+  ok(html.includes('<span class="pill pill-muted">Other</span>'),
     'an unnamed source is not a grey pill');
   // The bar is the source's share of the HEADLINE: 37 of 118 is 31%.
   ok(html.includes('style="width:31%"'), 'the Security Scan bar is not its share of the command rate');
@@ -273,7 +273,7 @@ function ok(cond: unknown, msg: string) { assert.ok(cond, msg); checks++; }
       .map((m) => html.indexOf('>' + m + '<'));
     const [arp, app, svc] = order(list.slice(list.indexOf('dc-diagBusyBody')));
     ok(arp >= 0 && app > arp && svc > app, 'the busiest menus are not ordered by rate, busiest first');
-    ok(list.includes('<td><span class="vpn-hs-badge hs-warn">Apps</span></td>'), 'a menu row does not name its source');
+    ok(list.includes('<td><span class="pill pill-warn">Apps</span></td>'), 'a menu row does not name its source');
     const head = doc.getElementById('dc-diagBusyHead');
     ok(head.innerHTML.includes('/ min'), 'the busiest table has no header');
     // Clicking the rate header flips it to ascending.

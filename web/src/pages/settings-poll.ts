@@ -22,7 +22,7 @@
  * so BOTH sides actually execute it rather than both skipping it.
  */
 
-import { el } from '../dom';
+import { el, pill } from '../dom';
 import { fieldHtml } from '../form';
 import { POLL_SLIDERS, POLL_PROFILES, POLL_PROFILE_KEY, type PollSlider } from '../gen/poll-tables';
 
@@ -157,7 +157,7 @@ export function buildSliders(data: PollData, sliders: PollSlider[] = POLL_SLIDER
     }
     if (cfg.streamed) {
       wrap.insertAdjacentHTML('beforeend', fieldHtml({ label: cfg.label },
-        '<div class="ff-row"><span class="vpn-hs-badge hs-ok">Event-driven</span></div>'));
+        '<div class="ff-row">' + pill('Event-driven', 'ok') + '</div>'));
       return;
     }
     const min = cfg.min as number;

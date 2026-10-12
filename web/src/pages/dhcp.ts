@@ -12,7 +12,7 @@
 // correctly.
 
 import { netFlowUpdate } from './dashboard-card-netflow';
-import { esc, el, resRow } from '../dom';
+import { esc, el, resRow, pill } from '../dom';
 import { paletteCss } from '../palette';
 import type { Socket } from '../socket';
 import { mountAdds, mountRows } from '../resource';
@@ -125,13 +125,13 @@ export function initDhcpPage(socket: Socket, isVisible: (page: string) => boolea
     }
     table.innerHTML = sortLeases(filtered).map((l) => {
       const st = (l.status || '').toLowerCase();
-      const pillCls = st === 'bound' ? 'bound'
-        : (st === 'waiting' || st === 'offered') ? 'waiting' : 'expired';
+      const tone = st === 'bound' ? 'ok'
+        : (st === 'waiting' || st === 'offered') ? 'warn' : 'muted';
       return '<tr' + resRow(l.id, l.mac) + '>' +
         '<td style="font-weight:600">' + esc(l.name || l.hostName || '-') + '</td>' +
         '<td style="color:var(--accent-rx)">' + esc(l.ip) + '</td>' +
         '<td style="color:var(--text-muted)">' + esc(l.mac || '-') + '</td>' +
-        '<td><span class="lease-pill ' + pillCls + '">' + esc(l.status || '?') + '</span></td>' +
+        '<td>' + pill(l.status || '?', tone) + '</td>' +
         '</tr>';
     }).join('');
   }

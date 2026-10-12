@@ -342,7 +342,7 @@ export function initWirelessPage(socket: Socket, isVisible: (page: string) => bo
             ' aria-expanded="' + (shut ? 'false' : 'true') + '">' +
             '<span class="wl-group-caret">' + (shut ? '&#9656;' : '&#9662;') + '</span>' +
             '<span class="wl-group-label">' + esc(g.iface) + '</span>' +
-            (isCapsman ? '<span class="badge badge-outline-azure ms-1" style="font-size:.6rem">CAP</span>' : '') +
+            (isCapsman ? '<span class="pill pill-alt ms-1">CAP</span>' : '') +
             (g.ssid ? '<span class="wl-group-sub">' + esc(g.ssid) + '</span>' : '') +
             '<span class="wl-group-sub">' + g.clients.length + ' client' +
               (g.clients.length !== 1 ? 's' : '') + '</span>' +

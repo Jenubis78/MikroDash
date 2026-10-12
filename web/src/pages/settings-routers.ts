@@ -77,8 +77,8 @@ export function renderRouterRow(
   // everyone. They coincide most of the time, which is exactly why they were
   // one badge and why the one badge was wrong.
   const isPrimary = !!primaryId && r.id === primaryId;
-  const activeBadge = isActive ? '<span class="rtr-active-badge">Active</span>' : '';
-  const primaryBadge = isPrimary ? '<span class="rtr-primary-badge" title="Loaded when you sign in">Primary</span>' : '';
+  const activeBadge = isActive ? '<span class="pill pill-rx">Active</span>' : '';
+  const primaryBadge = isPrimary ? '<span class="pill pill-warn" style="margin-right:.25rem" title="Loaded when you sign in">Primary</span>' : '';
   // ── MOVE ARROWS, NOT SORTING ──────────────────────────────────────────
   //
   // This table is ordered by the operator, so it does not sort: the rule the
@@ -95,7 +95,7 @@ export function renderRouterRow(
     + '</td>';
   // A router that came in by zero-touch provisioning says so, and how.
   const ztp = ztpDeviceForRouter(r.id);
-  const ztpBadge = ztp ? '<span class="rtr-ztp-badge" title="Added by zero-touch provisioning (' +
+  const ztpBadge = ztp ? '<span class="pill pill-alt" style="margin-left:.3rem" title="Added by zero-touch provisioning (' +
     (ztp.mode === 'local' ? 'local' : 'through its tunnel') + ')">ZTP</span>' : '';
   const delBtn = '<button class="sbtn sbtn-danger is-sm" data-rtr-id="' + esc(r.id) + '" data-rtr-label="' + esc(r.label) + '" data-rtr-action="delete" title="Delete">&#128465;</button>';
   const toggleBtn = '<button class="sbtn sbtn-ghost is-sm"'
@@ -103,15 +103,15 @@ export function renderRouterRow(
     + ' data-rtr-id="' + esc(r.id) + '" data-rtr-action="toggle">'
     + (r.disabled ? 'Enable' : 'Disable') + '</button>';
   const tlsBadge = r.tls
-    ? '<span style="font-size:.6rem;padding:.1rem .4rem;border-radius:4px;background:rgb(from var(--accent-tx) r g b / .1);color:rgb(from var(--accent-tx) r g b / .9);border:1px solid rgb(from var(--accent-tx) r g b / .2)">TLS</span>'
-    : '<span style="font-size:.6rem;padding:.1rem .4rem;border-radius:4px;background:rgb(from var(--accent-warn) r g b / .1);color:rgb(from var(--accent-warn) r g b / .8);border:1px solid rgb(from var(--accent-warn) r g b / .2)">Unencrypted</span>';
+    ? '<span class="pill pill-tx">TLS</span>'
+    : '<span class="pill pill-warn">Unencrypted</span>';
   const certNote = r.tlsInsecure ? ' <span style="font-size:.6rem;color:var(--text-muted)">self-signed</span>' : '';
   const connState = status[r.id];
-  const badgeCls = connState === true ? 'rtr-status-badge--on' : connState === false ? 'rtr-status-badge--off' : 'rtr-status-badge--unknown';
+  const badgeCls = connState === true ? 'pill-ok' : connState === false ? 'pill-err' : 'pill-muted';
   const badgeTxt = connState === true ? 'Online' : connState === false ? 'Offline' : '-';
   const statusCell = r.disabled
-    ? '<span class="rtr-status-badge rtr-status-badge--disabled" data-rtr-conn="' + esc(r.id) + '">Disabled</span>'
-    : '<span class="rtr-status-badge ' + badgeCls + '" data-rtr-conn="' + esc(r.id) + '">' + badgeTxt + '</span>';
+    ? '<span class="pill pill-warn" data-rtr-conn="' + esc(r.id) + '">Disabled</span>'
+    : '<span class="pill pill-dot ' + badgeCls + '" data-rtr-conn="' + esc(r.id) + '">' + badgeTxt + '</span>';
   // Identity is persisted on the router entry rather than read from the live
   // stats feed, so these stay populated while a router is offline or disabled.
   const unknown = '<span style="color:var(--text-muted)">-</span>';
@@ -131,11 +131,11 @@ export function renderRouterRow(
   // rest of this table already does with one fact per cell.
   const siteCell = siteNames.length
     ? '<div class="rtr-site-cell">' + siteNames.map((n) =>
-        '<span class="rtr-site-chip">' + esc(n) + '</span>').join('') + '</div>'
+        '<span class="pill pill-muted">' + esc(n) + '</span>').join('') + '</div>'
     : unknown;
   const modelCell = r.model ? esc(r.model) : unknown;
   const serialCell = r.serial ? '<span class="rtr-host">' + esc(r.serial) + '</span>' : unknown;
-  const versionCell = r.osVersion ? '<span class="rtr-ver-pill">' + esc(r.osVersion) + '</span>' : unknown;
+  const versionCell = r.osVersion ? '<span class="pill pill-alt">' + esc(r.osVersion) + '</span>' : unknown;
   return '<tr' + (r.disabled ? ' style="opacity:.55"' : '') + '>' +
     orderCell +
     '<td><div style="font-weight:600;font-size:.76rem">' + esc(r.label) + ztpBadge + '</div>' + primaryBadge + activeBadge + '</td>' +
@@ -219,7 +219,7 @@ export function updateRouterStatusBadge(routerId: string, connected: boolean): v
   if (!row || row.disabled) return;
   const badge = document.querySelector('[data-rtr-conn="' + routerId + '"]');
   if (!badge) return;
-  badge.className = 'rtr-status-badge ' + (connected ? 'rtr-status-badge--on' : 'rtr-status-badge--off');
+  badge.className = 'pill pill-dot ' + (connected ? 'pill-ok' : 'pill-err');
   badge.textContent = connected ? 'Online' : 'Offline';
 }
 

@@ -12,7 +12,7 @@
 // same reason alerting treats the host as not yet probed.
 
 import type { Socket } from '../socket';
-import { esc, el, resRow } from '../dom';
+import { esc, el, resRow, pill } from '../dom';
 import { mountAdds, mountRows } from '../resource';
 import type { NetwatchPayload } from '../gen/payloads';
 
@@ -31,12 +31,12 @@ export function initNetwatchPage(socket: Socket, isVisible: (page: string) => bo
     }
     tbody.innerHTML = hosts.map((h) => {
       const status = h.disabled
-        ? '<span style="color:var(--text-muted);font-size:.7rem">Disabled</span>'
+        ? pill('Disabled', 'warn')
         : h.status === 'up'
-          ? '<span class="wg-up">Up</span>'
+          ? '<span class="pill pill-ok pill-dot">Up</span>'
           : h.status === 'down'
-            ? '<span class="wg-down">Down</span>'
-            : '<span style="color:var(--text-muted);font-size:.7rem">' + esc(h.status || '?') + '</span>';
+            ? '<span class="pill pill-err pill-dot">Down</span>'
+            : pill(h.status || '?', 'muted');
       return '<tr' + (h.disabled ? ' style="opacity:.55"' : '') + resRow(h.id, h.host) + '>' +
         '<td>' + status + '</td>' +
         '<td style="font-weight:600">' + esc(h.name || '-') + '</td>' +

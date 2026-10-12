@@ -69,7 +69,7 @@ const { cards, editor, deploy, history } = mod;
   assert.strictEqual(run.total, 3, 'the routers column does not count every router');
   const closed = history.historyRows([run], '', null);
   assert.ok(!closed.includes('<b>T</b>') && !closed.includes('<i>x</i>'), 'a run row renders markup from its data');
-  assert.ok(closed.includes('cfg-run-bad') && closed.includes('Stopped'), 'a halted run is not a red Stopped pill');
+  assert.ok(closed.includes('pill-err') && closed.includes('Stopped'), 'a halted run is not a red Stopped pill');
   assert.ok(closed.includes('1/3') && closed.includes('1 not applied'), 'the routers cell miscounts');
   assert.ok(!closed.includes('cfg-hist-open'), 'a closed run shows its detail');
   const detail = { startedBy: 'x', run: { bodyMasked: '/ip dns\nset servers={{dns}}' }, targets: [{
@@ -125,8 +125,8 @@ assert.ok(!/<\/?(?:b|script|img|i)\b/i.test(hostile), 'a template field reached 
 assert.ok(hostile.includes('&lt;b&gt;n&lt;/b&gt;'), 'the escaped name is shown');
 
 // ── THE LOCK BADGE ───────────────────────────────────────────────────────────
-assert.ok(cards.templateCard(tpl({ lockClass: true })).includes('cfg-pill-lock'), 'a lock-class template is not marked');
-assert.ok(!cards.templateCard(tpl({ lockClass: false })).includes('cfg-pill-lock'), 'a harmless template is marked');
+assert.ok(cards.templateCard(tpl({ lockClass: true })).includes('pill-warn'), 'a lock-class template is not marked');
+assert.ok(!cards.templateCard(tpl({ lockClass: false })).includes('pill-warn'), 'a harmless template is marked');
 
 // ── THE EXTERNAL GENERATOR ───────────────────────────────────────────────────
 const grid = cards.libraryGrid([tpl({ id: 'a', name: 'Alpha' }), tpl({ id: 'b', name: 'Beta', category: 'office' })], 'all', '');

@@ -108,7 +108,7 @@ assert.strictEqual(n.traceRun.disabled, true, 'another tool can start while a ru
 handlers['tools:ping'](result);
 const html = rows();
 assert.ok(/0\.114 ms/.test(html), 'the reply has no time:\n' + html);
-assert.ok(/<span class="wg-down">timeout<\/span>/.test(html), 'the lost packet does not say timeout:\n' + html);
+assert.ok(/<span class="pill pill-err pill-dot">timeout<\/span>/.test(html), 'the lost packet does not say timeout:\n' + html);
 assert.ok(!/<b>x<\/b>/.test(html) && /&lt;b&gt;/.test(html), 'a reply host was not escaped:\n' + html);
 assert.ok(/2 sent, 1 received, 50% loss/.test(String(n.pingSummary.textContent)), 'no summary');
 // THE CARDS follow the same frame: half the packets lost scores 0.
@@ -152,7 +152,7 @@ assert.ok(/0\.114 ms/.test(rows()) && !/timeout/.test(rows()), 'the first progre
 assert.ok(isStop(n.pingRun), 'a progress frame settled the run');
 assert.ok(/Running/.test(String(n.pingStatus.textContent)), 'a progress frame cleared the running status');
 handlers['tools:ping'](frame(2, false));
-assert.ok(/<span class="wg-down">timeout<\/span>/.test(rows()), 'the second progress frame was not drawn:\n' + rows());
+assert.ok(/<span class="pill pill-err pill-dot">timeout<\/span>/.test(rows()), 'the second progress frame was not drawn:\n' + rows());
 assert.ok(isStop(n.pingRun), 'the second progress frame settled the run');
 handlers['tools:ping'](frame(2, true));
 assert.ok(n.pingRun.textContent === 'Ping' && !n.pingRun.disabled, 'the done frame did not settle the run');
@@ -184,7 +184,7 @@ handlers['tools:traceroute']({ code: '', message: '', done: true, result: { addr
   { hop: 2, address: '', timedOut: true, lossPct: 100, lastMs: null, bestMs: null, worstMs: null, status: '' },
 ] } });
 const trace = String(n.traceRows.innerHTML);
-assert.ok(/1\.5 ms/.test(trace) && /<span class="wg-down">timeout<\/span>/.test(trace), 'hops not drawn:\n' + trace);
+assert.ok(/1\.5 ms/.test(trace) && /<span class="pill pill-err pill-dot">timeout<\/span>/.test(trace), 'hops not drawn:\n' + trace);
 assert.ok(!/<i>h<\/i>/.test(trace), 'a hop address was not escaped:\n' + trace);
 assert.ok(/2 hops · Too many hops/.test(String(n.traceSummary.textContent)), 'the router\'s note on the run is missing');
 assert.strictEqual(n.pingRun.disabled, false, 'Ping stays disabled after the traceroute');
@@ -220,7 +220,7 @@ assert.ok(/2\.00 Mbps/.test(String(n.torchRows.innerHTML)) && /198\.51\.100\.1:4
 assert.ok(/<td style="color:var\(--accent-rx\)">2\.00 Mbps<\/td>/.test(String(n.torchRows.innerHTML)) &&
   /<td style="color:var\(--accent-tx\)">/.test(String(n.torchRows.innerHTML)),
   'Rx and Tx are not in the rx and tx colours:\n' + n.torchRows.innerHTML);
-assert.ok(/<span class="bw-proto bw-proto-tcp">tcp<\/span>/.test(String(n.torchRows.innerHTML)),
+assert.ok(/<span class="pill pill-rx">tcp<\/span>/.test(String(n.torchRows.innerHTML)),
   'the protocol is not a pill:\n' + n.torchRows.innerHTML);
 assert.ok(/2 quieter flows not shown/.test(String(n.torchSummary.textContent)), 'omitted flows are not admitted to');
 // THE COUNT PILL beside each page's title counts what that page lists, and goes
@@ -252,7 +252,7 @@ assert.strictEqual(String(n.torchTalkerVal.textContent), '198.51.100.1', 'the To
 // address - "fe80::2ec8:1bff:fe5..." on a real bridge - names no host at all.
 assert.strictEqual(String(n.torchTalkerVal.attributes?.title ?? ''), '198.51.100.1',
   'the Top talker card does not carry its full address as a title');
-assert.ok(/<span class="bw-proto bw-proto-tcp">tcp<\/span>/.test(String(n.torchProtoVal.innerHTML)),
+assert.ok(/<span class="pill pill-rx">tcp<\/span>/.test(String(n.torchProtoVal.innerHTML)),
   'the Top protocol card is not the shared pill: ' + n.torchProtoVal.innerHTML);
 
 // A CONTINUOUS RUN SAYS SO. Its rate is the last few seconds, not the run.
@@ -298,7 +298,7 @@ assert.deepStrictEqual(sent.slice(1), [['tools:stop', {}]], 'pressing Stop did n
 assert.strictEqual(n.pingRun.disabled, true, 'Stop can be pressed twice while the stop is on its way');
 assert.ok(/Stopping/.test(String(n.pingStatus.textContent)), 'the status does not say it is stopping');
 handlers['tools:ping']({ ...frame(2, true), code: 'stopped' });
-assert.ok(/<span class="wg-down">timeout<\/span>/.test(rows()), 'the stopped frame\'s run so far was not drawn:\n' + rows());
+assert.ok(/<span class="pill pill-err pill-dot">timeout<\/span>/.test(rows()), 'the stopped frame\'s run so far was not drawn:\n' + rows());
 assert.ok(/Stopped/.test(String(n.pingStatus.textContent)), 'a stopped run does not say so');
 assert.ok(n.pingRun.textContent === 'Ping' && !n.pingRun.disabled, 'a stopped run left the button as Stop');
 n.pingCount.value = '2';
@@ -418,11 +418,11 @@ handlers['tools:sniffer']({ code: '', message: '', done: false, result: capture 
 const sniff = () => String(n.snifferRows.innerHTML);
 assert.ok(/198\.51\.100\.10:8728/.test(sniff()), 'the capture was not drawn:\n' + sniff());
 assert.ok(!/<i>x<\/i>/.test(sniff()) && /&lt;i&gt;/.test(sniff()), 'an address was not escaped:\n' + sniff());
-assert.ok(/<span class="sniff-dir sniff-dir-tx">tx<\/span>/.test(sniff()) &&
-  /<span class="sniff-dir sniff-dir-rx">rx<\/span>/.test(sniff()),
+assert.ok(/<span class="pill pill-tx">tx<\/span>/.test(sniff()) &&
+  /<span class="pill pill-rx">rx<\/span>/.test(sniff()),
   'the direction is not a pill:\n' + sniff());
-assert.ok(/<span class="bw-proto bw-proto-tcp">tcp<\/span>/.test(sniff()) &&
-  /<span class="bw-proto bw-proto-icmp">icmp<\/span>/.test(sniff()),
+assert.ok(/<span class="pill pill-rx">tcp<\/span>/.test(sniff()) &&
+  /<span class="pill pill-warn">icmp<\/span>/.test(sniff()),
   'the protocol is not the shared pill:\n' + sniff());
 assert.ok(isStop(n.snifferRun), 'a progress frame settled the capture');
 // ── THE CARDS COUNT THE CAPTURE, NOT THE ROWS ─────────────────────────────
@@ -434,7 +434,7 @@ assert.strictEqual(String(n.snifferPacketsVal.textContent), '332', 'the Packets 
 assert.notStrictEqual(String(n.snifferPacketsVal.textContent), String(capture.packets.length),
   'the Packets card counted the rows on screen');
 assert.strictEqual(String(n.snifferBytesVal.textContent), '98.8 KB', 'the Captured card is wrong');
-assert.ok(/bw-proto-tcp/.test(String(n.snifferProtoVal.innerHTML)), 'the Top protocol card has no pill');
+assert.ok(/pill pill-rx">tcp</.test(String(n.snifferProtoVal.innerHTML)), 'the Top protocol card has no pill');
 assert.strictEqual(String(n.snifferProtoFoot.textContent), '96.76% of bytes', 'the Top protocol share is wrong');
 assert.strictEqual(String(n.snifferTalkerVal.textContent), '198.51.100.10', 'the Top talker card is wrong');
 assert.ok(/98\.5 KB both ways/.test(String(n.snifferTalkerFoot.textContent)),

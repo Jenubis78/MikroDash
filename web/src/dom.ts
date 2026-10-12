@@ -5,7 +5,7 @@
 // helper that emitted tidier HTML would render a page that no longer matches
 // the one it replaced.
 
-import { paletteCss } from './palette';
+import { paletteCss, type PillTone } from './palette';
 
 /** Escape for HTML text and attribute contexts, exactly as `esc` does. */
 export function esc(s: unknown): string {
@@ -310,11 +310,16 @@ export function fmtBps(bits: number | null | undefined): string {
 // under the same names so a LIFTED live renderer finds them during a DOM
 // comparison. Wifi Clients will import them rather than redefine them.
 
+/** A band's tone, the same on every pill and legend that names one:
+ *  2.4 GHz purple, 5 GHz blue, 6 GHz green. */
+export function bandTone(band: string): PillTone {
+  return band.indexOf('5') === 0 ? 'rx' : band.indexOf('6') === 0 ? 'tx' : 'alt';
+}
+
 /** The band pill. Three bands, spelled as both pages spell them. */
 export function bandBadge(band: string): string {
   if (!band) return '';
-  const cls = band === '5GHz' ? 'wl-band-5' : band === '6GHz' ? 'wl-band-6' : 'wl-band-24';
-  return '<span class="wl-band ' + cls + '">' + band + '</span>';
+  return pill(band, bandTone(band));
 }
 
 /**
@@ -361,27 +366,26 @@ export function bandRank(band: string): number {
  * rather than old. A blank pill would read as a value; the dash matches what the
  * other columns already do with an absent field.
  *
- * The class carries the colour rather than an inline style, so the palette lives
- * with the rest of the wireless pills in CSS and a theme can move it.
+ * A tone per generation, drawn as the one pill, so the palette moves it with
+ * every other pill.
  */
 export function standardBadge(standard: string): string {
   if (!standard) return '<span class="muted-note">-</span>';
   // Keyed on the rendered label because that IS the vocabulary: `WifiStandard`
   // in internal/collect emits exactly these six strings and nothing else, and
   // its test pins that list against MikroTik's documented band enum.
-  const CLS: Record<string, string> = {
-    'Legacy': 'wl-std-legacy',
-    'Wi-Fi 4': 'wl-std-4',
-    'Wi-Fi 5': 'wl-std-5',
-    'Wi-Fi 6': 'wl-std-6',
-    'Wi-Fi 6E': 'wl-std-6e',
-    'Wi-Fi 7': 'wl-std-7',
+  const TONE: Record<string, PillTone> = {
+    'Legacy': 'muted',
+    'Wi-Fi 4': 'err',
+    'Wi-Fi 5': 'warn',
+    'Wi-Fi 6': 'tx',
+    'Wi-Fi 6E': 'rx',
+    'Wi-Fi 7': 'pink',
   };
   // An unrecognised string still renders, in the neutral colour. The collector
   // should never send one, but a pill that vanishes is a worse way to find out
   // than a pill that looks plain.
-  const cls = CLS[standard] || 'wl-std-legacy';
-  return '<span class="wl-std ' + cls + '">' + esc(standard) + '</span>';
+  return pill(standard, TONE[standard] || 'muted');
 }
 
 // Drawn from the palette, so a chosen palette or the light theme recolours them.
@@ -462,10 +466,22 @@ export function sparkPoints(data: number[], w: number, h: number, pad: number, f
   }).join(' ');
 }
 
-/** The service badge beside an organisation. `cat` is the ASN category, or `other`. */
+/** The one label pill (app.css PILLS). `text` is escaped. */
+export function pill(text: string, tone: PillTone): string {
+  return '<span class="pill pill-' + tone + '">' + esc(text) + '</span>';
+}
+
+/** The tone of each ASN service category, shared by the pill and the
+ *  Connections diagram so a service reads the same colour in both. */
+export const SVC_TONE: Record<string, PillTone> = {
+  cdn: 'rx', cloud: 'warn', social: 'alt', streaming: 'pink',
+  messaging: 'tx', video: 'warn', dns: 'tx', other: 'muted',
+};
+
+/** The service pill beside an organisation. `cat` is the ASN category, or `other`. */
 export function svcBadge(org: string, cat: string | null): string {
   if (!org) return '';
-  return '<span class="svc-badge svc-' + (cat || 'other') + '">' + esc(org) + '</span>';
+  return pill(org, SVC_TONE[cat || 'other'] || 'muted');
 }
 
 /** A protocol as a coloured pill: TCP blue, UDP green, ICMP (and icmpv6) amber,
@@ -473,10 +489,7 @@ export function svcBadge(org: string, cat: string | null): string {
  *  same colour on both. */
 export function protoPill(p: string): string {
   if (!p) return '-';
-  const cls = p === 'tcp' ? 'bw-proto-tcp'
-    : p === 'udp' ? 'bw-proto-udp'
-      : p.indexOf('icmp') !== -1 ? 'bw-proto-icmp' : 'bw-proto-other';
-  return '<span class="bw-proto ' + cls + '">' + esc(p) + '</span>';
+  return pill(p, p === 'tcp' ? 'rx' : p === 'udp' ? 'tx' : p.indexOf('icmp') !== -1 ? 'warn' : 'muted');
 }
 
 /** A regional-indicator flag from an ISO-3166 alpha-2 code, either case. */

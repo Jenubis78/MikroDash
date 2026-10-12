@@ -59,7 +59,7 @@
 // and clears what is shown, and a result nobody is waiting for is dropped.
 
 import type { Socket } from '../socket';
-import { esc, el, fmtBps, fmtBytes, fmtMbps, protoPill, renderSortHeader, sortRows, type SortCol, type SortState } from '../dom';
+import { esc, el, fmtBps, fmtBytes, fmtMbps, pill, protoPill, renderSortHeader, sortRows, type SortCol, type SortState } from '../dom';
 import type { PingResult, TracerouteResult, TorchResult, BtestResult, SnifferResult } from '../gen/payloads';
 import { renderPingCards } from './tools-ping-cards';
 import { renderBtestCards } from './tools-btest-cards';
@@ -281,7 +281,7 @@ function renderPing(r: PingResult): void {
       '<td>' + (lost ? '-' : ms(p.rttMs)) + '</td>' +
       '<td>' + (lost ? '-' : p.ttl) + '</td>' +
       '<td>' + (lost ? '-' : p.size) + '</td>' +
-      '<td>' + (lost ? '<span class="wg-down">' + esc(p.status) + '</span>' : '<span class="wg-up">reply</span>') + '</td>' +
+      '<td>' + (lost ? '<span class="pill pill-err pill-dot">' + esc(p.status) + '</span>' : '<span class="pill pill-ok pill-dot">reply</span>') + '</td>' +
       '</tr>';
   }).join('');
 }
@@ -300,7 +300,7 @@ function renderTraceroute(r: TracerouteResult): void {
     '<td>' + h.hop + '</td>' +
     '<td>' + (h.address ? esc(h.address) : '-') + '</td>' +
     '<td>' + h.lossPct + '%</td>' +
-    '<td>' + (h.timedOut ? '<span class="wg-down">timeout</span>' : ms(h.lastMs)) + '</td>' +
+    '<td>' + (h.timedOut ? '<span class="pill pill-err pill-dot">timeout</span>' : ms(h.lastMs)) + '</td>' +
     '<td>' + ms(h.bestMs) + '</td>' +
     '<td>' + ms(h.worstMs) + '</td>' +
     '<td>' + esc(h.status) + '</td>' +
@@ -409,8 +409,7 @@ function renderSniffer(r: SnifferResult): void {
   }
   // rx blue and tx green, the app's fixed directions, as a pill rather than a
   // bare word - a direction is a state, which is what a pill is for.
-  const dirPill = (d: string): string => '<span class="sniff-dir sniff-dir-' +
-    (d === 'tx' ? 'tx' : 'rx') + '">' + esc(d) + '</span>';
+  const dirPill = (d: string): string => pill(d, d === 'tx' ? 'tx' : 'rx');
   rows.innerHTML = sortRows(r.packets, sniffSort.col, sniffSort.dir).map((p) =>
     '<tr>' +
     '<td>' + p.num + '</td>' +

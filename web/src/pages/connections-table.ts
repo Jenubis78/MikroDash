@@ -2,7 +2,8 @@
 // markup out. connections.ts owns the wiring (tabs, socket, paging state);
 // nothing here touches the page, so all of it is testable without one.
 
-import { esc, fmtBytes, fmtMbps, iso2Flag, protoPill, type SortCol } from '../dom';
+import { esc, fmtBytes, fmtMbps, iso2Flag, pill, protoPill, type SortCol } from '../dom';
+import type { PillTone } from '../palette';
 import type { ConnRow } from '../gen/payloads';
 import { CC_NAMES, PORT_NAMES } from './connections-map';
 
@@ -50,17 +51,17 @@ export function filterConns<T extends ConnRow>(rows: T[], query: string, client:
   });
 }
 
-const STATE_CLS: Record<string, string> = {
-  established: 'conn-st-ok',
-  'syn-sent': 'conn-st-warn', 'syn-received': 'conn-st-warn',
-  'time-wait': 'conn-st-muted', close: 'conn-st-muted', 'close-wait': 'conn-st-muted',
-  'fin-wait': 'conn-st-muted', 'last-ack': 'conn-st-muted',
+const STATE_TONE: Record<string, PillTone> = {
+  established: 'ok',
+  'syn-sent': 'warn', 'syn-received': 'warn',
+  'time-wait': 'muted', close: 'muted', 'close-wait': 'muted',
+  'fin-wait': 'muted', 'last-ack': 'muted',
 };
 
 /** The TCP state as a pill; a dash for protocols that have none. */
 export function statePill(state: string): string {
   if (!state) return '<span class="conn-sub">-</span>';
-  return '<span class="conn-st ' + (STATE_CLS[state] ?? 'conn-st-other') + '">' + esc(state) + '</span>';
+  return pill(state, STATE_TONE[state] ?? 'rx');
 }
 
 /** A byte rate as the app writes rates: bits per second. */
@@ -88,7 +89,7 @@ export function connRowHTML(r: ConnRow): string {
     '<td>' + who + '</td>' +
     '<td><div class="conn-who">' + flag + addr(r.dst, r.dstPort) + '</div><div class="conn-sub">' + esc(where) +
     '</div></td>' +
-    '<td>' + (svc ? '<span class="conn-svc">' + esc(svc) + '</span>'
+    '<td>' + (svc ? pill(svc, 'alt')
       : (r.dstPort ? '<span class="conn-sub">' + esc(r.dstPort) + '</span>' : '<span class="conn-sub">-</span>')) +
     '</td>' +
     '<td>' + protoPill(r.proto) + '</td>' +

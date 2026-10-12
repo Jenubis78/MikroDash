@@ -46,13 +46,13 @@ export function topoPanel(st: TopoState, deps: {
         '<span class="topo-panel-name">' + esc(n.name || n.mac) + '</span>' +
         '<button class="topo-panel-close" id="topoPanelClose" aria-label="Close">&times;</button>' +
       '</div>' +
-      '<div class="topo-badges"><span class="topo-badge">' +
+      '<div class="topo-badges"><span class="pill pill-muted">' +
         (n.type === 'wifi-client' ? 'Wi-Fi client' : 'Wired client') + '</span>' +
-        (n.vlanNames || []).map((v) => '<span class="topo-badge is-vlan">' + esc(v) + '</span>').join('') +
+        (n.vlanNames || []).map((v) => '<span class="pill pill-alt">' + esc(v) + '</span>').join('') +
         // Say plainly when the attachment was DEDUCED from a shared port rather
         // than observed, so a wrong guess is visible rather than silent.
         (n.attrib === 'port'
-          ? '<span class="topo-badge is-guess" title="Deduced: this device shares a ' +
+          ? '<span class="pill pill-warn" title="Deduced: this device shares a ' +
             'port with that switch. The router cannot see which switch port.">inferred</span>'
           : '') +
       '</div>' +
@@ -198,17 +198,17 @@ export function topoPanel(st: TopoState, deps: {
       return;
     }
 
-    let badges = '<span class="topo-badge">' + esc(TYPE_LABEL[n.type] || n.type) + '</span>';
+    let badges = '<span class="pill pill-muted">' + esc(TYPE_LABEL[n.type] || n.type) + '</span>';
     // A GUESS IS LABELLED A GUESS. `caps` means the device advertised what it
     // is; anything else means the type came from its board name or platform.
     if (n.kind !== 'core' && n.typeSource !== 'caps') {
-      badges += '<span class="topo-badge is-guess" title="Inferred from the board or platform - this ' +
+      badges += '<span class="pill pill-warn" title="Inferred from the board or platform - this ' +
         'device did not advertise LLDP capabilities">guessed</span>';
     }
     if (n.gone) {
-      badges += '<span class="topo-badge" style="border-color:var(--accent-err);color:var(--accent-err)">offline</span>';
+      badges += '<span class="pill pill-err">offline</span>';
     }
-    (n.running || []).forEach((r) => { badges += '<span class="topo-badge">' + esc(r) + '</span>'; });
+    (n.running || []).forEach((r) => { badges += '<span class="pill pill-muted">' + esc(r) + '</span>'; });
 
     let live = '';
     if (n.kind !== 'core') {

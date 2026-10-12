@@ -1,6 +1,7 @@
 // The History and Drift tabs' markup, as pure functions: rows in, HTML out.
 
 import { esc, type SortCol } from '../dom';
+import type { PillTone } from '../palette';
 import { hunksHTML } from '../diffview';
 import type { Hunk } from '../gen/payloads';
 import { fmtTs } from '../timefmt';
@@ -62,31 +63,31 @@ export type DriftCheck =
 /** The key a baseline is held under: a template on a router. */
 export const driftKey = (r: { templateId: string; routerId: string }): string => r.templateId + '|' + r.routerId;
 
-const RUN_STATE: Record<string, { word: string; cls: string }> = {
-  done: { word: 'Deployed', cls: 'cfg-run-ok' },
-  halted: { word: 'Stopped', cls: 'cfg-run-bad' },
-  cancelled: { word: 'Cancelled', cls: 'cfg-run-muted' },
-  interrupted: { word: 'Interrupted', cls: 'cfg-run-warn' },
-  expired: { word: 'Expired', cls: 'cfg-run-muted' },
-  canary: { word: 'On the canary', cls: 'cfg-run-live' },
-  'awaiting-canary': { word: 'Awaiting your OK', cls: 'cfg-run-live' },
-  rolling: { word: 'Rolling out', cls: 'cfg-run-live' },
+const RUN_STATE: Record<string, { word: string; tone: PillTone }> = {
+  done: { word: 'Deployed', tone: 'ok' },
+  halted: { word: 'Stopped', tone: 'err' },
+  cancelled: { word: 'Cancelled', tone: 'muted' },
+  interrupted: { word: 'Interrupted', tone: 'warn' },
+  expired: { word: 'Expired', tone: 'muted' },
+  canary: { word: 'On the canary', tone: 'rx' },
+  'awaiting-canary': { word: 'Awaiting your OK', tone: 'rx' },
+  rolling: { word: 'Rolling out', tone: 'rx' },
 };
 
-const TARGET_STATE: Record<string, { word: string; cls: string }> = {
-  applied: { word: 'Applied', cls: 'cfg-run-ok' },
-  failed: { word: 'Failed', cls: 'cfg-run-bad' },
-  'failed-partial': { word: 'Partly applied', cls: 'cfg-run-warn' },
-  unknown: { word: 'Unknown', cls: 'cfg-run-warn' },
-  'preflight-failed': { word: 'Not started', cls: 'cfg-run-bad' },
-  'not-attempted': { word: 'Skipped', cls: 'cfg-run-muted' },
-  pending: { word: 'Waiting', cls: 'cfg-run-muted' },
-  applying: { word: 'Working', cls: 'cfg-run-live' },
+const TARGET_STATE: Record<string, { word: string; tone: PillTone }> = {
+  applied: { word: 'Applied', tone: 'ok' },
+  failed: { word: 'Failed', tone: 'err' },
+  'failed-partial': { word: 'Partly applied', tone: 'warn' },
+  unknown: { word: 'Unknown', tone: 'warn' },
+  'preflight-failed': { word: 'Not started', tone: 'err' },
+  'not-attempted': { word: 'Skipped', tone: 'muted' },
+  pending: { word: 'Waiting', tone: 'muted' },
+  applying: { word: 'Working', tone: 'rx' },
 };
 
-function pill(map: Record<string, { word: string; cls: string }>, state: string): string {
-  const k = map[state] ?? { word: state, cls: 'cfg-run-muted' };
-  return '<span class="vpn-hs-badge ' + k.cls + '">' + esc(k.word) + '</span>';
+function pill(map: Record<string, { word: string; tone: PillTone }>, state: string): string {
+  const k = map[state] ?? { word: state, tone: 'muted' };
+  return '<span class="pill pill-' + k.tone + '">' + esc(k.word) + '</span>';
 }
 
 const METHOD: Record<string, string> = {
@@ -177,13 +178,13 @@ export const DRIFT_COLS: SortCol[] = [
 ];
 
 function driftStatus(c: DriftCheck | undefined): string {
-  if (!c) return '<span class="vpn-hs-badge cfg-run-muted">Not checked</span>';
-  if (c.state === 'checking') return '<span class="vpn-hs-badge cfg-run-live">Reading the router…</span>';
+  if (!c) return '<span class="pill pill-muted">Not checked</span>';
+  if (c.state === 'checking') return '<span class="pill pill-rx">Reading the router…</span>';
   if (c.state === 'error') {
-    return '<span class="vpn-hs-badge cfg-run-bad">' + (c.accept ? 'Not accepted' : 'Could not check') + '</span>';
+    return '<span class="pill pill-err">' + (c.accept ? 'Not accepted' : 'Could not check') + '</span>';
   }
-  return c.drifted ? '<span class="vpn-hs-badge cfg-run-warn">Drifted</span>'
-    : '<span class="vpn-hs-badge cfg-run-ok">As deployed</span>';
+  return c.drifted ? '<span class="pill pill-warn">Drifted</span>'
+    : '<span class="pill pill-ok">As deployed</span>';
 }
 
 /** The Drift table's body; a checked baseline that drifted can show its diff. */

@@ -228,8 +228,8 @@ function applyConnSort(): void {
     } else {
       tbody.innerHTML = sorted.map((r) => {
         const badge = r.connected
-          ? '<span class="rtr-status-badge rtr-status-badge--on">Online</span>'
-          : '<span class="rtr-status-badge rtr-status-badge--off">Offline</span>';
+          ? '<span class="pill pill-ok pill-dot">Online</span>'
+          : '<span class="pill pill-err pill-dot">Offline</span>';
         // "ONGOING" IS NOT ZERO. A null duration on an offline row means the
         // outage has no end yet - the annotation walks backwards and finds no
         // online event after it - and showing 0s would report a router that is

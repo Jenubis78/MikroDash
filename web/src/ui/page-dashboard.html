@@ -4,7 +4,7 @@
          the fleet, not the router this dashboard shows. Only an administrator
          is sent the state it is drawn from (pages/ztp.ts). -->
     <div class="ztp-notice" id="ztpNotice" hidden>
-      <span class="vpn-hs-badge ztp-pill-pending">Not yet provisioned</span>
+      <span class="pill pill-warn">Not yet provisioned</span>
       <span id="ztpNoticeText"></span>
       <button class="sbtn sbtn-primary ztp-btn" type="button" id="ztpNoticeBtn">Review on Devices</button>
     </div>
@@ -36,7 +36,7 @@
               <select id="windowSelect" class="sform-input sform-sm" style="width:90px" title="Time window">
                 <option value="1m" selected>1m</option><option value="5m">5m</option><option value="15m">15m</option><option value="30m">30m</option>
               </select>
-              <span id="wanStatusBadge" class="wan-badge wan-disabled" style="white-space:nowrap;flex-shrink:0">-</span>
+              <span id="wanStatusBadge" class="pill pill-dot pill-muted" style="flex-shrink:0">-</span>
             </div>
             <div class="chart-legend">
               <div class="legend-item"><div class="legend-dot" style="background:var(--accent-rx)"></div><span style="color:var(--text-muted)">RX</span><span class="legend-rate" id="liveRx">-</span></div>
@@ -563,15 +563,15 @@
           <div class="card-body" style="padding:.75rem">
             <div class="wl-band-grid">
               <div class="wl-band-item">
-                <span class="wl-band-pill wl-band-24">2.4 GHz</span>
+                <span class="pill pill-alt">2.4 GHz</span>
                 <span class="wl-band-num" id="dc-wlBandNum24" style="color:rgb(from var(--accent-alt) r g b / .9)">0</span>
               </div>
               <div class="wl-band-item">
-                <span class="wl-band-pill wl-band-5">5 GHz</span>
+                <span class="pill pill-rx">5 GHz</span>
                 <span class="wl-band-num" id="dc-wlBandNum5" style="color:var(--accent-rx)">0</span>
               </div>
               <div class="wl-band-item" id="dc-wlBandRow6" style="display:none">
-                <span class="wl-band-pill wl-band-6">6 GHz</span>
+                <span class="pill pill-tx">6 GHz</span>
                 <span class="wl-band-num" id="dc-wlBandNum6" style="color:rgb(from var(--accent-tx) r g b / .9)">0</span>
               </div>
             </div>

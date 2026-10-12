@@ -76,7 +76,7 @@ typography:
     fontWeight: 600
   pill:
     fontFamily: JetBrains Mono
-    fontSize: 0.62rem
+    fontSize: 0.64rem
     fontWeight: 400
 rounded:
   xs: 3px
@@ -230,13 +230,11 @@ Every accent has a job, and the jobs do not move:
 
 A state is a **tinted pill**, not a block of solid colour:
 
-- the text in the accent colour;
-- the background at about 10-15% of it;
-- a 1px border at about 25-30% of it.
+- the text in the accent colour, at .95;
+- the background at .1 of it;
+- a 1px border at .25 of it.
 
-New code builds these with `color-mix(in srgb, var(--accent-ok) 13%, transparent)` so the tint
-follows the palette. Older rules spell the default palette's `rgba()` out literally; don't copy
-them.
+That recipe is written once, on `.pill` in `app.css`; a page picks a tone, never mixes a colour.
 
 ## Typography
 
@@ -321,8 +319,8 @@ Corners are gently rounded, and the radius grows with the size of the element:
 
 | Element | Radius |
 |---|---|
-| Keyboard keys, protocol tags | 3px |
-| State pills, chips | 4px |
+| Keyboard keys | 3px |
+| Label pills (every one), chips | 4px |
 | Count pills, small chips | 5px |
 | Buttons, inputs, selects, tab tops | 6px |
 | Cards, the stale overlay | 10px |
@@ -372,18 +370,24 @@ where it is limited to.
   - The footer's actions are right-aligned.
   - Wide modals split the body into two columns from 900px.
   - The `pmodal` variant is a single 640px column for short forms.
-- **State pills**: `.vpn-hs-badge` with
-  - `hs-ok` (green),
-  - `hs-warn` (amber),
-  - `hs-stale` (red),
-  - `hs-info` (blue),
-  - `hs-never` (neutral).
-
-  Generated pages pick these by **kind** (`state`, `action`, `good`, `warn`, `bad`, `info`), never by
-  colour.
-- **Protocols**: `protoPill()` in `web/src/dom.ts`.
-  - TCP is blue, UDP is green, ICMP is amber and anything else is grey.
-  - Firewall actions use `actionBadge`.
+- **Label pills: one pill.** A state, a kind, a flag, a protocol, an action, a version, a band: every
+  label is `.pill` plus one tone, `pill(text, tone)` from `web/src/dom.ts` in code.
+  - The tones are palette roles: `pill-ok` (healthy green), `pill-tx` (the Tx green), `pill-warn`
+    (amber), `pill-err` (red), `pill-rx` (blue, also "informative"), `pill-alt` (purple), `pill-pink`
+    and `pill-muted` (neutral). `PillTone` in `web/src/palette.ts` is the same list.
+  - `pill-dot` adds a status dot.
+  - One shape: mono .64rem, 4px corners. A pill carries no inline style; placement (a margin, a gap)
+    is the container's.
+  - One map per vocabulary, shared by everything that colours it: `actionTone` (firewall actions,
+    pill and breakdown bar), `SVC_TONE` (service categories, pill and Connections diagram),
+    `bandTone` (Wi-Fi bands), `protoPill` (TCP blue, UDP green, ICMP amber, anything else grey).
+    A chart that colours something as a pill does reads the tone's token from `TONE_TOKEN`.
+  - Generated pages pick a pill by **kind** (`state`, `action`, `good`, `warn`, `bad`, `info`),
+    never by colour.
+  - **Not label pills, on purpose:** the count pill (`.card-badge`, below), the Wi-Fi SSID pill
+    (`.wn-ssid-pill`, a step larger because it is the network's name), and clickable chips (filters,
+    picked devices), which are controls. `internal/verify` (`TestEveryLabelIsTheOnePill`) records
+    each in a ledger; any other class named like a pill fails, and so does Tabler's `.badge`.
 - **Tables**: use `renderSortHeader` / `sortRows`.
   - **One density.** Every table, Tabler's `.table` or a page's own class, takes its cell padding
     (`--tbl-pad-y` / `--tbl-pad-x`), row height (`--tbl-row-h`, about 34px) and header (.66rem UI,

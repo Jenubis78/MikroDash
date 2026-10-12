@@ -38,7 +38,8 @@
 // styles. `PillKind` is generated from Go's list, so `PILLS` below missing a
 // kind, or naming one Go does not have, fails tsc.
 
-import { el, esc, resRow, renderSortHeader, sortRows, debounce, type SortCol, type SortState } from '../dom';
+import type { PillTone } from '../palette';
+import { el, esc, resRow, renderSortHeader, sortRows, debounce, pill, type SortCol, type SortState } from '../dom';
 import { mountAdds, mountRows } from '../resource';
 import { AREAS, type Area, type AreaPanel, type PillKind } from '../gen/areas';
 import { actionBadge } from './firewall';
@@ -196,24 +197,20 @@ const STATE_WARN = new Set(['searching', 'requesting', 'rebinding', 'renewing', 
   'incomplete']);
 const STATE_BAD = new Set(['error', 'down', 'expired', 'timeout', 'failed']);
 
-function pill(cls: string, text: string): string {
-  return '<span class="vpn-hs-badge ' + cls + '">' + esc(text) + '</span>';
-}
-
 /** A flag pill: "yes" in the kind's colour, "no" neutral. RouterOS says yes and
  *  no; the payload carries true and false. */
-const flag = (cls: string) => (v: string): string => (v === 'true' ? pill(cls, 'yes') : v === 'false' ? pill('hs-never', 'no') : esc(v));
+const flag = (tone: PillTone) => (v: string): string => (v === 'true' ? pill('yes', tone) : v === 'false' ? pill('no', 'muted') : esc(v));
 
 const PILLS: Record<PillKind, (v: string) => string> = {
   state: (v) => {
     const w = v.toLowerCase().replace(/\.+$/, '');
-    return pill(STATE_OK.has(w) ? 'hs-ok' : STATE_WARN.has(w) ? 'hs-warn' : STATE_BAD.has(w) ? 'hs-stale' : 'hs-never', v);
+    return pill(v, STATE_OK.has(w) ? 'ok' : STATE_WARN.has(w) ? 'warn' : STATE_BAD.has(w) ? 'err' : 'muted');
   },
   action: (v) => actionBadge(v),
-  good: flag('hs-ok'),
-  warn: flag('hs-warn'),
-  bad: flag('hs-stale'),
-  info: flag('hs-info'),
+  good: flag('ok'),
+  warn: flag('warn'),
+  bad: flag('err'),
+  info: flag('rx'),
 };
 
 /** One cell: a pill when the declaration names a kind for the column, the plain
@@ -342,7 +339,7 @@ function renderGrouped(area: Area, at: number, table: AreaTable, body: HTMLEleme
     const rows = shown.map(({ grp }) =>
       '<tr data-areagroup="' + esc(grp.name) + '" data-areagroupof="' + esc(area.key) + '" style="cursor:pointer"' +
       ' title="Show the entries in ' + esc(grp.name) + '">' +
-      '<td>' + pill('hs-info', grp.name) + '</td><td>' + grp.count.toLocaleString() + '</td>' +
+      '<td>' + pill(grp.name, 'rx') + '</td><td>' + grp.count.toLocaleString() + '</td>' +
       '<td>' + grp.dynamic.toLocaleString() + '</td><td>' + grp.disabled.toLocaleString() + '</td></tr>').join('');
     const declared = area.tables[at]!;
     body.innerHTML = '<table class="table table-vcenter mb-0">' +
@@ -367,7 +364,7 @@ function renderGrouped(area: Area, at: number, table: AreaTable, body: HTMLEleme
     body.setAttribute('data-open-group', k + '|' + g);
     body.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2 px-3 py-2" style="border-bottom:1px solid var(--border)">' +
       '<button class="sbtn sbtn-outline" type="button" data-areagroupback="' + esc(area.key) + '">&larr; All ' +
-      esc(noun.toLowerCase()) + 's</button>' + pill('hs-info', g) +
+      esc(noun.toLowerCase()) + 's</button>' + pill(g, 'rx') +
       '<input type="search" class="sform-input" style="max-width:260px;margin-left:auto" id="areaGroupSearch-' +
       esc(area.key) + '" data-areagroupsearch="' + esc(area.key) + '" placeholder="Search" autocomplete="off" value="' +
       esc(groupSearch[k] || '') + '">' +

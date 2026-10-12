@@ -65,11 +65,11 @@ const dhcp = send('dhcp-clients', [
 assert.strictEqual(dhcp.pills.status, 'state', 'the DHCP client status is not declared a state pill');
 const d = cells('dhcp-clients', dhcp);
 assert.strictEqual(d.length, 4);
-assert.strictEqual(d[0].status, '<span class="vpn-hs-badge hs-ok">bound</span>');
-assert.strictEqual(d[1].status, '<span class="vpn-hs-badge hs-warn">searching...</span>',
+assert.strictEqual(d[0].status, '<span class="pill pill-ok">bound</span>');
+assert.strictEqual(d[1].status, '<span class="pill pill-warn">searching...</span>',
   'a trailing "..." hid the meaning of the word');
-assert.strictEqual(d[2].status, '<span class="vpn-hs-badge hs-stale">error</span>');
-assert.strictEqual(d[3].status, '<span class="vpn-hs-badge hs-never">something-new&lt;i&gt;</span>',
+assert.strictEqual(d[2].status, '<span class="pill pill-err">error</span>');
+assert.strictEqual(d[3].status, '<span class="pill pill-muted">something-new&lt;i&gt;</span>',
   'an unknown state is not a neutral, escaped pill');
 // THE CONTROL: `interface` has no kind, so it is the plain escaped value, no span.
 assert.strictEqual(d[0].interface, 'ether1', 'a column with no kind was drawn as something other than text');
@@ -77,19 +77,19 @@ assert.strictEqual(d[3].interface, '&lt;b&gt;x&lt;/b&gt;', 'a plain value is not
 say('ok  a status word is coloured by meaning; a column with no kind stays plain text');
 
 // ── FLAGS: YES OR NO, COLOURED ONLY WHEN TRUE ───────────────────────────────
-assert.strictEqual(d[0].disabled, '<span class="vpn-hs-badge hs-never">no</span>');
-assert.strictEqual(d[1].disabled, '<span class="vpn-hs-badge hs-warn">yes</span>');
+assert.strictEqual(d[0].disabled, '<span class="pill pill-muted">no</span>');
+assert.strictEqual(d[1].disabled, '<span class="pill pill-warn">yes</span>');
 assert.ok(/-/.test(d[2].disabled), 'a flag the router did not send is not the dash');
 const lists = send('address-lists', [
   { id: '*1', identity: 'a', values: { list: 'blocked', address: '198.51.100.7', dynamic: 'true' } },
 ]);
-assert.strictEqual(cells('address-lists', lists)[0].dynamic, '<span class="vpn-hs-badge hs-info">yes</span>');
+assert.strictEqual(cells('address-lists', lists)[0].dynamic, '<span class="pill pill-rx">yes</span>');
 const vrrp = send('vrrp', [
   { id: '*1', identity: 'v', values: { name: 'vrrp1', running: 'true', invalid: 'true' } },
 ]);
 const v = cells('vrrp', vrrp)[0];
-assert.strictEqual(v.running, '<span class="vpn-hs-badge hs-ok">yes</span>');
-assert.strictEqual(v.invalid, '<span class="vpn-hs-badge hs-stale">yes</span>');
+assert.strictEqual(v.running, '<span class="pill pill-ok">yes</span>');
+assert.strictEqual(v.invalid, '<span class="pill pill-err">yes</span>');
 say('ok  a flag reads yes or no, in its kind\'s colour only when true');
 
 // ── ACTIONS: THE FIREWALL PAGE'S BADGE ──────────────────────────────────────
@@ -98,12 +98,11 @@ const rules = send('routing-rules', [
   { id: '*2', identity: 'r2', values: { action: 'unreachable' } },
 ]);
 const r = cells('routing-rules', rules);
-// The colour is the palette's, not a literal, so a chosen palette recolours it:
-// the neutral badge is the border token, a refusal the error token.
-assert.ok(/^<span style="[^"]*color:rgb\(from var\(--border\) /.test(r[0].action) && r[0].action.endsWith('>lookup</span>'),
-  'lookup is not the Firewall badge in its neutral colour: ' + r[0].action);
-assert.ok(/color:rgb\(from var\(--accent-err\) /.test(r[1].action), 'unreachable is not red: ' + r[1].action);
-assert.ok(!/rgba?\(\s*\d/.test(r[0].action + r[1].action), 'the badge carries a literal colour');
+// The Firewall page's tones: a refusal is red, an action it has no meaning for
+// neutral. The tone is a class, so a chosen palette recolours it.
+assert.strictEqual(r[0].action, '<span class="pill pill-muted">lookup</span>',
+  'lookup is not the Firewall pill in its neutral tone: ' + r[0].action);
+assert.strictEqual(r[1].action, '<span class="pill pill-err">unreachable</span>', 'unreachable is not red: ' + r[1].action);
 assert.strictEqual(r[0].table, 'main', 'the table column became a pill');
 say('ok  an action is drawn with the Firewall page\'s badge');
 

@@ -55,19 +55,19 @@ export function opStatus(op: LoginOp | null, devices = 0): string {
   // NO JOB IN MEMORY (none run yet, or the server restarted): the device
   // records are the truth, in the words the other rows use.
   if (!op) {
-    return devices ? '<span class="cp-pill cp-ok">applied</span>' : '<span class="cp-pill cp-none">not linked</span>';
+    return devices ? '<span class="pill pill-ok">applied</span>' : '<span class="pill pill-muted">not linked</span>';
   }
   const vals = Object.values(op.results);
   const failed = vals.filter((r) => r.state === 'failed').length;
   if (op.running) {
     const done = vals.filter((r) => r.state === 'done' || r.state === 'failed').length;
     const what = op.kind === 'password' ? 'Changing password' : 'Linking';
-    return `<span class="cp-pill cp-wait">${what} ${done}/${vals.length}</span>`;
+    return `<span class="pill pill-rx">${what} ${done}/${vals.length}</span>`;
   }
   // SHORT, in the table's own state words; the sentence is the tooltip. The
   // whole summary in the cell pushed the row's buttons out of the table.
   const word = failed ? `${failed} failed` : 'applied';
-  return `<span class="cp-pill cp-${failed ? 'warn' : 'ok'}" title="${esc(op.summary)}">${esc(word)}</span>`;
+  return `<span class="pill pill-${failed ? 'warn' : 'ok'}" title="${esc(op.summary)}">${esc(word)}</span>`;
 }
 
 /** The name the pinned login is created with. */
@@ -86,12 +86,12 @@ export function pinnedRow(p: LoginProfileView | null): string {
     : '<button class="sbtn sbtn-primary is-sm" type="button" data-lp-new="1">Set password</button>';
   return '<tr class="lp-pinned">'
     + `<td><strong>${esc(p ? p.name : MIKRODASH_LOGIN)}</strong> `
-    + '<span class="cp-pill cp-wait" title="The account MikroDash itself signs in with. Always first, never deleted.">'
+    + '<span class="pill pill-rx" title="The account MikroDash itself signs in with. Always first, never deleted.">'
     + 'pinned</span></td>'
-    + `<td><span class="cp-user">${esc(p ? p.username : 'mikrodash')}</span></td>`
+    + `<td><span class="pill pill-alt">${esc(p ? p.username : 'mikrodash')}</span></td>`
     + `<td><span class="cp-perms">${esc(p ? p.group : 'mikrodash')}: every permission</span></td>`
     + `<td>${p ? p.devices.length : 0}</td>`
-    + `<td>${p ? opStatus(p.op, p.devices.length) : '<span class="cp-pill cp-none">not set</span>'}</td>`
+    + `<td>${p ? opStatus(p.op, p.devices.length) : '<span class="pill pill-muted">not set</span>'}</td>`
     + `<td class="text-end cp-actions">${actions}</td></tr>`;
 }
 

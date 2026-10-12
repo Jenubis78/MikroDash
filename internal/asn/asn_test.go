@@ -106,7 +106,7 @@ func TestCategoryIsKeyedOnTheNumberAndFallsBackToOther(t *testing.T) {
 	// THE dns COLOUR IS REACHABLE, which it was not before this change: the CSS
 	// carried `.svc-dns` while no organisation could ever have that category.
 	if got := Category(19281); got != "dns" {
-		t.Errorf("Category(AS19281 Quad9) = %q, want dns; the svc-dns colour is dead again", got)
+		t.Errorf("Category(AS19281 Quad9) = %q, want dns; the dns tone in SVC_TONE is dead again", got)
 	}
 	// An unknown network is "other" — a value the page renders, not a gap.
 	if got := Category(64496); got != "other" {

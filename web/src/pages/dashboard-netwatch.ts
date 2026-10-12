@@ -26,9 +26,9 @@ export function renderNetwatch(data: NetwatchPayload): void {
     const isUp = h.status === 'up';
     const isDown = h.status === 'down';
     const statusHtml = isUp
-      ? '<span class="wg-up">Up</span>'
+      ? '<span class="pill pill-ok pill-dot">Up</span>'
       : isDown
-        ? '<span class="wg-down">Down</span>'
+        ? '<span class="pill pill-err pill-dot">Down</span>'
         : '<span style="color:var(--text-muted);font-size:.7rem">' + esc(h.status || '?') + '</span>';
     return '<tr>' +
       '<td>' + statusHtml + '</td>' +

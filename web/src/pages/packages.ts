@@ -12,7 +12,7 @@
 // silent. It is what makes "the wrong router" a hard mistake rather than an easy
 // one.
 
-import { esc, el, renderSortHeader, sortMul, debounce, fmtBytes, type SortCol, type SortState, kv } from '../dom';
+import { esc, el, renderSortHeader, sortMul, debounce, fmtBytes, pill, type SortCol, type SortState, kv } from '../dom';
 import type { Socket } from '../socket';
 import type { Package, Firmware, Update, PackagesPayload } from '../gen/payloads';
 import type { HandEvents } from '../events-hand';
@@ -32,12 +32,12 @@ const STATE_RANK: Record<string, number> = {
 
 function stateCell(p: Package): string {
   if (p.scheduled) {
-    return '<span class="wl-band wl-band-24" title="' + esc(p.scheduled) + '">' +
+    return '<span class="pill pill-warn" title="' + esc(p.scheduled) + '">' +
       esc(p.scheduledAction || 'scheduled') + ' pending</span>';
   }
-  if (p.state === 'installed') return '<span class="wl-band wl-band-6">installed</span>';
+  if (p.state === 'installed') return pill('installed', 'ok');
   if (p.state === 'disabled') return '<span style="color:var(--text-muted)">disabled</span>';
-  if (p.state === 'available') return '<span class="wl-band wl-band-5">available</span>';
+  if (p.state === 'available') return pill('available', 'rx');
   return '<span style="color:var(--text-muted)">unknown</span>';
 }
 

@@ -88,12 +88,13 @@ function boot() {
   const html = String(doc.nodes['wirelessTable'].innerHTML);
   restore();
 
-  // THE CLASS IS THE COLOUR. A distinct class per generation is what was asked
+  // THE TONE IS THE COLOUR. A distinct tone per generation is what was asked
   // for, so asserting the label alone would pass against six identical grey
   // pills - which is the version of this feature that is not worth having.
   const want = [
-    ['Wi-Fi 4', 'wl-std-4'], ['Wi-Fi 5', 'wl-std-5'], ['Wi-Fi 6', 'wl-std-6'],
-    ['Wi-Fi 6E', 'wl-std-6e'], ['Wi-Fi 7', 'wl-std-7'], ['Legacy', 'wl-std-legacy'],
+    ['Wi-Fi 4', 'pill pill-err">Wi-Fi 4<'], ['Wi-Fi 5', 'pill pill-warn">Wi-Fi 5<'],
+    ['Wi-Fi 6', 'pill pill-tx">Wi-Fi 6<'], ['Wi-Fi 6E', 'pill pill-rx">Wi-Fi 6E<'],
+    ['Wi-Fi 7', 'pill pill-pink">Wi-Fi 7<'], ['Legacy', 'pill pill-muted">Legacy<'],
   ];
   for (const [label, cls] of want) {
     assert.ok(html.includes(cls),
@@ -101,7 +102,7 @@ function boot() {
     assert.ok(html.includes('>' + label + '<'),
       'the ' + label + ' pill does not carry its label:\n' + html);
   }
-  const classes = new Set((html.match(/wl-std-[a-z0-9]+/g) || []));
+  const classes = new Set([...html.matchAll(/pill (pill-[a-z]+)">(?:Wi-Fi [0-9E]+|Legacy)</g)].map((m) => m[1]));
   assert.strictEqual(classes.size, 6,
     'six generations rendered ' + classes.size + ' distinct colours; two share one, ' +
     'so the column cannot be read at a glance: ' + [...classes].join(', '));
@@ -121,11 +122,11 @@ function boot() {
   assert.ok(/-|-/.test(html),
     'a client with no known standard rendered nothing at all; the cell must say ' +
     '"not known" rather than look like a rendering failure:\n' + html);
-  assert.ok(!/wl-std\s/.test(html) && !/wl-std"/.test(html),
+  assert.ok(!/pill-[a-z]+">(?:Wi-Fi [0-9E]+|Legacy)</.test(html),
     'a client with no known standard rendered a pill rather than a dash:\n' + html);
   // AND THE BAND MUST SURVIVE IT. The two are independent, and a CAPsMAN row
   // has a band while having no generation.
-  assert.ok(/wl-band/.test(html),
+  assert.ok(/pill pill-rx">5GHz</.test(html),
     'the band pill vanished for a client with no standard, so the new column ' +
     'has broken the old one:\n' + html);
   say('ok  an unknown standard is a dash, and the band pill still renders');

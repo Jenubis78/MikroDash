@@ -75,7 +75,7 @@ const D = require(OUT);
     profile: '', sites: [evil], newSites: [evil] }], newSites: [evil], ready: 0, duplicates: 0, errors: 1, accounts: 0 };
   const html = D.previewHtml(plan);
   assert.ok(!html.includes('<img'), 'the preview escapes');
-  assert.match(html, /hs-stale/, 'an error row is a red pill');
+  assert.match(html, /pill-err/, 'an error row is a red pill');
   assert.match(html, /dimp-new/, 'a site the import creates is marked new');
   const job = { running: false, started: 0, summary: '', rows: [{ line: 2, label: evil, state: 'warning', message: evil }] };
   assert.ok(!D.progressHtml(job).includes('<img'), 'the progress table escapes');

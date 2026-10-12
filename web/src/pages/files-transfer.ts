@@ -11,7 +11,7 @@
 // Reading a file (`files:read`) returns its text, capped and with every
 // credential value masked by the server; it is set as text, never markup.
 
-import { el, esc } from '../dom';
+import { el, esc, pill } from '../dom';
 import { fieldHtml } from '../form';
 import type { Socket } from '../socket';
 import { registerAreaPanel } from './area';
@@ -23,8 +23,7 @@ export function initFilesTransfer(socket: Socket): void {
   function note(text: string, ok: boolean): void {
     const n = el('filesFetchNote');
     if (!n) return;
-    n.innerHTML = text ? '<span class="vpn-hs-badge ' + (ok ? 'hs-ok' : 'hs-warn') + '">' +
-      (ok ? 'done' : 'not downloaded') + '</span> ' + esc(text) : '';
+    n.innerHTML = text ? pill(ok ? 'done' : 'not downloaded', ok ? 'ok' : 'warn') + ' ' + esc(text) : '';
   }
 
   function layout(h: HTMLElement): void {

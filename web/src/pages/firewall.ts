@@ -18,8 +18,8 @@
 // position survives. Only a structural change - a different rule count, a
 // different id order, or a queued pulse - takes the full path.
 
-import { esc, el, resRow, debounce, fmtBytes } from '../dom';
-import { paletteCss, type PaletteToken } from '../palette';
+import { esc, el, resRow, debounce, fmtBytes, pill } from '../dom';
+import { paletteCss, TONE_TOKEN, type PaletteToken, type PillTone } from '../palette';
 import type { Socket } from '../socket';
 // FirewallPayload, as generated from the Go collector:
 //
@@ -50,13 +50,6 @@ const V6_CARDS_KEY = 'mdFwShowV6';
 
 // Colours as palette tokens, resolved where drawn, so a chosen palette or the
 // light theme recolours them.
-const ACTION_COLOUR: Record<string, [PaletteToken, number]> = {
-  accept: ['--accent-tx', 0.8], drop: ['--accent-err', 0.8],
-  reject: ['--accent-err', 0.8], masquerade: ['--accent-rx', 0.8],
-  'dst-nat': ['--accent-warn', 0.8], 'src-nat': ['--accent-warn', 0.8],
-  log: ['--accent-alt', 0.8], passthrough: ['--accent-tx', 0.6],
-};
-
 const CHAIN_COL: Record<string, PaletteToken> = {
   forward: '--accent-rx', input: '--accent-rx', output: '--accent-rx',
   srcnat: '--accent-tx', dstnat: '--accent-tx', masquerade: '--accent-tx',
@@ -94,21 +87,22 @@ export function onlyCountersDiffer(drawn: FirewallRule[], next: FirewallRule[]):
   return drawn.every((r, i) => shapeOf(r) === shapeOf(next[i]!));
 }
 
-export function actionBadge(a: string): string {
+/** An action's tone, for its pill and its bar in the breakdown card. */
+export function actionTone(a: string): PillTone {
   // `encrypt`, `discard` and `unreachable` are no firewall action: they are the
   // IPsec policy's and the routing rule's, which the generated pages draw with
-  // this same badge.
-  const [tok, alpha]: [PaletteToken, number] =
-    a === 'accept' || a === 'passthrough' || a === 'encrypt' ? ['--accent-tx', 0.9]
-      : a === 'drop' || a === 'reject' || a === 'tarpit' || a === 'discard' || a === 'unreachable' ? ['--accent-err', 0.9]
-        : a === 'log' || a === 'add-src-to-address-list' ? ['--accent-alt', 0.9]
-          : a === 'masquerade' ? ['--accent-rx', 0.9]
-            : a === 'dst-nat' || a === 'src-nat' ? ['--accent-warn', 0.9]
-              : ['--border', 0.8];
-  return '<span style="font-family:var(--font-mono);font-size:.63rem;color:' + paletteCss(tok, alpha) +
-    ';background:' + paletteCss(tok, 0.1) +
-    ';border:1px solid ' + paletteCss(tok, 0.25) +
-    ';border-radius:4px;padding:1px 6px;white-space:nowrap">' + esc(a) + '</span>';
+  // this same pill.
+  return (
+    a === 'accept' || a === 'passthrough' || a === 'encrypt' ? 'tx'
+      : a === 'drop' || a === 'reject' || a === 'tarpit' || a === 'discard' || a === 'unreachable' ? 'err'
+        : a === 'log' || a === 'add-src-to-address-list' ? 'alt'
+          : a === 'masquerade' ? 'rx'
+            : a === 'dst-nat' || a === 'src-nat' ? 'warn'
+              : 'muted');
+}
+
+export function actionBadge(a: string): string {
+  return pill(a, actionTone(a));
 }
 
 export function initFirewallPage(socket: Socket, isVisible: (page: string) => boolean): void {
@@ -188,8 +182,7 @@ export function initFirewallPage(socket: Socket, isVisible: (page: string) => bo
     const listEl = el('fwActionList');
     if (listEl) {
       listEl.innerHTML = actionEntries.map((e) => {
-        const [tok, alpha] = ACTION_COLOUR[e[0]] || ['--border', 0.7];
-        const col = paletteCss(tok, alpha);
+        const col = paletteCss(TONE_TOKEN[actionTone(e[0])], 0.8);
         return '<div class="fw-action-row">' +
           '<span class="fw-action-name" style="color:' + col + '">' + esc(e[0]) + '</span>' +
           '<div class="fw-action-bar-wrap"><div class="fw-action-bar" style="width:' +

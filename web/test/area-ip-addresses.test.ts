@@ -156,7 +156,7 @@ function rowHtml(html, id) {
   assert.ok(!/opacity/.test(rowTag(html, '*1')), 'an enabled, valid row is dimmed:\n' + rowTag(html, '*1'));
   assert.ok(/opacity:\.55/.test(rowTag(html, '*2')), 'a disabled row is not dimmed:\n' + rowTag(html, '*2'));
   // A pill since 2026-09-18: `dynamic` is a CommonPills flag, drawn "yes" in blue.
-  assert.ok(/<td><span class="vpn-hs-badge hs-info">yes<\/span><\/td>/.test(rowHtml(html, '*1')),
+  assert.ok(/<td><span class="pill pill-rx">yes<\/span><\/td>/.test(rowHtml(html, '*1')),
     'the dynamic row does not say it is dynamic:\n' + rowHtml(html, '*1'));
   clickTab(1);
   html = body();
