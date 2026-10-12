@@ -430,6 +430,10 @@ rows below it, a select a few pixels off its neighbours, and placeholders in the
   same height as an input, reading Off or On beside the switch. The Settings page's `.stoggle`
   panel, with its label inside the box, is for page forms only, never a dialog.
 - **A set of options chosen together** is one `.ff-multi` box, full width.
+- **The browser never draws a widget.** A checkbox, radio, slider, colour well, file button and
+  scrollbar are drawn from the palette by the NATIVE WIDGETS section of `app.css`; left to the
+  browser they come out a warm khaki grey under the dark theme and a pale beige under light. Never
+  colour one with `accent-color`: it reaches only the ticked state, and `internal/verify` refuses it.
 - **A data-entry table** (one input per router and variable) keeps its table: the column header is
   each input's label, and every cell's control is still `.sform-input`.
 

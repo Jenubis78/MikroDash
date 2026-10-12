@@ -514,3 +514,43 @@ func TestEveryButtonIsAnActionAnIconOrANamedComponent(t *testing.T) {
 		}
 	}
 }
+
+// NO WIDGET IS LEFT FOR THE BROWSER TO DRAW.
+//
+// A checkbox, radio, slider, colour well, file button and scrollbar are drawn
+// by the browser in its system colours unless the stylesheet draws them: a warm
+// khaki grey under dark, a pale beige under light. The Backups page's selection
+// checkboxes were exactly that (2026-10-12): they set accent-color, which only
+// colours the CHECKED state. app.css now draws each widget from the palette in
+// its NATIVE WIDGETS section; this holds that section, and forbids accent-color
+// anywhere, since reaching for it is how an unticked widget goes back to khaki.
+func TestNativeWidgetsAreDrawnFromThePalette(t *testing.T) {
+	root := repoRoot(t)
+	css := mustRead(t, filepath.Join(root, "web", "public", "app.css"))
+	flat := regexp.MustCompile(`\s+`).ReplaceAllString(css, " ")
+	for _, want := range []struct{ re, why string }{
+		{`:where\(input\[type=checkbox\], input\[type=radio\]\) \{ appearance: none;`, "checkboxes and radios are drawn by the stylesheet"},
+		{`:where\(input\[type=checkbox\], input\[type=radio\]\):checked, :where\(input\[type=checkbox\]\):indeterminate \{ background: var\(--accent-rx\)`, "a ticked box takes the accent"},
+		{`:where\(input\[type=range\]\)::-webkit-slider-thumb \{[^}]*background: var\(--accent-rx\)`, "a slider's thumb is drawn"},
+		{`:where\(input\[type=range\]\)::-webkit-slider-runnable-track \{`, "a slider's track is drawn"},
+		{`:where\(input\[type=file\]\)::file-selector-button \{`, "a file input's button is drawn"},
+		{`:where\(input\[type=color\]\)::-webkit-color-swatch \{`, "a colour well is drawn"},
+		{`:root \{ scrollbar-color: `, "scrollbars take the palette"},
+	} {
+		if !regexp.MustCompile(want.re).MatchString(flat) {
+			t.Errorf("app.css no longer draws a native widget: %s (looked for /%s/)", want.why, want.re)
+		}
+	}
+	decl := regexp.MustCompile(`accent-color\s*:`)
+	files := readFiles(t, root, "web/", func(rel string) bool {
+		return (strings.HasSuffix(rel, ".css") || strings.HasSuffix(rel, ".html") || strings.HasSuffix(rel, ".ts")) &&
+			!strings.HasPrefix(rel, "web/src/gen/") && !strings.Contains(rel, "/vendor/") &&
+			!strings.HasPrefix(rel, "web/dist/") && !isTestSource(rel) && !strings.HasSuffix(rel, "login.html")
+	})
+	for rel, src := range files {
+		for _, m := range decl.FindAllStringIndex(src, -1) {
+			t.Errorf("%s:%d: accent-color colours only a CHECKED widget, so the unticked one stays the browser's - "+
+				"the NATIVE WIDGETS section in app.css draws widgets instead", rel, strings.Count(src[:m[0]], "\n")+1)
+		}
+	}
+}

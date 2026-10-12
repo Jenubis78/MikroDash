@@ -404,7 +404,7 @@
     .bk-id-pill{display:inline-block;font-family:var(--font-mono);font-size:.68rem;font-weight:600;
       padding:.1rem .45rem;border-radius:4px;background:rgba(56,189,248,.13);
       color:var(--accent-rx);border:1px solid rgba(56,189,248,.28);line-height:1.5;white-space:nowrap}
-    .bk-pick{width:15px;height:15px;margin:0;cursor:pointer;accent-color:var(--accent-rx);vertical-align:middle}
+    .bk-pick{vertical-align:middle}
     .bk-pick:disabled{opacity:.35;cursor:not-allowed}
     tr.bk-row-picked{background:rgba(56,189,248,.07)}
     /* .sbtn-outline shares the ghost treatment. It was referenced in a dozen
@@ -3861,25 +3861,8 @@ select.sform-input.sform-sm { padding-right: 1.8rem; background-position: calc(1
 /* A unit picker beside a number (Gbps/Mbps) is as tall as the box it qualifies. */
 .ff-row > .bw-unit-toggle { align-self: stretch; }
 /* A range slider in a field takes the interactive accent, like a focused box. */
-input[type=range].sform-input { accent-color: var(--accent-rx); }
-/* A checkbox in a checklist is drawn here, in both states. `accent-color` alone
-   colours only the CHECKED fill and a native box ignores `border`, so an empty
-   one stayed the browser's grey on every palette. */
-.ff-multi input[type=checkbox] {
-  appearance: none; -webkit-appearance: none;
-  width: .9rem; height: .9rem; margin: 0; flex-shrink: 0; cursor: pointer;
-  background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px;
-  display: inline-grid; place-content: center; transition: background .12s, border-color .12s;
-}
-.ff-multi input[type=checkbox]::before {
-  content: ""; width: .5rem; height: .5rem; transform: scale(0); transition: transform .12s;
-  background: var(--bg-deep);
-  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
-}
-.ff-multi input[type=checkbox]:checked { background: var(--accent-rx); border-color: var(--accent-rx); }
-.ff-multi input[type=checkbox]:checked::before { transform: scale(1); }
-.ff-multi input[type=checkbox]:focus-visible { outline: 2px solid var(--accent-rx); outline-offset: 2px; }
-.ff-multi input[type=checkbox]:disabled { opacity: .5; cursor: not-allowed; }
+/* A slider in a field sits on the field's line: the box's height, none of its paint. */
+input[type=range].sform-input { background: transparent; border: none; padding: 0; }
 /* A control row whose buttons may wrap (the poll profiles, the view presets). */
 .ff-row.ff-wrap { flex-wrap: wrap; }
 /* A unit or end word beside a control in its row: "h", "s", "Low". */
@@ -3895,4 +3878,84 @@ input[type=range].sform-input { accent-color: var(--accent-rx); }
 .setup-fields { margin-bottom: .6rem; }
 /* Code and file contents keep their line breaks and scroll sideways. */
 textarea.sform-input.ff-code { white-space: pre; font-size: .74rem; }
+
+/* ── NATIVE WIDGETS: DRAWN FROM THE PALETTE, NEVER BY THE BROWSER ────────────
+   A checkbox, a radio, a slider, a colour well, a file button and a scrollbar
+   are widgets the browser draws in its own system colours: a warm khaki grey
+   under color-scheme dark and a pale beige under light, neither in any palette
+   here. The control floor near the top of this file leaves them out on
+   purpose (a background paints over the widget), and `accent-color` only
+   colours a CHECKED box, so an unticked one - the Backups page's selection
+   column, measured 2026-10-12 - stayed the browser's khaki.
+
+   So each is drawn here, at ZERO specificity (:where), so a component that
+   hides its input (a switch, a choice card) or styles its own still wins.
+   internal/verify holds that this section stays, and that nothing reaches for
+   accent-color to colour a widget instead. */
+:where(input[type=checkbox], input[type=radio]) {
+  appearance: none; -webkit-appearance: none;
+  width: .9rem; height: .9rem; margin: 0; flex-shrink: 0; vertical-align: middle; cursor: pointer;
+  background: var(--bg-deep);
+  border: 1px solid color-mix(in srgb, var(--text-muted) 70%, transparent);
+  border-radius: 3px;
+  display: inline-grid; place-content: center;
+  transition: background .12s, border-color .12s;
+}
+:where(input[type=radio]) { border-radius: 50%; }
+:where(input[type=checkbox])::before {
+  content: ""; width: .5rem; height: .5rem; transform: scale(0); transition: transform .12s;
+  background: var(--bg-deep);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+}
+:where(input[type=radio])::before {
+  content: ""; width: .4rem; height: .4rem; border-radius: 50%; transform: scale(0); transition: transform .12s;
+  background: var(--bg-deep);
+}
+:where(input[type=checkbox], input[type=radio]):checked,
+:where(input[type=checkbox]):indeterminate { background: var(--accent-rx); border-color: var(--accent-rx); }
+:where(input[type=checkbox], input[type=radio]):checked::before { transform: scale(1); }
+/* "Some of them": a bar, not a tick. */
+:where(input[type=checkbox]):indeterminate::before { transform: scale(1); height: 2px; clip-path: none; }
+:where(input[type=checkbox], input[type=radio]):hover:not(:disabled) { border-color: var(--accent-rx); }
+:where(input[type=checkbox], input[type=radio]):focus-visible { outline: 2px solid var(--accent-rx); outline-offset: 2px; }
+:where(input[type=checkbox], input[type=radio]):disabled { opacity: .5; cursor: not-allowed; }
+
+/* A slider: a palette track and an accent thumb. */
+:where(input[type=range]) {
+  appearance: none; -webkit-appearance: none;
+  background: transparent; height: 1.1rem; margin: 0; cursor: pointer;
+}
+:where(input[type=range])::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--text-muted) 35%, transparent);
+}
+:where(input[type=range])::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px; border-radius: 50%;
+  background: var(--accent-rx); border: 2px solid var(--bg-deep);
+}
+:where(input[type=range])::-moz-range-track {
+  height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--text-muted) 35%, transparent);
+}
+:where(input[type=range])::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--accent-rx); }
+:where(input[type=range])::-moz-range-thumb {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--accent-rx); border: 2px solid var(--bg-deep);
+}
+:where(input[type=range]):focus-visible { outline: 2px solid var(--accent-rx); outline-offset: 3px; }
+
+/* A colour well: the chosen colour, edge to edge, in the box. */
+:where(input[type=color]) { padding: 3px; cursor: pointer; }
+:where(input[type=color])::-webkit-color-swatch-wrapper { padding: 0; }
+:where(input[type=color])::-webkit-color-swatch { border: none; border-radius: 4px; }
+:where(input[type=color])::-moz-color-swatch { border: none; border-radius: 4px; }
+
+/* A file input's button is the compact outline action button. */
+:where(input[type=file]) { color: var(--text-muted); font-family: var(--font-ui); font-size: .72rem; }
+:where(input[type=file])::file-selector-button {
+  height: var(--ctl-h-sm); padding: 0 .7rem; margin-right: .6rem; cursor: pointer;
+  font-family: var(--font-ui); font-size: .72rem; font-weight: 600;
+  color: var(--text-muted); background: transparent; border: 1px solid var(--border); border-radius: 6px;
+}
+:where(input[type=file])::file-selector-button:hover { color: var(--text-main); border-color: var(--text-muted); }
+
+/* Scrollbars everywhere take the palette (a component's own thin bar still wins). */
+:root { scrollbar-color: color-mix(in srgb, var(--text-muted) 35%, transparent) transparent; }
 
