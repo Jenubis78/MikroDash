@@ -271,13 +271,14 @@
               <div class="dbc-stat"><span class="dbc-stat-label">Oldest record</span><span class="dbc-stat-value" id="dbcOldest">-</span></div>
             </div>
             <div id="dbcByRouter" class="dbc-routers"></div>
-            <div class="sform-row" style="margin-top:.9rem">
-              <div class="sform-group" style="margin-bottom:0">
-                <label class="sform-label">Routers</label>
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="dbcScope">Routers</label>
                 <select class="sform-input" id="dbcScope" aria-label="Data cleanup scope"><option value="">All routers</option></select>
+                <div class="ff-help"></div>
               </div>
-              <div class="sform-group" style="margin-bottom:0">
-                <label class="sform-label">Delete data older than</label>
+              <div class="ff">
+                <label class="sform-label" for="dbcAge">Delete data older than</label>
                 <select class="sform-input" id="dbcAge" aria-label="Data cleanup age">
                   <option value="1">1 day</option>
                   <option value="7">7 days</option>
@@ -286,15 +287,17 @@
                   <option value="365">1 year</option>
                   <option value="0">Everything (no age limit)</option>
                 </select>
+                <div class="ff-help"></div>
               </div>
-            </div>
-            <div class="sform-group" style="margin-top:.8rem;margin-bottom:0">
-              <label class="sform-label">Data types</label>
-              <div class="dbc-types" id="dbcTypes">
-                <label class="dbc-type"><input type="checkbox" value="traffic" checked><span>Traffic graphs</span></label>
-                <label class="dbc-type"><input type="checkbox" value="ping" checked><span>Ping history</span></label>
-                <label class="dbc-type"><input type="checkbox" value="bandwidth" checked><span>Bandwidth usage</span></label>
-                <label class="dbc-type"><input type="checkbox" value="events" checked><span>Alerts &amp; connectivity</span></label>
+              <div class="ff ff-full">
+                <label class="sform-label">Data types</label>
+                <div class="ff-multi" id="dbcTypes">
+                  <label><input type="checkbox" value="traffic" checked>Traffic graphs</label>
+                  <label><input type="checkbox" value="ping" checked>Ping history</label>
+                  <label><input type="checkbox" value="bandwidth" checked>Bandwidth usage</label>
+                  <label><input type="checkbox" value="events" checked>Alerts &amp; connectivity</label>
+                </div>
+                <div class="ff-help"></div>
               </div>
             </div>
             <div class="dbc-summary" id="dbcSummary"></div>
@@ -823,35 +826,38 @@
               </div>
               <div class="rtr-modal-body">
               <input type="hidden" id="sf_id">
-              <div class="sform-row">
-                <div>
-                  <label class="sform-label">Name</label>
+              <div class="ff-grid">
+                <div class="ff">
+                  <label class="sform-label" for="sf_name">Name</label>
                   <input class="sform-input" id="sf_name" type="text" placeholder="Head Office" autocomplete="off" maxlength="64">
+                  <div class="ff-help"></div>
                 </div>
-                <div>
-                  <label class="sform-label">Description <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+                <div class="ff">
+                  <label class="sform-label" for="sf_description">Description</label>
                   <input class="sform-input" id="sf_description" type="text" placeholder="Main building, ground floor" autocomplete="off" maxlength="256">
+                  <div class="ff-help">Optional</div>
                 </div>
-              </div>
-              <!-- A site's location, picked the same way a router's is (#96). It
-                   is the fallback for every router here that has no location of
-                   its own, so one choice can place a whole site. -->
-              <div class="sform-group cpick" id="sf_placeWrap" style="margin-top:.6rem">
-                <label class="sform-label" for="sf_place">Location <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-                <div class="cpick-row">
-                  <input class="sform-input" id="sf_place" type="text" role="combobox"
-                         aria-expanded="false" aria-autocomplete="list" aria-controls="sf_placeList"
-                         placeholder="Search for a town or city…" autocomplete="off" maxlength="64">
-                  <button type="button" class="cpick-clear" id="sf_placeClear" title="Clear this site's location">Clear</button>
+                <!-- A site's location, picked the same way a router's is (#96). It
+                     is the fallback for every router here that has no location of
+                     its own, so one choice can place a whole site. The list is
+                     absolutely positioned, so it takes no row of the field's
+                     subgrid and opens below the whole field, as it did before. -->
+                <div class="ff ff-full cpick" id="sf_placeWrap">
+                  <label class="sform-label" for="sf_place">Location</label>
+                  <div class="cpick-row">
+                    <input class="sform-input" id="sf_place" type="text" role="combobox"
+                           aria-expanded="false" aria-autocomplete="list" aria-controls="sf_placeList"
+                           placeholder="Search for a town or city…" autocomplete="off" maxlength="64">
+                    <button type="button" class="cpick-clear" id="sf_placeClear" title="Clear this site's location">Clear</button>
+                  </div>
+                  <div class="cpick-list" id="sf_placeList" role="listbox" hidden></div>
+                  <div class="ff-help">Optional. Devices whose PRIMARY site is this one, and which have no location of their own, are shown here on the map.</div>
                 </div>
-                <div class="cpick-list" id="sf_placeList" role="listbox" hidden></div>
-                <div class="cpick-hint">Devices whose PRIMARY site is this one, and which have no location of their own, are shown here on the map.</div>
-              </div>
-
-              <div style="margin-top:.6rem">
-                <label class="sform-label">Devices at this site</label>
-                <div id="sf_routers" class="dp"></div>
-                <div style="font-size:.7rem;color:var(--text-muted);margin-top:.35rem">Ticking a device adds this site to it. It keeps any other sites it is already in, and unticking removes only this one.</div>
+                <div class="ff ff-full">
+                  <label class="sform-label">Devices at this site</label>
+                  <div id="sf_routers" class="dp"></div>
+                  <div class="ff-help">Ticking a device adds this site to it. It keeps any other sites it is already in, and unticking removes only this one.</div>
+                </div>
               </div>
               <div class="login-error" id="sf_error" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:6px;color:#f87171;font-size:.78rem;padding:.45rem .65rem;margin-top:.6rem;text-align:center"></div>
               </div>
@@ -890,23 +896,27 @@
               </div>
               <div class="rtr-modal-body">
               <input type="hidden" id="gf_id">
-              <div class="sform-row">
-                <div>
-                  <label class="sform-label">Name</label>
+              <div class="ff-grid">
+                <div class="ff">
+                  <label class="sform-label" for="gf_name">Name</label>
                   <input class="sform-input" id="gf_name" type="text" placeholder="Network Operators" autocomplete="off" maxlength="64">
+                  <div class="ff-help"></div>
                 </div>
-                <div>
-                  <label class="sform-label">Description <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+                <div class="ff">
+                  <label class="sform-label" for="gf_description">Description</label>
                   <input class="sform-input" id="gf_description" type="text" placeholder="Team responsible for day-to-day monitoring" autocomplete="off" maxlength="256">
+                  <div class="ff-help">Optional</div>
                 </div>
-              </div>
-              <div style="margin-top:.6rem">
-                <label class="sform-label">Members</label>
-                <div id="gf_members" style="padding:.6rem;background:rgba(99,130,190,.05);border:1px solid var(--border);border-radius:6px;font-size:.78rem;max-height:12rem;overflow-y:auto"></div>
-              </div>
-              <div style="margin-top:.6rem">
-                <label class="sform-label">Access granted to this group</label>
-                <div id="gf_grants" style="padding:.6rem;background:rgba(99,130,190,.05);border:1px solid var(--border);border-radius:6px;font-size:.78rem"></div>
+                <div class="ff ff-full">
+                  <label class="sform-label">Members</label>
+                  <div id="gf_members" class="ff-box ff-scroll"></div>
+                  <div class="ff-help"></div>
+                </div>
+                <div class="ff ff-full">
+                  <label class="sform-label">Access granted to this group</label>
+                  <div id="gf_grants" class="ff-box"></div>
+                  <div class="ff-help"></div>
+                </div>
               </div>
               <div class="login-error" id="gf_error" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:6px;color:#f87171;font-size:.78rem;padding:.45rem .65rem;margin-top:.6rem;text-align:center"></div>
               </div>
@@ -945,33 +955,35 @@
               </div>
               <div class="rtr-modal-body">
               <input type="hidden" id="rf_id">
-              <div class="sform-row">
-                <div>
-                  <label class="sform-label">Name</label>
+              <div class="ff-grid">
+                <div class="ff">
+                  <label class="sform-label" for="rf_name">Name</label>
                   <input class="sform-input" id="rf_name" type="text" placeholder="NOC Tier 1" autocomplete="off" maxlength="64">
+                  <div class="ff-help"></div>
                 </div>
-                <div>
-                  <label class="sform-label">Description <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+                <div class="ff">
+                  <label class="sform-label" for="rf_description">Description</label>
                   <input class="sform-input" id="rf_description" type="text" placeholder="First-line monitoring: logs and reports" autocomplete="off" maxlength="256">
+                  <div class="ff-help">Optional</div>
                 </div>
-              </div>
-              <div style="margin-top:.7rem">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
-                  <label class="sform-label" style="margin:0">Page access</label>
-                  <div style="display:flex;gap:.3rem">
-                    <button class="sbtn sbtn-outline rf-bulk" data-bulk="none"  style="padding:.15rem .5rem;font-size:.68rem">All none</button>
-                    <button class="sbtn sbtn-outline rf-bulk" data-bulk="read"  style="padding:.15rem .5rem;font-size:.68rem">All read</button>
-                    <button class="sbtn sbtn-outline rf-bulk" data-bulk="write" style="padding:.15rem .5rem;font-size:.68rem">All write</button>
+                <!-- A bespoke control: the bulk and preset buttons over the
+                     per-page matrix, one field under one label. -->
+                <div class="ff ff-full">
+                  <label class="sform-label">Page access</label>
+                  <div>
+                    <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.4rem">
+                      <button class="sbtn sbtn-outline rf-bulk" data-bulk="none"  style="padding:.15rem .5rem;font-size:.68rem">All none</button>
+                      <button class="sbtn sbtn-outline rf-bulk" data-bulk="read"  style="padding:.15rem .5rem;font-size:.68rem">All read</button>
+                      <button class="sbtn sbtn-outline rf-bulk" data-bulk="write" style="padding:.15rem .5rem;font-size:.68rem">All write</button>
+                      <span style="font-size:.68rem;color:var(--text-muted);margin-left:.4rem">Preset</span>
+                      <button type="button" class="sbtn sbtn-outline rf-preset" data-role-preset="home"     style="padding:.15rem .5rem;font-size:.68rem">Home</button>
+                      <button type="button" class="sbtn sbtn-outline rf-preset" data-role-preset="standard" style="padding:.15rem .5rem;font-size:.68rem">Standard</button>
+                      <button type="button" class="sbtn sbtn-outline rf-preset" data-role-preset="advanced" style="padding:.15rem .5rem;font-size:.68rem">Advanced</button>
+                    </div>
+                    <div id="rf_pages" class="ff-box ff-scroll-tall"></div>
                   </div>
+                  <div class="ff-help">A preset sets read on that tier and clears the rest.</div>
                 </div>
-                <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.4rem">
-                  <span style="font-size:.68rem;color:var(--text-muted)">Preset</span>
-                  <button type="button" class="sbtn sbtn-outline rf-preset" data-role-preset="home"     style="padding:.15rem .5rem;font-size:.68rem">Home</button>
-                  <button type="button" class="sbtn sbtn-outline rf-preset" data-role-preset="standard" style="padding:.15rem .5rem;font-size:.68rem">Standard</button>
-                  <button type="button" class="sbtn sbtn-outline rf-preset" data-role-preset="advanced" style="padding:.15rem .5rem;font-size:.68rem">Advanced</button>
-                  <span style="font-size:.66rem;color:var(--text-muted)">sets read on that tier and clears the rest</span>
-                </div>
-                <div id="rf_pages" style="margin-top:.4rem;padding:.35rem;background:rgba(99,130,190,.05);border:1px solid var(--border);border-radius:6px;font-size:.78rem;max-height:22rem;overflow-y:auto"></div>
               </div>
               <div class="login-error" id="rf_error" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:6px;color:#f87171;font-size:.78rem;padding:.45rem .65rem;margin-top:.6rem;text-align:center"></div>
               </div>
@@ -1027,87 +1039,97 @@
 
                 <div class="modal-panel active" data-modalpanel="general">
                   <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:.9rem 0 .5rem">Basic settings</div>
-                  <div class="sform-row">
-                    <div class="sform-group">
-                      <label class="sform-label" for="so_name">Name <span style="color:var(--accent-err)">*</span></label>
+                  <div class="ff-grid">
+                    <div class="ff">
+                      <label class="sform-label" for="so_name">Name <span class="ff-req">*</span></label>
                       <input class="sform-input" id="so_name" type="text" autocomplete="off" maxlength="64" placeholder="Entra ID, Okta, Keycloak&#8230;">
+                      <div class="ff-help"></div>
                     </div>
-                    <div class="sform-group">
-                      <label class="sform-label" for="so_issuer">Issuer URL <span style="color:var(--accent-err)">*</span></label>
+                    <div class="ff">
+                      <label class="sform-label" for="so_issuer">Issuer URL <span class="ff-req">*</span></label>
                       <input class="sform-input" id="so_issuer" type="url" autocomplete="off" spellcheck="false" placeholder="https://login.microsoftonline.com/&lt;tenant&gt;/v2.0">
+                      <div class="ff-help"></div>
+                    </div>
+                    <!-- A toggle is a field like any other: its label above, the
+                         switch in a box the height of an input. -->
+                    <div class="ff">
+                      <label class="sform-label" for="so_enabled">Enable this provider</label>
+                      <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="so_enabled" aria-label="Enable this provider"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                      <div class="ff-help"></div>
                     </div>
                   </div>
-                  <!-- THE APP'S OWN SWITCH, not a bare checkbox. `.stoggle` is a
-                       labelled row with the control on the right, exactly as
-                       "Require sign-in" is on the card above - and a boolean
-                       that looked different here would read as a different kind
-                       of setting. -->
-                  <label class="stoggle" style="margin-top:.6rem">
-                    <span class="stoggle-label">Enable this provider</span>
-                    <span class="stoggle-switch">
-                      <input type="checkbox" id="so_enabled" aria-label="Enable this provider">
-                      <span class="stoggle-track"></span><span class="stoggle-thumb"></span>
-                    </span>
-                  </label>
 
                   <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:.9rem 0 .5rem">Client credentials</div>
                   <p style="font-size:.68rem;color:var(--text-muted);margin:.25rem 0 0;line-height:1.5" style="margin:0 0 .5rem">Get these from the application you registered at your identity provider.</p>
-                  <div class="sform-row">
-                    <div class="sform-group">
-                      <label class="sform-label" for="so_clientId">Client ID <span style="color:var(--accent-err)">*</span></label>
+                  <div class="ff-grid">
+                    <div class="ff">
+                      <label class="sform-label" for="so_clientId">Client ID <span class="ff-req">*</span></label>
                       <input class="sform-input" id="so_clientId" type="text" autocomplete="off" spellcheck="false" placeholder="your-client-id">
+                      <div class="ff-help"></div>
                     </div>
-                    <div class="sform-group">
+                    <div class="ff">
                       <label class="sform-label" for="so_clientSecret">Client secret</label>
                       <!-- new-password, not off: Chrome ignores `off` on a
                            password field and offers a saved credential. The
                            autofill gate in internal/verify pins this. -->
                       <input class="sform-input" id="so_clientSecret" type="password" autocomplete="new-password" spellcheck="false" placeholder="your-client-secret">
-                      <p style="font-size:.68rem;color:var(--text-muted);margin:.25rem 0 0;line-height:1.5" id="so_secretNote"></p>
+                      <div class="ff-help" id="so_secretNote"></div>
                     </div>
                   </div>
 
                   <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:.9rem 0 .5rem">Redirect settings</div>
-                  <div class="sform-group">
-                    <label class="sform-label" for="so_redirectUri">Redirect URI</label>
-                    <!-- READ-ONLY, and built from the Base URL setting. Deriving
-                         it from the Host header would be host-header injection:
-                         whoever could set Host would choose where the
-                         authorization code is delivered. -->
-                    <input class="sform-input" id="so_redirectUri" type="text" readonly spellcheck="false" style="font-family:var(--font-mono);font-size:.72rem">
-                    <p style="font-size:.68rem;color:var(--text-muted);margin:.25rem 0 0;line-height:1.5">Add this exact URI to the application's allowed callback URLs. It must match byte for byte.</p>
-                  </div>
-                  <div class="sform-group" style="margin-top:.6rem">
-                    <label class="sform-label" for="so_scopes">Scopes</label>
-                    <input class="sform-input" id="so_scopes" type="text" autocomplete="off" spellcheck="false" placeholder="openid profile email">
-                    <p style="font-size:.68rem;color:var(--text-muted);margin:.25rem 0 0;line-height:1.5"><code>openid</code> is added whether or not you type it - without it the provider returns no ID token at all.</p>
+                  <div class="ff-grid">
+                    <div class="ff ff-full">
+                      <label class="sform-label" for="so_redirectUri">Redirect URI</label>
+                      <!-- READ-ONLY, and built from the Base URL setting. Deriving
+                           it from the Host header would be host-header injection:
+                           whoever could set Host would choose where the
+                           authorization code is delivered. -->
+                      <input class="sform-input" id="so_redirectUri" type="text" readonly spellcheck="false">
+                      <div class="ff-help">Add this exact URI to the application's allowed callback URLs. It must match byte for byte.</div>
+                    </div>
+                    <div class="ff ff-full">
+                      <label class="sform-label" for="so_scopes">Scopes</label>
+                      <input class="sform-input" id="so_scopes" type="text" autocomplete="off" spellcheck="false" placeholder="openid profile email">
+                      <div class="ff-help"><code>openid</code> is added whether or not you type it - without it the provider returns no ID token at all.</div>
+                    </div>
                   </div>
 
                   <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:.9rem 0 .5rem">Claim mapping</div>
                   <p style="font-size:.68rem;color:var(--text-muted);margin:.25rem 0 0;line-height:1.5" style="margin:0 0 .5rem">Which claim in the ID token holds each attribute. The defaults suit most providers.</p>
-                  <div class="sform-row">
-                    <div class="sform-group">
+                  <div class="ff-grid">
+                    <div class="ff">
                       <label class="sform-label" for="so_claimUsername">Username claim</label>
                       <input class="sform-input" id="so_claimUsername" type="text" autocomplete="off" spellcheck="false" placeholder="preferred_username">
+                      <div class="ff-help"></div>
                     </div>
-                    <div class="sform-group">
+                    <div class="ff">
                       <label class="sform-label" for="so_claimEmail">Email claim</label>
                       <input class="sform-input" id="so_claimEmail" type="text" autocomplete="off" spellcheck="false" placeholder="email">
+                      <div class="ff-help"></div>
                     </div>
-                    <div class="sform-group">
+                    <div class="ff">
                       <label class="sform-label" for="so_claimName">Display name claim</label>
                       <input class="sform-input" id="so_claimName" type="text" autocomplete="off" spellcheck="false" placeholder="name">
+                      <div class="ff-help"></div>
                     </div>
                   </div>
 
                   <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:.9rem 0 .5rem">Button icon</div>
-                  <p style="font-size:.68rem;color:var(--text-muted);margin:.25rem 0 0;line-height:1.5" style="margin:0 0 .5rem">An optional mark beside the label on the sign-in button. Square PNG or JPEG, 64 to 512 px.</p>
-                  <div style="display:flex;align-items:center;gap:.6rem">
-                    <img id="so_iconPreview" alt="" style="width:32px;height:32px;border-radius:6px;display:none;background:var(--bg-deep)">
-                    <input type="file" id="so_iconFile" accept="image/png,image/jpeg" style="display:none">
-                    <button type="button" class="sbtn sbtn-outline" id="so_iconPick" style="padding:.2rem .6rem;font-size:.72rem">Choose image&#8230;</button>
-                    <button type="button" class="sbtn sbtn-outline" id="so_iconClear" style="padding:.2rem .6rem;font-size:.72rem;display:none">Remove</button>
-                    <span id="so_iconNote" style="font-size:.68rem;color:var(--text-muted)"></span>
+                  <!-- A bespoke control: the preview and its buttons are the
+                       field's control, and the size rule is its help. -->
+                  <div class="ff-grid">
+                    <div class="ff ff-full">
+                      <label class="sform-label" for="so_iconPick">Image</label>
+                      <div class="ff-row">
+                        <img id="so_iconPreview" alt="" style="width:32px;height:32px;border-radius:6px;display:none;background:var(--bg-deep)">
+                        <input type="file" id="so_iconFile" accept="image/png,image/jpeg" style="display:none">
+                        <button type="button" class="sbtn sbtn-outline" id="so_iconPick" style="padding:.2rem .6rem;font-size:.72rem">Choose image&#8230;</button>
+                        <button type="button" class="sbtn sbtn-outline" id="so_iconClear" style="padding:.2rem .6rem;font-size:.72rem;display:none">Remove</button>
+                        <span id="so_iconNote" style="font-size:.68rem;color:var(--text-muted)"></span>
+                      </div>
+                      <div class="ff-help">Optional. A mark beside the label on the sign-in button. Square PNG or JPEG, 64 to 512 px.</div>
+                    </div>
                   </div>
                 </div>
 
@@ -1118,10 +1140,12 @@
                        grant is removed. That is what makes removing somebody
                        from a group at the provider actually reach this app. -->
                   <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:.9rem 0 .5rem" style="margin-top:0">Which claim carries the roles</div>
-                  <div class="sform-group">
-                    <label class="sform-label" for="so_claimRoles">Roles claim</label>
-                    <input class="sform-input" id="so_claimRoles" type="text" autocomplete="off" spellcheck="false" placeholder="groups">
-                    <p style="font-size:.68rem;color:var(--text-muted);margin:.25rem 0 0;line-height:1.5">On Entra ID, prefer <code>roles</code> (app roles) over <code>groups</code>: groups are capped at 200 in a token, and past that the claim is left out entirely.</p>
+                  <div class="ff-grid">
+                    <div class="ff ff-full">
+                      <label class="sform-label" for="so_claimRoles">Roles claim</label>
+                      <input class="sform-input" id="so_claimRoles" type="text" autocomplete="off" spellcheck="false" placeholder="groups">
+                      <div class="ff-help">On Entra ID, prefer <code>roles</code> (app roles) over <code>groups</code>: groups are capped at 200 in a token, and past that the claim is left out entirely.</div>
+                    </div>
                   </div>
                   <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:.9rem 0 .5rem">Mappings</div>
                   <p style="font-size:.68rem;color:var(--text-muted);margin:.25rem 0 0;line-height:1.5" style="margin:0 0 .5rem">The first match wins. Somebody matching none of these cannot sign in, and loses any access they had.</p>
@@ -1171,24 +1195,27 @@
               </div>
               <div class="rtr-modal-body">
               <input type="hidden" id="uf_id">
-              <div class="sform-row">
-                <div>
-                  <label class="sform-label">Username</label>
+              <div class="ff-grid">
+                <div class="ff">
+                  <label class="sform-label" for="uf_username">Username</label>
                   <input class="sform-input" id="uf_username" type="text" placeholder="username" autocomplete="off">
+                  <div class="ff-help"></div>
                 </div>
-                <div>
-                  <label class="sform-label">Password <span id="uf_passHint" style="font-weight:400;text-transform:none;letter-spacing:0">(leave blank to keep)</span></label>
+                <div class="ff">
+                  <label class="sform-label" for="uf_password">Password</label>
                   <input class="sform-input" id="uf_password" type="password" placeholder="Password" autocomplete="new-password">
+                  <div class="ff-help" id="uf_passHint">Leave blank to keep</div>
                 </div>
-              </div>
-              <!-- Access is granted the same way for users as for groups (#108):
-                   rows of [Role] over [All routers | Site | Router]. The old
-                   single-role select plus an all-or-listed router picker could
-                   not express a custom role, nor two different roles at two
-                   different sites. -->
-              <div style="margin-top:.6rem">
-                <label class="sform-label">Access granted to this user</label>
-                <div id="uf_grants" style="padding:.6rem;background:rgba(99,130,190,.05);border:1px solid var(--border);border-radius:6px;font-size:.78rem"></div>
+                <!-- Access is granted the same way for users as for groups (#108):
+                     rows of [Role] over [All routers | Site | Router]. The old
+                     single-role select plus an all-or-listed router picker could
+                     not express a custom role, nor two different roles at two
+                     different sites. -->
+                <div class="ff ff-full">
+                  <label class="sform-label">Access granted to this user</label>
+                  <div id="uf_grants" class="ff-box"></div>
+                  <div class="ff-help"></div>
+                </div>
               </div>
               <div class="login-error" id="uf_error" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:6px;color:#f87171;font-size:.78rem;padding:.45rem .65rem;margin-top:.6rem;text-align:center"></div>
               </div>

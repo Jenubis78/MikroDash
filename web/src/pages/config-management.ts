@@ -519,9 +519,10 @@ export function initConfigManagementPage(socket: Socket, isVisible: (page: strin
   function cpDrawPolicies(chosen: readonly string[]): void {
     const host = el('cpPolicies');
     if (!host) return;
-    host.innerHTML = cpVocabulary.map((p) => '<label class="cp-policy">'
+    // The host is the field's `.ff-multi` box, which styles its labels.
+    host.innerHTML = cpVocabulary.map((p) => '<label>'
       + `<input type="checkbox" data-cp-policy="${esc(p)}"${chosen.includes(p) ? ' checked' : ''}>`
-      + `<span>${esc(p)}</span></label>`).join('');
+      + `${esc(p)}</label>`).join('');
   }
 
   function cpReadPolicies(): string[] {

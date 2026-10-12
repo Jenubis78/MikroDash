@@ -63,7 +63,7 @@ export function valuesGrid(defs: VarDef[], routers: RouterOpt[], values: Record<
   const secrets = defs.some((d) => d.type === 'secret');
   const cell = (rid: string, d: VarDef): string => {
     const v = values[rid]?.[d.name] ?? (d.type === 'secret' ? '' : d.default ?? '');
-    return '<td><input class="form-control form-control-sm" data-dep-val="' + esc(rid) + '" data-dep-var="' +
+    return '<td><input class="sform-input" data-dep-val="' + esc(rid) + '" data-dep-var="' +
       esc(d.name) + '" type="' + kind(d) + '" value="' + esc(v) + '" placeholder="' + esc(d.type) + '" autocomplete="off"></td>';
   };
   return (secrets ? '<label class="cfg-reveal"><input type="checkbox" data-dep-reveal' + (reveal ? ' checked' : '') +
@@ -73,7 +73,7 @@ export function valuesGrid(defs: VarDef[], routers: RouterOpt[], values: Record<
     defs.map((d) => '<th><span class="cfg-var">{{' + esc(d.name) + '}}</span>' +
       (d.label ? '<div class="cfg-meta">' + esc(d.label) + '</div>' : '') + '</th>').join('') +
     '</tr></thead><tbody><tr class="cfg-grid-all"><td>All routers</td>' +
-    defs.map((d) => '<td><input class="form-control form-control-sm" data-dep-all-var="' + esc(d.name) + '" type="' +
+    defs.map((d) => '<td><input class="sform-input" data-dep-all-var="' + esc(d.name) + '" type="' +
       kind(d) + '" placeholder="fill every row" autocomplete="off"></td>').join('') +
     '</tr>' + routers.map((r) => '<tr><td>' + esc(r.label) + '</td>' + defs.map((d) => cell(r.id, d)).join('') + '</tr>').join('') +
     '</tbody></table></div>';

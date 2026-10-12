@@ -34,13 +34,17 @@
   // 1. Every control on screen sits in a field.
   for (const c of modal.querySelectorAll('input, select, textarea')) {
     if (c.type === 'hidden' || c.type === 'file') continue;
-    if (c.closest('.ff-toggle, .ff-multi')) continue;
+    // A toggle, a checklist, or a choice card (a whole card is the option, its
+    // radio hidden inside it) - each draws its own box.
+    if (c.closest('.ff-toggle, .ff-multi, .ztp-choice')) continue;
     if (!shown(c)) continue;
     if (c.type === 'checkbox' || c.type === 'radio') {
       issues.push(`bare ${c.type} ${name(c)}: a toggle is .ff-toggle, a set of options .ff-multi`);
       continue;
     }
-    if (!c.closest('.ff')) issues.push(`${name(c)} is not inside an .ff field`);
+    // A cell of a data-entry table is labelled by its column header, so it needs
+    // no field around it - but it is still the one control.
+    if (!c.closest('.ff') && !c.closest('td')) issues.push(`${name(c)} is not inside an .ff field`);
     if (!c.classList.contains('sform-input')) issues.push(`${name(c)} is not an .sform-input`);
   }
 
@@ -52,7 +56,8 @@
       // `display:` is how a field is shown and hidden; nothing else may be inline.
       if (st && !/^\s*(display:\s*[a-z]*;?\s*)?$/.test(st)) issues.push(`${name(part)} carries style="${st}"`);
     }
-    const kids = [...f.children];
+    // A location search's suggestion list is absolutely positioned: no row.
+    const kids = [...f.children].filter((k) => !k.classList.contains('cpick-list'));
     if (kids.length !== 3 || !kids[0].classList.contains('sform-label') || !kids[2].classList.contains('ff-help')) {
       issues.push(`${name(f)} is not label, control, help`);
       continue;
@@ -63,6 +68,15 @@
     if (box && !tall) {
       const h = box.getBoundingClientRect().height;
       if (Math.abs(h - ctlH) > 0.5) issues.push(`${name(f)}: control is ${h.toFixed(1)}px, --ctl-h is ${ctlH.toFixed(1)}px`);
+    }
+    // A row of controls (Stream/Poll, a search and its button): every box in it
+    // is a control, buttons included.
+    if (ctl.matches('.ff-row, .cpick-row, .res-neg-row')) {
+      for (const k of ctl.children) {
+        if (!k.matches('button, .sform-input, .ff-toggle, .bw-unit-toggle') || !shown(k)) continue;
+        const h = k.getBoundingClientRect().height;
+        if (Math.abs(h - ctlH) > 0.5) issues.push(`${name(f)}: ${name(k)} in its control row is ${h.toFixed(1)}px, --ctl-h is ${ctlH.toFixed(1)}px`);
+      }
     }
     for (const inp of f.querySelectorAll('input.sform-input, textarea.sform-input')) {
       const ph = getComputedStyle(inp, '::placeholder').color;

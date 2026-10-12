@@ -3,6 +3,7 @@
 // and Settings → Provisioning's status. `ztp.ts` wires them.
 
 import { esc } from '../dom';
+import { fieldHtml } from '../form';
 import type { ZTPBatchView, ZTPDeviceView, ZTPPayload, ZTPStatus } from '../gen/payloads';
 import { valuesGrid, type RouterOpt } from './config-management-deploy';
 import type { VarDef } from './config-management-editor';
@@ -157,27 +158,31 @@ export function deviceStep(f: DeviceForm, mode: string, sites: SiteOpt[], facts?
     ['Called from', facts.source], ['Script', facts.batchName],
   ] as [string, string][]).filter(([, v]) => v).map(([k, v]) => '<dt>' + k + '</dt><dd>' + esc(v) + '</dd>').join('') +
     '</dl>' : '';
-  return known +
-    '<div class="sform-group"><label class="sform-label" for="ztpLabel">Name</label>' +
-    '<input id="ztpLabel" class="sform-input" maxlength="64" autocomplete="off" value="' + esc(f.label) +
-    '" placeholder="Branch office router"></div>' +
-    (facts ? '' : '<div class="sform-group"><label class="sform-label" for="ztpSerial">Serial number ' +
-      '<span class="ztp-opt">optional</span></label>' +
-      '<input id="ztpSerial" class="sform-input" maxlength="64" autocomplete="off" value="' + esc(f.serial) +
-      '" placeholder="HF1234567AB"><div class="ztp-help">When given, only the router with this serial can use ' +
-      'the script. On the router: <code>/system routerboard print</code>, or on a CHR ' +
-      '<code>/system license print</code>.</div></div>') +
-    (mode === 'local' ? '<div class="sform-group"><label class="sform-label" for="ztpLanUrl">This MikroDash, as the ' +
-      'router reaches it</label><input id="ztpLanUrl" class="sform-input" autocomplete="off" value="' + esc(f.lanUrl) +
-      '" placeholder="http://192.168.88.10:3081"><div class="ztp-help">The router calls home here, and its API user ' +
-      'accepts logins from this address only.</div></div>' : '') +
-    (sites.length ? '<div class="sform-group"><span class="sform-label">Sites</span><div class="ztp-sites">' +
-      sites.map((s) => '<label class="ztp-site"><input type="checkbox" data-ztp-site="' + esc(s.id) + '"' +
-        (f.siteIds.includes(s.id) ? ' checked' : '') + '> ' + esc(s.name) + '</label>').join('') + '</div></div>' : '') +
-    (facts ? '' : '<div class="sform-group"><label class="sform-label" for="ztpDays">The script works for</label>' +
+  // The serial's help carries <code>, so its help line is written here rather
+  // than through fieldHtml, which escapes help as text. Same three children.
+  const serial = '<div class="ff"><label class="sform-label" for="ztpSerial">Serial number</label>' +
+    '<input id="ztpSerial" class="sform-input" maxlength="64" autocomplete="off" value="' + esc(f.serial) +
+    '" placeholder="HF1234567AB"><div class="ff-help">Optional. When given, only the router with this serial can ' +
+    'use the script. On the router: <code>/system routerboard print</code>, or on a CHR ' +
+    '<code>/system license print</code>.</div></div>';
+  return known + '<div class="ff-grid">' +
+    fieldHtml({ id: 'ztpLabel', label: 'Name', required: true },
+      '<input id="ztpLabel" class="sform-input" maxlength="64" autocomplete="off" value="' + esc(f.label) +
+      '" placeholder="Branch office router">') +
+    (facts ? '' : serial) +
+    (mode === 'local' ? fieldHtml({ id: 'ztpLanUrl', label: 'This MikroDash, as the router reaches it', required: true,
+      help: 'The router calls home here, and its API user accepts logins from this address only.' },
+      '<input id="ztpLanUrl" class="sform-input" autocomplete="off" value="' + esc(f.lanUrl) +
+      '" placeholder="http://192.168.88.10:3081">') : '') +
+    (facts ? '' : fieldHtml({ id: 'ztpDays', label: 'The script works for' },
       '<select id="ztpDays" class="sform-input">' + [1, 7, 30, 90].map((n) => '<option value="' + n + '"' +
         (f.days === n ? ' selected' : '') + '>' + n + (n === 1 ? ' day' : ' days') + '</option>').join('') +
-      '</select></div>');
+      '</select>')) +
+    (sites.length ? fieldHtml({ label: 'Sites', full: true },
+      '<div class="ff-multi">' +
+      sites.map((s) => '<label><input type="checkbox" data-ztp-site="' + esc(s.id) + '"' +
+        (f.siteIds.includes(s.id) ? ' checked' : '') + '>' + esc(s.name) + '</label>').join('') + '</div>') : '') +
+    '</div>';
 }
 
 export interface TemplateOpt { id: string; name: string; description: string; canned: boolean }
@@ -223,29 +228,29 @@ export interface CredOpt { id: string; name: string; username: string; isDefault
  */
 export function credPick(creds: CredOpt[], chosen: string): string {
   if (!creds.length) return '';
-  return '<div class="sform-group"><label class="sform-label" for="ztpCred">Credential</label>' +
-    '<select id="ztpCred" class="sform-input"><option value="">None: no extra account</option>' +
+  return fieldHtml({ id: 'ztpCred', label: 'Credential',
+    help: 'A credential profile, created on the device once it arrives. It is a login for people; ' +
+      'MikroDash keeps signing in as itself.' },
+  '<select id="ztpCred" class="sform-input"><option value="">None: no extra account</option>' +
     creds.map((c) => '<option value="' + esc(c.id) + '"' + (c.id === chosen ? ' selected' : '') + '>' +
       esc(c.name) + ' (' + esc(c.username) + ')' + (c.isDefault ? ' - default' : '') +
-      '</option>').join('') + '</select>' +
-    '<div class="ztp-help">A credential profile, created on the device once it arrives. It is a login for ' +
-    'people; MikroDash keeps signing in as itself.</div></div>';
+      '</option>').join('') + '</select>');
 }
 
 /** Step 3: a template to apply on arrival, its settings and its checks. */
 export function configStep(templates: TemplateOpt[], chosen: string, tpl: OpenTemplate | null, label: string,
   values: Record<string, string>, acked: Set<string>, reveal: boolean,
   creds: CredOpt[] = [], cred = ''): string {
-  const pick = '<div class="sform-group"><label class="sform-label" for="ztpTpl">Apply on arrival</label>' +
-    '<select id="ztpTpl" class="sform-input"><option value="">Nothing: just add it to the fleet</option>' +
+  const pick = fieldHtml({ id: 'ztpTpl', label: 'Apply on arrival',
+    help: 'A Config Management template that adds configuration. It is previewed on the router itself when it ' +
+      'arrives, and deployed with a restore point and the auto-revert, as any deploy is.' },
+  '<select id="ztpTpl" class="sform-input"><option value="">Nothing: just add it to the fleet</option>' +
     templates.map((t) => '<option value="' + esc(t.id) + '"' + (t.id === chosen ? ' selected' : '') + '>' +
-      esc(t.name) + (t.canned ? ' (built in)' : '') + '</option>').join('') + '</select>' +
-    '<div class="ztp-help">A Config Management template that adds configuration. It is previewed on the router ' +
-    'itself when it arrives, and deployed with a restore point and the auto-revert, as any deploy is.</div></div>';
+      esc(t.name) + (t.canned ? ' (built in)' : '') + '</option>').join('') + '</select>');
   // APPENDED TO `pick` ITSELF rather than to each return below: this function
   // has three exits and a credential that appeared on only one of them would be
   // a setting that vanishes when a template is chosen.
-  const head = pick + credPick(creds, cred);
+  const head = '<div class="ff-grid">' + pick + credPick(creds, cred) + '</div>';
   if (!chosen) return head;
   if (!tpl || tpl.id !== chosen) return head + '<div class="ztp-help">Opening the template…</div>';
   const one: RouterOpt[] = [{ id: 'device', label: label || 'This device' }];

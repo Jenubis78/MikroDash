@@ -520,10 +520,6 @@
     .dbc-routers{display:flex;flex-direction:column;gap:.25rem;margin-top:.5rem}
     .dbc-router{display:flex;justify-content:space-between;gap:.6rem;font-size:.7rem;color:var(--text-muted);padding:.25rem .1rem}
     .dbc-router b{font-family:var(--font-mono);font-weight:600;color:var(--text-main)}
-    .dbc-types{display:flex;gap:.45rem;flex-wrap:wrap}
-    .dbc-type{display:flex;align-items:center;gap:.35rem;font-size:.72rem;color:var(--text-main);
-              background:var(--bg-deep);border:1px solid var(--border);border-radius:6px;padding:.3rem .55rem;cursor:pointer}
-    .dbc-type input{accent-color:var(--accent-rx);cursor:pointer}
     .dbc-summary{margin-top:.8rem;font-size:.73rem;color:var(--text-muted);line-height:1.5;min-height:1px}
     .dbc-summary b{color:var(--text-main);font-family:var(--font-mono)}
     .dbc-result{margin-top:.6rem;font-size:.73rem;line-height:1.5}
@@ -1279,39 +1275,6 @@
     .rtr-site-chip{font-size:.6rem;padding:.1rem .4rem;border-radius:4px;
                    background:rgba(99,130,190,.12);color:var(--text-muted);
                    border:1px solid var(--border);white-space:nowrap}
-    /* Identity left, Primary right. `1fr auto` rather than two equal halves: the
-       tick needs only its own width, and the identity field should keep the rest
-       even when it is the only thing in the row. */
-    .rtr-identity-row{display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:start}
-    /* IN LINE WITH THE INPUT ITSELF, not with the row.
-       `align-self:end` put it level with the HINT under the input, because the
-       identity group is label + input + hint and the hint is what ends the
-       column. The label's height and the gap below it are what the tick has to
-       clear, so it is pushed down by that much and then centred on the input's
-       own height - which is what "in line with the text box" means. */
-    .rtr-primary-wrap{display:flex;align-items:center;align-self:start;
-                      height:2.1rem;margin-top:1.35rem}
-    .rtr-primary-label{display:inline-flex;align-items:center;gap:.4rem;cursor:pointer;
-                       font-family:var(--font-ui);font-size:.74rem;color:var(--text-main);white-space:nowrap}
-    /* BLUE IN BOTH STATES, WHICH NEEDS `appearance:none`.
-       `accent-color` alone - what `.bk-pick` and `.dbc-type input` use - colours
-       only the CHECKED fill, and a native checkbox IGNORES `border` outright:
-       the UA paints its own box. So an unticked box stayed the browser's grey,
-       which is how it looks on every device but the primary one. Taking the
-       native rendering off is the only way to colour the empty state, so the
-       tick is drawn here too. */
-    .rtr-primary-box{appearance:none;-webkit-appearance:none;
-                     width:1rem;height:1rem;margin:0;cursor:pointer;flex-shrink:0;
-                     background:transparent;border:1px solid var(--accent-rx);border-radius:3px;
-                     display:inline-grid;place-content:center;transition:background .12s}
-    .rtr-primary-box::before{content:"";width:.5rem;height:.5rem;transform:scale(0);
-                             box-shadow:inset 1rem 1rem #fff;transition:transform .12s;
-                             clip-path:polygon(14% 44%,0 65%,50% 100%,100% 16%,80% 0,43% 62%)}
-    .rtr-primary-box:checked{background:var(--accent-rx)}
-    .rtr-primary-box:checked::before{transform:scale(1)}
-    .rtr-primary-box:focus-visible{outline:2px solid var(--accent-rx);outline-offset:2px}
-    .rtr-primary-label:has(.rtr-primary-box:disabled){cursor:default}
-    .rtr-primary-box:disabled{cursor:default;opacity:.75}
 
     /* Same purple the rest of the UI uses, at low alpha for the pill ground.
        Literal rather than a var because this colour is a literal everywhere else. */
@@ -2078,9 +2041,6 @@
        the title attribute, which is where a truncated value belongs. */
     .cp-perms{display:block;max-width:22rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .cp-actions{white-space:nowrap}
-    .cp-policies{display:grid;grid-template-columns:repeat(auto-fill,minmax(7.5rem,1fr));gap:.25rem .6rem;margin:.35rem 0 .2rem}
-    .cp-policy{display:flex;align-items:center;gap:.35rem;font-size:.7rem;font-family:var(--font-mono);color:var(--text-main);cursor:pointer}
-    .cp-policy input{margin:0}
     .vpn-tile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.45rem}
     .vpn-tile{padding:.55rem .65rem;border-radius:7px;border:1px solid var(--border);background:rgba(99,130,190,.04);font-family:var(--font-mono);font-size:.7rem;transition:border-color .2s}
     .vpn-tile.up{border-color:rgba(74,222,128,.22);background:rgba(74,222,128,.04)}
@@ -3180,7 +3140,6 @@
     .ztp-status{font-size:.76rem;color:var(--text-muted);display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
     .ztp-help{font-size:.72rem;color:var(--text-muted);line-height:1.45;margin-top:.25rem}
     .ztp-help code,.ztp-steps code{font-family:var(--font-mono);font-size:.7rem;padding:.05rem .3rem;border-radius:4px;background:color-mix(in srgb,var(--text-muted) 14%,transparent);color:var(--text-main)}
-    .ztp-opt{font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0}
     .ztp-lead{font-size:.86rem;color:var(--text-main);margin-bottom:.7rem}
     .ztp-sub{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:.9rem 0 .4rem}
     .ztp-choices{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
@@ -3193,8 +3152,6 @@
     .ztp-choice-title{font-weight:700;font-size:.9rem;color:var(--text-main)}
     .ztp-choice-text{font-size:.74rem;color:var(--text-muted);line-height:1.45}
     .ztp-choice-off{font-size:.72rem;color:var(--accent-warn)}
-    .ztp-sites{display:flex;flex-wrap:wrap;gap:.3rem .9rem;font-size:.76rem}
-    .ztp-site{display:inline-flex;align-items:center;gap:.3rem;cursor:pointer}
     .ztp-notes{margin-top:.6rem;font-size:.74rem;color:var(--text-muted)}
     .ztp-script-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:.5rem}
     .ztp-script-btns{display:flex;gap:.4rem}
@@ -3327,14 +3284,11 @@
 .nchan-help { font-size: .7rem; color: var(--text-muted); margin: .4rem 0 0; line-height: 1.5; }
 .nchan-help code { font-family: var(--font-mono, monospace); font-size: .68rem; }
 
-/* An event row: text, then the gear when there is one, then the switch. The
-   switch is a label of its own rather than part of the text's label, which is
-   what lets the gear sit BETWEEN them - immediately left of the toggle it
-   configures rather than on the far side of it. */
-.nchan-event-row { display: flex; align-items: center; gap: .5rem; }
-.nchan-event-row > .nchan-event { flex: 1; min-width: 0; }
-/* It stopped being a child of `.stoggle`, which is what carried the pointer. */
-.nchan-event-switch { cursor: pointer; }
+/* An event's control row (an .ff-row): the toggle fills it, and the gear or
+   the threshold sit beside it, outside the toggle's label so clicking them does
+   not flip the switch. */
+.ff-row > .ff-toggle { flex: 1 1 0; min-width: 0; }
+.nchan-event-row > .nchan-gear { align-self: stretch; }
 .nchan-gear {
   display: inline-flex; align-items: center; gap: .3rem;
   background: none; border: 1px solid var(--border); border-radius: 5px;
@@ -3350,13 +3304,8 @@
   display: inline-flex; align-items: center; gap: .2rem;
   color: var(--text-muted); font-size: .7rem; white-space: nowrap;
 }
-.nchan-thr input {
-  width: 3.4rem; text-align: right;
-  font-family: var(--font-mono); font-size: .7rem;
-  padding: .18rem .3rem; border-radius: 4px;
-  border: 1px solid var(--border); background: transparent; color: var(--text-main);
-}
-.nchan-thr input:focus { outline: none; border-color: var(--accent-rx); }
+/* The box is the shared control, narrowed to the three digits it can hold. */
+.nchan-thr .sform-input { width: 4.2rem; padding: 0 .5rem; text-align: right; }
 .nchan-gear svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
 /* ABOVE THE DIALOG THAT OPENED IT. `.rtr-modal-bg` is z-index 900, so this has
    to beat that number and not merely be positive - 60 was written first and put
@@ -3381,22 +3330,6 @@
   width: 20px;
   height: 20px;
   border-width: 2px;
-}
-.nchan-iface-list { display: flex; flex-direction: column; gap: .15rem; }
-.nchan-iface-row { padding: .3rem 0; }
-
-/* A toggle standing in a form row beside text inputs. It needs the height of an
-   input so the three cells of the host/port/encryption row line up on their
-   baselines rather than the toggle floating at the top of its cell. */
-.nchan-inline-toggle {
-  display: flex; align-items: center; gap: .5rem;
-  min-height: 2.05rem;
-}
-/* The channel's state, last and separated from the configuration above it. */
-.nchan-enabled {
-  display: flex; align-items: center; gap: .6rem;
-  margin-top: 1rem; padding-top: .85rem;
-  border-top: 1px solid var(--border);
 }
 
 .nchan-actions { margin-left: auto; }
@@ -3452,11 +3385,6 @@
 .modal-panels { display: grid; }
 .modal-panel { grid-area: 1 / 1; visibility: hidden; padding-top: .9rem; }
 .modal-panel.active { visibility: visible; }
-/* A panel's opening sentence, with room under it: the router list sat directly
-   against this line with nothing between them. */
-.modal-panel-note { margin: 0 0 .9rem; }
-/* The cooldown sits above the Enabled divider, with air of its own. */
-.nchan-cooldown { margin: 1rem 0 0; }
 
 /* ── THE ABOUT PAGE ──────────────────────────────────────────────────────────
    Identity left, facts right, history underneath. The top row is two cards of
@@ -3737,9 +3665,6 @@
 }
 .modal-tabs .stab-bar { margin-bottom: 0; }
 
-.nchan-event { align-items: flex-start; }
-.nchan-event .stoggle-label { display: flex; flex-direction: column; gap: .15rem; }
-.nchan-event-desc { font-size: .68rem; color: var(--text-muted); font-weight: 400; }
 
 
     /* ── THE TERMINAL ─────────────────────────────────────────────────────────
@@ -3918,6 +3843,14 @@
   margin: .25rem 0 .8rem;
 }
 .ff-help:empty { margin-top: 0; }
+.ff-help code {
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  padding: .05rem .3rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-muted) 14%, transparent);
+  color: var(--text-main);
+}
 
 /* A TOGGLE IS A CONTROL: the same box as an input, saying Off or On beside the
    switch, under the field's label. The words come from CSS so the state needs
@@ -3963,6 +3896,54 @@
   font-size: .74rem;
   color: var(--text-main);
 }
+/* A bordered box holding a list a field controls (a group's members, a user's
+   grants, a role's pages): the input box's surface, grown to its content. */
+.ff-box {
+  padding: .6rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: .78rem;
+}
+.ff-scroll { max-height: 12rem; overflow-y: auto; }
+.ff-scroll-tall { max-height: 22rem; overflow-y: auto; }
+/* A row of controls at the shared height, as one field's control or repeated
+   (an SSO claim mapping, the icon picker). */
+.ff-row { display: flex; align-items: center; gap: .5rem; min-height: var(--ctl-h); }
+.ff-row > .sform-input { flex: 1 1 0; min-width: 0; }
+.ff-row > .sbtn { flex: 0 0 auto; }
+.ff-row + .ff-row { margin-top: .4rem; }
+/* A search field's suggestion list is a fourth child of its .ff: absolutely
+   positioned, so it takes no row of the subgrid and opens under the field. */
+.dbc-routers + .ff-grid { margin-top: .9rem; }
+/* A BUTTON IN A FIELD'S CONTROL ROW IS A CONTROL TOO: Stream/Poll, a search's
+   "Use automatic", an icon picker's Upload. Left at its own padding it sat a
+   few pixels short of the box beside it, which is the mismatch this section
+   exists to end. */
+.ff .ff-row > button,
+.ff .cpick-row > button { height: var(--ctl-h); border-radius: 6px; box-sizing: border-box; }
+/* A unit picker beside a number (Gbps/Mbps) is as tall as the box it qualifies. */
+.ff-row > .bw-unit-toggle { align-self: stretch; }
+/* A range slider in a field takes the interactive accent, like a focused box. */
+input[type=range].sform-input { accent-color: var(--accent-rx); }
+/* A checkbox in a checklist is drawn here, in both states. `accent-color` alone
+   colours only the CHECKED fill and a native box ignores `border`, so an empty
+   one stayed the browser's grey on every palette. */
+.ff-multi input[type=checkbox] {
+  appearance: none; -webkit-appearance: none;
+  width: .9rem; height: .9rem; margin: 0; flex-shrink: 0; cursor: pointer;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px;
+  display: inline-grid; place-content: center; transition: background .12s, border-color .12s;
+}
+.ff-multi input[type=checkbox]::before {
+  content: ""; width: .5rem; height: .5rem; transform: scale(0); transition: transform .12s;
+  background: var(--bg-deep);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+}
+.ff-multi input[type=checkbox]:checked { background: var(--accent-rx); border-color: var(--accent-rx); }
+.ff-multi input[type=checkbox]:checked::before { transform: scale(1); }
+.ff-multi input[type=checkbox]:focus-visible { outline: 2px solid var(--accent-rx); outline-offset: 2px; }
+.ff-multi input[type=checkbox]:disabled { opacity: .5; cursor: not-allowed; }
 /* Code and file contents keep their line breaks and scroll sideways. */
 textarea.sform-input.ff-code { white-space: pre; font-size: .74rem; }
 

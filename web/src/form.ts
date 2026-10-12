@@ -13,8 +13,9 @@
 import { esc } from './dom';
 
 export interface FieldOpts {
-  /** The control's id, which the label points at. */
-  id: string;
+  /** The control's id, which the label points at. Omitted when the control is
+   *  not a single labelable element (a checklist), so no `for` names a div. */
+  id?: string;
   label: string;
   required?: boolean;
   /** One line under the control. Empty keeps the row's shape. */
@@ -34,7 +35,7 @@ export interface FieldOpts {
  */
 export function fieldHtml(o: FieldOpts, control: string): string {
   return '<div class="ff' + (o.full ? ' ff-full' : '') + '"' + (o.attrs ? ' ' + o.attrs : '') + '>' +
-    '<label class="sform-label" for="' + esc(o.id) + '">' + esc(o.label) +
+    '<label class="sform-label"' + (o.id ? ' for="' + esc(o.id) + '"' : '') + '>' + esc(o.label) +
     (o.required ? ' <span class="ff-req">*</span>' : '') + '</label>' +
     control +
     '<div class="ff-help">' + (o.help ? esc(o.help) : '') + '</div>' +

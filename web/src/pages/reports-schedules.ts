@@ -484,11 +484,11 @@ export function openSchedModal(row: ScheduleRow | null): void {
   const chosen = row ? row.sections : ['ping'];
   const secs = el('rs_sections');
   if (secs) {
+    // A set chosen together: one `.ff-multi` box of checkboxes, the field's
+    // control (app.css, FORM FIELDS).
     secs.innerHTML = state.sections.map((sec) =>
-      '<label class="stoggle"><span class="stoggle-label">' + esc(sec) + '</span>' +
-      '<span class="stoggle-switch"><input type="checkbox" data-rs-sec="' + esc(sec) + '"' +
-      (chosen.indexOf(sec) !== -1 ? ' checked' : '') + '>' +
-      '<span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>').join('');
+      '<label><input type="checkbox" data-rs-sec="' + esc(sec) + '"' +
+      (chosen.indexOf(sec) !== -1 ? ' checked' : '') + '>' + esc(sec) + '</label>').join('');
   }
   syncIfaceVisibility();
   el('rptSchedModal')?.classList.add('open');

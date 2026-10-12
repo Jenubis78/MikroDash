@@ -129,14 +129,17 @@ function mapRowHtml(claimValue: string, roleId: string): string {
   const opts = roles.map((r) =>
     '<option value="' + esc(r.id) + '"' + (r.id === roleId ? ' selected' : '') + '>'
     + esc(r.name) + '</option>').join('');
-  return '<div class="sform-row" data-sso-map style="margin-bottom:.4rem;align-items:end">'
-    + '<div class="sform-group"><input class="sform-input" data-sso-claim type="text" '
+  // A ROW, NOT AN .ff-grid: a mapping is a pair read together, repeated, and a
+  // label and a help line on every repetition would be noise. Its two controls
+  // are bare .sform-input, so they stand at the shared control height.
+  return '<div class="ff-row" data-sso-map>'
+    + '<input class="sform-input" data-sso-claim type="text" aria-label="Claim value" '
     + 'autocomplete="off" spellcheck="false" placeholder="netops" value="' + esc(claimValue)
-    + '"></div>'
-    + '<div class="sform-group"><select class="sform-input" data-sso-role>'
-    + '<option value="">Choose a role&#8230;</option>' + opts + '</select></div>'
+    + '">'
+    + '<select class="sform-input" data-sso-role aria-label="Role">'
+    + '<option value="">Choose a role&#8230;</option>' + opts + '</select>'
     + '<button type="button" class="sbtn sbtn-outline" data-sso-map-del '
-    + 'style="padding:.3rem .6rem;font-size:.72rem;flex:0 0 auto">Remove</button>'
+    + 'style="padding:.3rem .6rem;font-size:.72rem">Remove</button>'
     + '</div>';
 }
 

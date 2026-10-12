@@ -18,6 +18,7 @@
  */
 
 import { el, esc, modalTabs } from '../dom';
+import { fieldHtml, toggleHtml } from '../form';
 import { mountPicker, type Picker } from '../device-picker';
 
 interface ChannelView {
@@ -242,12 +243,12 @@ function renderIfacePicker(): void {
   const wrap = el('nchanIfaceList');
   if (!wrap) return;
   const all = ifaceTypes.length === 0;
+  // A SET CHOSEN TOGETHER, so the field's control is one `.ff-multi` box of
+  // checkboxes (app.css, FORM FIELDS) rather than a toggle per type.
   wrap.innerHTML = IFACE_TYPES.map(([key, label]) =>
-    '<label class="stoggle stoggle-bare nchan-iface-row">'
-    + '<span class="stoggle-label">' + esc(label) + '</span>'
-    + '<span class="stoggle-switch"><input type="checkbox" data-nchan-iface="' + esc(key) + '"'
+    '<label><input type="checkbox" data-nchan-iface="' + esc(key) + '"'
     + (all || ifaceTypes.indexOf(key) !== -1 ? ' checked' : '') + '>'
-    + '<span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>').join('');
+    + esc(label) + '</label>').join('');
 }
 
 /**
@@ -358,7 +359,7 @@ function eventRow(e: EventRow, on: boolean): string {
   // under it would look configured and stay silent; the server refuses one, and
   // the control will not produce one.
   const thr = e.key === 'high_cpu' || e.key === 'ping_loss'
-    ? '<span class="nchan-thr"><input type="number" data-nchan-thr="' + esc(e.key) + '"'
+    ? '<span class="nchan-thr"><input class="sform-input" type="number" data-nchan-thr="' + esc(e.key) + '"'
       + ' min="' + (FLOOR[e.key] || 1) + '" max="100" step="1"'
       + ' value="' + esc(String(thresholdValue(e.key))) + '"'
       + ' aria-label="' + esc(e.label) + ' threshold, percent"'
@@ -369,29 +370,19 @@ function eventRow(e: EventRow, on: boolean): string {
       + ' title="Choose which interface types this channel is told about">'
       + GEAR_SVG + '<span data-nchan-ifacesum>' + esc(ifaceSummary()) + '</span></button>'
     : '';
-  // ── THE SWITCH IS A SIBLING OF ITS TEXT, NOT INSIDE ONE LABEL ─────────
+  // ── AN EVENT IS A FIELD ───────────────────────────────────────────────
   //
-  // The row reads text, gear, switch, and the gear has to sit BETWEEN the other
-  // two. While the switch lived inside the label that also held the text, the
-  // gear could only be placed before both or after both - it ended up after,
-  // which put it on the far side of the toggle it configures.
-  //
-  // So text and switch are two labels pointing at the same checkbox with `for`,
-  // and the gear is an ordinary button between them. Clicking either label still
-  // flips the toggle; clicking the gear does not, because it is not inside one.
-  // That is also why it is a button rather than a span: it is the only thing in
-  // the row that is not a label.
-  const id = 'nchanEv-' + esc(e.key);
-  return '<div class="nchan-event-row">'
-    + '<label class="stoggle stoggle-bare nchan-event" for="' + id + '">'
-    + '<span class="stoggle-label"><strong>' + esc(e.label) + '</strong>'
-    + '<span class="nchan-event-desc">' + esc(e.desc) + '</span></span></label>'
+  // Its name is the label, its description the help line, and the control is
+  // the toggle with the gear and the threshold beside it - a bespoke control in
+  // the field's middle slot (app.css, FORM FIELDS). The gear and the number sit
+  // OUTSIDE the toggle's label, so clicking either does not flip the switch;
+  // that is also why the gear is a button rather than a span.
+  const id = 'nchanEv-' + e.key;
+  return fieldHtml({ id, label: e.label, help: e.desc },
+    '<div class="nchan-event-row ff-row">'
+    + toggleHtml(id, on, 'data-nchan-event="' + esc(e.key) + '"')
     + gear + thr
-    + '<label class="stoggle-switch nchan-event-switch" for="' + id + '">'
-    + '<input type="checkbox" id="' + id + '" data-nchan-event="' + esc(e.key) + '"'
-    + (on ? ' checked' : '') + '>'
-    + '<span class="stoggle-track"></span><span class="stoggle-thumb"></span></label>'
-    + '</div>';
+    + '</div>');
 }
 
 function fillModal(c: ChannelView | null): void {
@@ -451,7 +442,7 @@ function fillModal(c: ChannelView | null): void {
   const evHost = el('nchanEvents');
   if (evHost) {
     evHost.innerHTML = events.length
-      ? events.map((e) => eventRow(e, chosen.has(e.key))).join('')
+      ? '<div class="ff-grid">' + events.map((e) => eventRow(e, chosen.has(e.key))).join('') + '</div>'
       : '<p class="nchan-help">The event list could not be loaded.</p>';
   }
   const note = el('nchanEventNote');

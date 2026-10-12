@@ -410,15 +410,23 @@
           </span>
         </div>
 
+        <div class="ff-grid">
+          <div class="ff">
+            <label class="sform-label" for="faIface">Interface</label>
+            <select id="faIface" class="sform-input"></select>
+            <div class="ff-help"></div>
+          </div>
+          <div class="ff">
+            <label class="sform-label" for="faDuration">Duration</label>
+            <select id="faDuration" class="sform-input">
+              <option value="30" selected>30 s</option>
+              <option value="60">1 min</option>
+              <option value="120">2 min</option>
+            </select>
+            <div class="ff-help"></div>
+          </div>
+        </div>
         <div class="fa-controls">
-          <label for="faIface">Interface</label>
-          <select id="faIface" class="conn-src-filter" style="min-width:150px"></select>
-          <label for="faDuration">Duration</label>
-          <select id="faDuration" class="conn-src-filter" style="min-width:80px">
-            <option value="30" selected>30 s</option>
-            <option value="60">1 min</option>
-            <option value="120">2 min</option>
-          </select>
           <button class="sbtn sbtn-primary" id="faScanBtn" type="button">Scan</button>
           <button class="sbtn sbtn-outline" id="faStopBtn" type="button" style="display:none">Stop</button>
           <span class="fa-spin" id="faSpin" role="status" aria-label="Scanning"></span>
@@ -484,10 +492,13 @@
                  turn grouping off for their own sidebar. Same id-free handler,
                  same server round trip; the two checkboxes stay in step. -->
             <hr style="border:none;border-top:1px solid var(--border);margin:.85rem 0">
-            <label class="stoggle">
-              <span class="stoggle-label">Group the sidebar into categories</span>
-              <span class="stoggle-switch"><input type="checkbox" id="acctNavGrouped" class="nav-grouped-input"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span>
-            </label>
+            <div class="ff-grid ff-one">
+              <div class="ff">
+                <label class="sform-label" for="acctNavGrouped">Group the sidebar into categories</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="acctNavGrouped" class="nav-grouped-input"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -506,18 +517,21 @@
             </div>
 
             <div id="acct_pwForm" style="display:none">
-              <div class="sform-group" style="margin-bottom:.55rem">
-                <label class="sform-label">Current Password</label>
-                <input type="password" id="acct_currentPassword" class="sform-input" autocomplete="current-password">
-              </div>
-              <div class="sform-row">
-                <div class="sform-group" style="margin-bottom:.55rem">
-                  <label class="sform-label">New Password</label>
-                  <input type="password" id="acct_newPassword" class="sform-input" autocomplete="new-password">
+              <div class="ff-grid">
+                <div class="ff ff-full">
+                  <label class="sform-label" for="acct_currentPassword">Current Password</label>
+                  <input type="password" id="acct_currentPassword" class="sform-input" autocomplete="current-password">
+                  <div class="ff-help"></div>
                 </div>
-                <div class="sform-group" style="margin-bottom:.55rem">
-                  <label class="sform-label">Confirm New Password</label>
+                <div class="ff">
+                  <label class="sform-label" for="acct_newPassword">New Password</label>
+                  <input type="password" id="acct_newPassword" class="sform-input" autocomplete="new-password">
+                  <div class="ff-help"></div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="acct_confirmPassword">Confirm New Password</label>
                   <input type="password" id="acct_confirmPassword" class="sform-input" autocomplete="new-password">
+                  <div class="ff-help"></div>
                 </div>
               </div>
               <p style="font-size:.72rem;color:var(--text-muted);margin:0 0 .6rem">
@@ -573,8 +587,6 @@
           </div>
         </div>
       </div>
-
-      </div>
       <div class="rtr-modal-footer">
         <span id="acct_version" style="font-size:.72rem;color:var(--text-muted);margin-right:auto"></span>
         <button id="acct_signOutBtn" class="sbtn sbtn-outline" type="button">Sign Out</button>
@@ -590,75 +602,83 @@
       </div>
       <div class="rtr-modal-body">
         <input type="hidden" id="rtrModalId">
+        <input type="hidden" id="rtrModalMode" value="stream">
         <div class="rtr-modal-col">
 
         <div class="rtr-sec">Device</div>
-        <div class="sform-group">
-          <label class="sform-label" for="rtrModalLabel">Display Name</label>
-          <input class="sform-input" id="rtrModalLabel" type="text" placeholder="e.g. Office Router">
+        <div class="ff-grid">
+          <div class="ff ff-full">
+            <label class="sform-label" for="rtrModalLabel">Display Name</label>
+            <input class="sform-input" id="rtrModalLabel" type="text" placeholder="e.g. Office Router">
+            <div class="ff-help"></div>
+          </div>
         </div>
         <!-- Identity on the left, Primary on the right. THEY HIDE SEPARATELY:
              the identity field is shown only for a device MikroDash can reach,
-             and the Primary tick must not disappear with it - an unreachable
+             and the Primary toggle must not disappear with it - an unreachable
              device is still one you may want opened at sign-in. -->
-        <div class="rtr-identity-row" id="rtrModalIdentityRow" style="display:none">
+        <div class="ff-grid" id="rtrModalIdentityRow" style="display:none">
           <!-- The device's own name (System Identity), written to the device, not
                to MikroDash. Shown only when editing a device MikroDash can reach. -->
-          <div class="sform-group" id="rtrModalIdentityWrap" style="display:none">
+          <div class="ff" id="rtrModalIdentityWrap" style="display:none">
             <label class="sform-label" for="rtrModalIdentity">Device identity</label>
             <input class="sform-input" id="rtrModalIdentity" type="text" maxlength="255" placeholder="MikroTik" disabled>
-            <div class="cpick-hint" id="rtrModalIdentityHint"></div>
+            <div class="ff-help" id="rtrModalIdentityHint"></div>
           </div>
-          <!-- BOX FIRST, WORD SECOND, on one line: this is a tick with a name,
-               not a field with a caption, so it does not take the stacked
-               label-above-control shape the inputs beside it use. -->
-          <div class="sform-group rtr-primary-wrap" id="rtrModalPrimaryDeviceWrap">
-            <label class="rtr-primary-label" for="rtrModalPrimaryDevice">
-              <input type="checkbox" id="rtrModalPrimaryDevice" class="rtr-primary-box">
-              <span>Primary</span>
-            </label>
+          <!-- A TOGGLE LIKE EVERY OTHER. It was a bare box-first tick with its
+               own styling; it is a field now, label above, under the contract
+               every dialog field follows (app.css, FORM FIELDS). -->
+          <div class="ff" id="rtrModalPrimaryDeviceWrap">
+            <label class="sform-label" for="rtrModalPrimaryDevice">Primary</label>
+            <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="rtrModalPrimaryDevice"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+            <div class="ff-help"></div>
           </div>
         </div>
 
         <div class="rtr-sec">Connection</div>
-        <div class="sform-row sform-group">
-          <div>
+        <div class="ff-grid">
+          <div class="ff">
             <label class="sform-label" for="rtrModalHost">Host / IP</label>
             <input class="sform-input" id="rtrModalHost" type="text" placeholder="192.168.88.1">
+            <div class="ff-help"></div>
           </div>
-          <div>
+          <div class="ff">
             <label class="sform-label" for="rtrModalPort">API Port</label>
             <input class="sform-input" id="rtrModalPort" type="number" min="1" max="65535" value="8729" placeholder="8729">
+            <div class="ff-help"></div>
           </div>
         </div>
         <p class="rtr-note" id="rtrModalLoginNote" hidden>Signs in as <strong>mikrodash</strong> with a login
           profile. Change its password, or give it a login of its own, in Config Management &rarr; Credentials.</p>
-        <div class="sform-row sform-group" id="rtrModalCredRow">
-          <div>
+        <div class="ff-grid" id="rtrModalCredRow">
+          <div class="ff">
             <label class="sform-label" for="rtrModalUser">Username</label>
             <input class="sform-input" id="rtrModalUser" type="text" placeholder="admin">
+            <div class="ff-help"></div>
           </div>
-          <div>
+          <div class="ff">
             <label class="sform-label" for="rtrModalPass">Password</label>
             <input class="sform-input" id="rtrModalPass" type="password" placeholder="leave blank to keep current" autocomplete="new-password">
+            <div class="ff-help"></div>
           </div>
         </div>
-        <div class="sform-row sform-group" style="margin-bottom:.4rem">
-          <label class="stoggle" id="rtrStogTls">
-            <span class="stoggle-label">Use TLS</span>
-            <span class="stoggle-switch"><input type="checkbox" id="rtrModalTls" checked><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span>
-          </label>
-          <label class="stoggle">
-            <span class="stoggle-label">Allow self-signed cert</span>
-            <span class="stoggle-switch"><input type="checkbox" id="rtrModalTlsInsecure"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span>
-          </label>
+        <div class="ff-grid">
+          <div class="ff" id="rtrStogTls">
+            <label class="sform-label" for="rtrModalTls">Use TLS</label>
+            <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="rtrModalTls" checked><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+            <div class="ff-help">TLS uses port 8729 (API-SSL, recommended). Plain uses port 8728 (API, unencrypted).</div>
+          </div>
+          <div class="ff">
+            <label class="sform-label" for="rtrModalTlsInsecure">Allow self-signed cert</label>
+            <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="rtrModalTlsInsecure"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+            <div class="ff-help"></div>
+          </div>
         </div>
-        <p class="rtr-note">TLS uses port 8729 (API-SSL, recommended) &nbsp;·&nbsp; Plain uses port 8728 (API, unencrypted)</p>
         <!-- ── THE WAY OFF THE PLAIN API ────────────────────────────────────
              Shown only when this device is NOT already on API-SSL, because the
              only thing it can do for one that is, is generate two more keys.
              router-modal.ts sets the display. -->
-        <div id="rtrApiSslWrap" style="display:none;margin-top:.5rem">
+        <div id="rtrApiSslWrap" style="display:none">
           <button type="button" class="sbtn sbtn-outline" id="rtrApiSslBtn" style="padding:.3rem .7rem;font-size:.75rem">Auto Switch to API-SSL</button>
         </div>
 
@@ -666,24 +686,23 @@
              watching and by dormancy, so there is nothing per collector to switch
              off. Poll exists for small routers where persistent streams strain. -->
         <div class="rtr-sec">Collection</div>
-        <div class="sform-group">
-          <div class="poll-profile-row" id="rtrModalModeWrap" style="display:flex;gap:.35rem;margin-bottom:.5rem">
-            <button type="button" class="poll-profile-btn active" data-mode="stream">Stream</button>
-            <button type="button" class="poll-profile-btn" data-mode="poll">Poll</button>
+        <div class="ff-grid ff-one">
+          <div class="ff">
+            <label class="sform-label">Mode</label>
+            <div class="poll-profile-row ff-row" id="rtrModalModeWrap">
+              <button type="button" class="poll-profile-btn active" data-mode="stream">Stream</button>
+              <button type="button" class="poll-profile-btn" data-mode="poll">Poll</button>
+            </div>
+            <div class="ff-help">Poll suits lower-end hardware: it replaces persistent API streams with periodic requests,
+              which is what actually strains a small router. Logs and the traffic graph always stream -
+              polling them would drop log lines and cost more than it saves.</div>
           </div>
-          <input type="hidden" id="rtrModalMode" value="stream">
-          <p class="rtr-note">
-            Poll suits lower-end hardware: it replaces persistent API streams with periodic requests,
-            which is what actually strains a small router. Logs and the traffic graph always stream -
-            polling them would drop log lines and cost more than it saves.
-          </p>
         </div>
 
         </div><div class="rtr-modal-col">
 
         <div class="rtr-sec">Location</div>
-        <div class="sform-group">
-          <label class="sform-label" for="rtrModalPrimarySite">Primary site</label>
+        <div class="ff-grid ff-one">
           <!-- MEMBERSHIP IS NOT EDITED HERE. Which sites a device belongs to is
                an authorization decision - it changes who can reach the device -
                so it lives in Access Management with the rest of them, behind the
@@ -691,86 +710,87 @@
                sites it already belongs to places it on the map when it has no
                coordinates of its own, so it offers exactly those and nothing
                else. Saving reorders that list; it never adds or removes. -->
-          <select class="sform-input" id="rtrModalPrimarySite" aria-label="Primary site, used for the map location">
-            <option value="">- No site -</option>
-          </select>
-          <p class="rtr-note">Decides where this device is drawn on the map when it has no location of its own. To change which sites it belongs to, use Settings → Access Management → Sites.</p>
-        </div>
-        <!-- Location (issue #96). Deliberately a search, not two number boxes:
-             coordinates are derived from the town, never typed. Left blank the
-             router is placed from its WAN IP, and the hint below says what that
-             currently resolves to. -->
-        <div class="sform-group cpick" id="rtrModalGeoWrap">
-          <label class="sform-label" for="rtrModalGeo">Location</label>
-          <div class="cpick-row">
-            <input class="sform-input" id="rtrModalGeo" type="text" role="combobox"
-                   aria-expanded="false" aria-autocomplete="list" aria-controls="rtrModalGeoList"
-                   placeholder="Search for a town or city…" autocomplete="off" maxlength="64">
-            <button type="button" class="cpick-clear" id="rtrModalGeoClear"
-                    title="Clear this override and use the automatic location">Use automatic</button>
+          <div class="ff">
+            <label class="sform-label" for="rtrModalPrimarySite">Primary site</label>
+            <select class="sform-input" id="rtrModalPrimarySite" aria-label="Primary site, used for the map location">
+              <option value="">- No site -</option>
+            </select>
+            <div class="ff-help">Decides where this device is drawn on the map when it has no location of its own. To change which sites it belongs to, use Settings → Access Management → Sites.</div>
           </div>
-          <div class="cpick-list" id="rtrModalGeoList" role="listbox" hidden></div>
-          <div class="cpick-hint" id="rtrModalGeoHint"></div>
+          <!-- Location (issue #96). Deliberately a search, not two number boxes:
+               coordinates are derived from the town, never typed. Left blank the
+               router is placed from its WAN IP, and the help line says what that
+               currently resolves to. The suggestion list is absolutely placed, so
+               it is not a grid row of the field. -->
+          <div class="ff cpick" id="rtrModalGeoWrap">
+            <label class="sform-label" for="rtrModalGeo">Location</label>
+            <div class="cpick-row">
+              <input class="sform-input" id="rtrModalGeo" type="text" role="combobox"
+                     aria-expanded="false" aria-autocomplete="list" aria-controls="rtrModalGeoList"
+                     placeholder="Search for a town or city…" autocomplete="off" maxlength="64">
+              <button type="button" class="cpick-clear" id="rtrModalGeoClear"
+                      title="Clear this override and use the automatic location">Use automatic</button>
+            </div>
+            <div class="ff-help" id="rtrModalGeoHint"></div>
+            <div class="cpick-list" id="rtrModalGeoList" role="listbox" hidden></div>
+          </div>
         </div>
 
         <div class="rtr-sec">Network</div>
-        <div class="sform-row sform-group">
-          <div>
+        <div class="ff-grid">
+          <div class="ff">
             <label class="sform-label" for="rtrModalIf">Default WAN Interface</label>
             <input class="sform-input" id="rtrModalIf" type="text" placeholder="ether1">
+            <div class="ff-help"></div>
           </div>
-          <div>
+          <div class="ff">
             <label class="sform-label" for="rtrModalPing">Ping Target</label>
             <input class="sform-input" id="rtrModalPing" type="text" placeholder="1.1.1.1">
+            <div class="ff-help"></div>
           </div>
-        </div>
-        <div class="sform-row sform-group">
-          <div>
+          <div class="ff">
             <label class="sform-label" for="rtrModalBwDown">Download capacity</label>
-            <div style="display:flex;gap:.3rem">
-              <input class="sform-input" id="rtrModalBwDown" type="number" min="1" step="1" value="1" style="flex:1" aria-label="Download capacity, Mbps">
+            <div class="ff-row">
+              <input class="sform-input" id="rtrModalBwDown" type="number" min="1" step="1" value="1" aria-label="Download capacity, Mbps">
               <input type="hidden" id="rtrModalBwDownUnit" value="gbps">
               <div class="bw-unit-toggle" data-unit-for="rtrModalBwDownUnit">
                 <button type="button" class="bw-unit-btn active" data-val="gbps">Gbps</button>
                 <button type="button" class="bw-unit-btn" data-val="mbps">Mbps</button>
               </div>
             </div>
+            <div class="ff-help"></div>
           </div>
-          <div>
+          <div class="ff">
             <label class="sform-label" for="rtrModalBwUp">Upload capacity</label>
-            <div style="display:flex;gap:.3rem">
-              <input class="sform-input" id="rtrModalBwUp" type="number" min="1" step="1" value="1" style="flex:1" aria-label="Upload capacity, Mbps">
+            <div class="ff-row">
+              <input class="sform-input" id="rtrModalBwUp" type="number" min="1" step="1" value="1" aria-label="Upload capacity, Mbps">
               <input type="hidden" id="rtrModalBwUpUnit" value="gbps">
               <div class="bw-unit-toggle" data-unit-for="rtrModalBwUpUnit">
                 <button type="button" class="bw-unit-btn active" data-val="gbps">Gbps</button>
                 <button type="button" class="bw-unit-btn" data-val="mbps">Mbps</button>
               </div>
             </div>
+            <div class="ff-help"></div>
           </div>
         </div>
 
         <div class="rtr-sec">Monitoring</div>
-        <div class="sform-group">
-          <label class="stoggle">
-            <span class="stoggle-label">Alert Monitoring</span>
-            <span class="stoggle-switch"><input type="checkbox" id="rtrModalAlertsEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span>
-          </label>
-          <p class="rtr-note">Open a background connection for push alerts even when this router is not the active view.</p>
-        </div>
-        <div class="sform-group">
-          <label class="stoggle">
-            <span class="stoggle-label">Reporting</span>
-            <span class="stoggle-switch"><input type="checkbox" id="rtrModalReportingEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span>
-          </label>
-          <p class="rtr-note">Record traffic, bandwidth, ping and uptime history for this device so it appears in Reports. Off means nothing is written to disk for it - alerts still notify, but leave no history.</p>
-        </div>
-        <div class="sform-group">
-          <label class="sform-label" for="rtrModalDownThresh">Offline threshold</label>
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <input class="sform-input" id="rtrModalDownThresh" type="number" min="0" max="300" step="1" value="30" style="width:5rem">
-            <span style="font-size:.8rem;color:var(--text-muted)">seconds</span>
+        <div class="ff-grid ff-one">
+          <div class="ff">
+            <label class="sform-label" for="rtrModalAlertsEnabled">Alert Monitoring</label>
+            <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="rtrModalAlertsEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+            <div class="ff-help">Open a background connection for push alerts even when this router is not the active view.</div>
           </div>
-          <p class="rtr-note">Status badge and alerts only change after the router has been unreachable for this long. Set to 0 to react immediately.</p>
+          <div class="ff">
+            <label class="sform-label" for="rtrModalReportingEnabled">Reporting</label>
+            <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="rtrModalReportingEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+            <div class="ff-help">Record traffic, bandwidth, ping and uptime history for this device so it appears in Reports. Off means nothing is written to disk for it - alerts still notify, but leave no history.</div>
+          </div>
+          <div class="ff">
+            <label class="sform-label" for="rtrModalDownThresh">Offline threshold, seconds</label>
+            <input class="sform-input" id="rtrModalDownThresh" type="number" min="0" max="300" step="1" value="30">
+            <div class="ff-help">Status badge and alerts only change after the router has been unreachable for this long. Set to 0 to react immediately.</div>
+          </div>
         </div>
 
         </div>
@@ -879,9 +899,14 @@
       <button class="rtr-modal-close" data-modal-close="nchanIfaceModal" aria-label="Close">&#10005;</button>
     </div>
     <div class="rtr-modal-body">
-      <p class="nchan-help" style="margin:0 0 .7rem">Which kinds of interface this channel is told
-        about when one goes up or down. Everything is covered until you choose.</p>
-      <div id="nchanIfaceList" class="nchan-iface-list"></div>
+      <div class="ff-grid ff-one">
+        <div class="ff">
+          <label class="sform-label" for="nchanIfaceList">Interface types</label>
+          <div id="nchanIfaceList" class="ff-multi"></div>
+          <div class="ff-help">Which kinds of interface this channel is told about when one goes up
+            or down. Everything is covered until you choose.</div>
+        </div>
+      </div>
     </div>
     <div class="rtr-modal-footer">
       <button class="sbtn sbtn-primary" data-modal-close="nchanIfaceModal">Done</button>
@@ -917,64 +942,41 @@
              while no longer matching anything. -->
         <div class="modal-panels">
         <div class="modal-panel active" data-modalpanel="channel">
-          <div class="sform-row">
-            <div class="sform-group">
-              <label class="sform-label" for="nchanName">Name <span style="color:var(--accent-err)">*</span></label>
+          <div class="ff-grid">
+            <div class="ff">
+              <label class="sform-label" for="nchanName">Name <span class="ff-req">*</span></label>
               <input class="sform-input" id="nchanName" placeholder="My notification channel">
+              <div class="ff-help"></div>
             </div>
-            <div class="sform-group">
+            <div class="ff">
               <label class="sform-label" for="nchanKind">Type</label>
               <select class="sform-input" id="nchanKind">
                 <option value="webhook">Webhooks</option>
                 <option value="smtp">SMTP (Email)</option>
               </select>
+              <div class="ff-help"></div>
             </div>
           </div>
+          <!-- The two bodies are shown and hidden with the `hidden` attribute, so
+               neither is itself an .ff-grid: the grid's display would outrank it. -->
           <div id="nchanWebhookBody">
-            <div class="sform-group">
-              <label class="sform-label" for="nchanUrls">Webhook URLs <span style="color:var(--accent-err)">*</span> (one per line)</label>
-              <textarea class="sform-input" id="nchanUrls" rows="6" spellcheck="false"
-                placeholder="tgram://bot_token/chat_id&#10;discord://webhook_id/webhook_token&#10;ntfys://ntfy.sh/my-topic&#10;gotify://host/app-token"></textarea>
-              <p class="nchan-help" id="nchanSchemes"></p>
-              <p class="nchan-help">Need a provider that is not listed? Run an Apprise API server,
-                configure the provider there, and point a channel at it with
-                <code>apprise://host/key</code>.</p>
+            <div class="ff-grid">
+              <div class="ff ff-full">
+                <label class="sform-label" for="nchanUrls">Webhook URLs, one per line <span class="ff-req">*</span></label>
+                <textarea class="sform-input" id="nchanUrls" rows="6" spellcheck="false"
+                  placeholder="tgram://bot_token/chat_id&#10;discord://webhook_id/webhook_token&#10;ntfys://ntfy.sh/my-topic&#10;gotify://host/app-token"></textarea>
+                <div class="ff-help" id="nchanSchemes"></div>
+              </div>
             </div>
+            <p class="nchan-help">Need a provider that is not listed? Run an Apprise API server,
+              configure the provider there, and point a channel at it with
+              <code>apprise://host/key</code>.</p>
           </div>
 
           <div id="nchanSmtpBody" hidden>
             <!-- ── TLS SITS WITH THE PORT, because it is about the port ──────
-                 It was a bare toggle between the host row and the credentials
-                 row, with no label of its own, so it read as belonging to
-                 neither and was the narrowest thing on the form. Implicit TLS
-                 IS the difference between 465 and 587: it belongs beside the
-                 number it changes, with a label like its neighbours. -->
-            <div class="sform-row3">
-              <div class="sform-group">
-                <label class="sform-label" for="nchanSmtpHost">SMTP host <span style="color:var(--accent-err)">*</span></label>
-                <input class="sform-input" id="nchanSmtpHost" placeholder="smtp.example.com">
-              </div>
-              <div class="sform-group">
-                <label class="sform-label" for="nchanSmtpPort">Port</label>
-                <input class="sform-input" id="nchanSmtpPort" placeholder="587">
-              </div>
-              <div class="sform-group">
-                <label class="sform-label">Encryption</label>
-                <label class="stoggle stoggle-bare nchan-inline-toggle"><span class="stoggle-label">Implicit TLS</span>
-                  <span class="stoggle-switch"><input type="checkbox" id="nchanSmtpSecure">
-                    <span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
-              </div>
-            </div>
-            <div class="sform-row">
-              <div class="sform-group">
-                <label class="sform-label" for="nchanSmtpUser">Username</label>
-                <input class="sform-input" id="nchanSmtpUser" autocomplete="off" placeholder="user@example.com">
-              </div>
-              <div class="sform-group">
-                <label class="sform-label" for="nchanSmtpPass">Password</label>
-                <input class="sform-input" id="nchanSmtpPass" type="password" autocomplete="new-password">
-              </div>
-            </div>
+                 Implicit TLS IS the difference between 465 and 587, so it is the
+                 field straight after the port number it changes. -->
             <!-- ── To, Cc AND Bcc, BECAUSE THEY ARE THREE DECISIONS ─────────
                  This was one "Recipients" box, which forced the same treatment
                  on everybody an alert or a report reached. Who is addressed, who
@@ -985,49 +987,79 @@
                  to Bcc is how a list reaches people without disclosing them to
                  each other, and that is what scheduled reports did for everyone
                  before the choice existed. -->
-            <div class="sform-row">
-              <div class="sform-group">
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="nchanSmtpHost">SMTP host <span class="ff-req">*</span></label>
+                <input class="sform-input" id="nchanSmtpHost" placeholder="smtp.example.com">
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="nchanSmtpPort">Port</label>
+                <input class="sform-input" id="nchanSmtpPort" placeholder="587">
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="nchanSmtpSecure">Implicit TLS</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="nchanSmtpSecure"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
                 <label class="sform-label" for="nchanSmtpFrom">From address</label>
                 <input class="sform-input" id="nchanSmtpFrom" placeholder="alerts@example.com">
+                <div class="ff-help"></div>
               </div>
-              <div class="sform-group">
+              <div class="ff">
+                <label class="sform-label" for="nchanSmtpUser">Username</label>
+                <input class="sform-input" id="nchanSmtpUser" autocomplete="off" placeholder="user@example.com">
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="nchanSmtpPass">Password</label>
+                <input class="sform-input" id="nchanSmtpPass" type="password" autocomplete="new-password">
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
                 <label class="sform-label" for="nchanSmtpTo">To</label>
                 <input class="sform-input" id="nchanSmtpTo" placeholder="ops@example.com">
+                <div class="ff-help"></div>
               </div>
-            </div>
-            <div class="sform-row">
-              <div class="sform-group">
+              <div class="ff">
                 <label class="sform-label" for="nchanSmtpCc">Cc</label>
                 <input class="sform-input" id="nchanSmtpCc" placeholder="noc@example.com">
+                <div class="ff-help"></div>
               </div>
-              <div class="sform-group">
+              <div class="ff">
                 <label class="sform-label" for="nchanSmtpBcc">Bcc</label>
                 <input class="sform-input" id="nchanSmtpBcc" placeholder="archive@example.com">
+                <div class="ff-help"></div>
               </div>
             </div>
           </div>
 
-          <!-- ── THE CHANNEL'S STATE, AFTER ITS CONFIGURATION ──────────────
-               It used to sit between the Name/Type row and the type-specific
-               body, which is where neither belongs: it is not part of naming the
-               channel and not part of configuring the transport. Last, on its
-               own, it reads as what it is - whether this channel is in use. -->
           <!-- ── HOW OFTEN THIS CHANNEL MAY REPEAT ITSELF ─────────────────
                On the Channel tab rather than behind a gear, because it is not a
                property of one event: it applies to everything this channel
                sends. A pager that must not repeat and a log that should record
-               every crossing are the same events at two different rates. -->
-          <div class="sform-group nchan-cooldown">
-            <label class="sform-label" for="nchanCooldown">Repeat no more than once every</label>
-            <div style="display:flex;align-items:center;gap:.6rem">
-              <input type="range" id="nchanCooldown" min="10" max="600" step="10"
-                     style="flex:1;accent-color:var(--accent-rx)" aria-label="Cooldown, seconds">
-              <span id="nchanCooldownVal" style="font-family:var(--font-mono);font-size:.75rem;min-width:3.2rem;text-align:right;color:var(--text-main)">60 s</span>
+               every crossing are the same events at two different rates.
+               ── THE CHANNEL'S STATE, LAST ────────────────────────────────
+               Enabled is not part of naming the channel nor of configuring the
+               transport; after both, it reads as what it is - whether this
+               channel is in use. -->
+          <div class="ff-grid">
+            <div class="ff">
+              <label class="sform-label" for="nchanCooldown">Repeat no more than once every</label>
+              <div class="ff-row">
+                <input class="sform-input" type="range" id="nchanCooldown" min="10" max="600" step="10" aria-label="Cooldown, seconds">
+                <span id="nchanCooldownVal" style="font-family:var(--font-mono);font-size:.75rem;min-width:3.2rem;text-align:right;color:var(--text-main)">60 s</span>
+              </div>
+              <div class="ff-help"></div>
+            </div>
+            <div class="ff">
+              <label class="sform-label" for="nchanEnabled">Enabled</label>
+              <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="nchanEnabled" checked><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+              <div class="ff-help"></div>
             </div>
           </div>
-          <label class="stoggle stoggle-bare nchan-enabled"><span class="stoggle-label">Enabled</span>
-            <span class="stoggle-switch"><input type="checkbox" id="nchanEnabled" checked>
-              <span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
         </div>
 
         <div class="modal-panel" data-modalpanel="events">
@@ -1043,9 +1075,14 @@
              told about it, and stacking the second under the first made it read
              as a property of the event list. -->
         <div class="modal-panel" data-modalpanel="devices">
-          <p class="nchan-help modal-panel-note">Which routers this channel is told about. No
-            selection means every router, now and in future.</p>
-          <div id="nchanRouters" class="dp"></div>
+          <!-- The picker is the field's control, as it is in the Site dialog. -->
+          <div class="ff-grid">
+            <div class="ff ff-full">
+              <label class="sform-label">Devices</label>
+              <div id="nchanRouters" class="dp"></div>
+              <div class="ff-help">Which routers this channel is told about. No selection means every router, now and in future.</div>
+            </div>
+          </div>
         </div>
         </div>
       </div>
@@ -1067,46 +1104,55 @@
       <button class="rtr-modal-close" data-modal-close="rptSchedModal" aria-label="Close">&#10005;</button>
     </div>
     <div class="rtr-modal-body">
-      <div class="sform-group">
-        <label class="sform-label" for="rs_name">Name</label>
-        <input class="sform-input" id="rs_name" type="text" maxlength="80" placeholder="Monthly usage">
-      </div>
-      <div class="sform-row">
-        <div class="sform-group">
+      <div class="ff-grid">
+        <div class="ff ff-full">
+          <label class="sform-label" for="rs_name">Name</label>
+          <input class="sform-input" id="rs_name" type="text" maxlength="80" placeholder="Monthly usage">
+          <div class="ff-help"></div>
+        </div>
+        <div class="ff">
           <label class="sform-label" for="rs_frequency">Frequency</label>
           <select class="sform-input" id="rs_frequency">
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
           </select>
+          <div class="ff-help"></div>
         </div>
-        <div class="sform-group">
+        <div class="ff">
           <label class="sform-label" for="rs_hour">Send at</label>
           <select class="sform-input" id="rs_hour"></select>
+          <div class="ff-help"></div>
+        </div>
+        <div class="ff ff-full">
+          <label class="sform-label" for="rs_sections">Sections</label>
+          <div class="ff-multi" id="rs_sections"></div>
+          <div class="ff-help"></div>
+        </div>
+        <div class="ff" id="rs_ifaceWrap" style="display:none">
+          <label class="sform-label" for="rs_iface">Interface</label>
+          <input class="sform-input" id="rs_iface" type="text" placeholder="ether1">
+          <div class="ff-help">Traffic and bandwidth reports cover one interface.</div>
+        </div>
+        <!-- ── A CHANNEL, NOT A LIST OF ADDRESSES ───────────────────────────
+             This was a textarea of recipients belonging to the schedule. Who
+             receives a notification is configured on a channel and nowhere else,
+             so a schedule names one and the channel's To is the recipient list.
+             Only install-owned SMTP channels are offered: a webhook cannot carry
+             a PDF, and a report can cover every router a schedule reaches, so
+             routing one through a user's personal mail channel would hand them
+             routers they were never granted. -->
+        <div class="ff">
+          <label class="sform-label" for="rs_channel">Send through</label>
+          <select class="sform-input" id="rs_channel"></select>
+          <div class="ff-help"></div>
+        </div>
+        <div class="ff">
+          <label class="sform-label" for="rs_enabled">Enabled</label>
+          <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="rs_enabled" checked><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+          <div class="ff-help"></div>
         </div>
       </div>
-      <div class="sform-group">
-        <label class="sform-label">Sections</label>
-        <div class="stoggle-grid" id="rs_sections"></div>
-      </div>
-      <div class="sform-group" id="rs_ifaceWrap" style="display:none">
-        <label class="sform-label" for="rs_iface">Interface</label>
-        <input class="sform-input" id="rs_iface" type="text" placeholder="ether1">
-        <div class="form-hint">Traffic and bandwidth reports cover one interface.</div>
-      </div>
-      <!-- ── A CHANNEL, NOT A LIST OF ADDRESSES ───────────────────────────
-           This was a textarea of recipients belonging to the schedule. Who
-           receives a notification is configured on a channel and nowhere else,
-           so a schedule names one and the channel's To is the recipient list.
-           Only install-owned SMTP channels are offered: a webhook cannot carry
-           a PDF, and a report can cover every router a schedule reaches, so
-           routing one through a user's personal mail channel would hand them
-           routers they were never granted. -->
-      <div class="sform-group">
-        <label class="sform-label" for="rs_channel">Send through</label>
-        <select class="sform-input" id="rs_channel"></select>
-      </div>
-      <label class="stoggle"><span class="stoggle-label">Enabled</span><span class="stoggle-switch"><input type="checkbox" id="rs_enabled" checked><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
       <div class="login-error" id="rs_error" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:6px;color:#f87171;font-size:.78rem;padding:.45rem .65rem;margin-top:.6rem;text-align:center"></div>
     </div>
     <div class="rtr-modal-footer">
@@ -1194,8 +1240,13 @@
       <div style="background:rgba(245,159,0,.1);border:1px solid rgba(245,159,0,.3);border-radius:6px;font-size:.78rem;padding:.55rem .7rem;margin-bottom:.8rem;color:var(--text-main)">
         The router downloads the packages and <strong>reboots immediately</strong>. Every connection through it drops for the duration.
       </div>
-      <label class="sform-label">Type the router name to confirm</label>
-      <input class="sform-input" id="upd_confirm" type="text" autocomplete="off" placeholder="">
+      <div class="ff-grid ff-one">
+        <div class="ff">
+          <label class="sform-label" for="upd_confirm">Type the router name to confirm</label>
+          <input class="sform-input" id="upd_confirm" type="text" autocomplete="off" placeholder="">
+          <div class="ff-help"></div>
+        </div>
+      </div>
       <div id="upd_pending" style="display:none;text-align:center;font-size:.76rem;color:var(--text-muted);margin-top:.7rem;line-height:1.5"></div>
       <div class="login-error" id="upd_error" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:6px;color:#f87171;font-size:.78rem;padding:.45rem .65rem;margin-top:.6rem;text-align:center"></div>
     </div>
@@ -1226,33 +1277,36 @@
       <span class="rtr-modal-title" id="cpModalTitle">New credential profile</span>
     </div>
     <div class="rtr-modal-body">
-      <!-- sform-group / sform-label / sform-input are the app's form classes,
-           and they are not decoration: `.sform-input` sets the dark background,
-           the border and the text colour. The first version of this dialog
-           invented `rtr-lbl` and `rtr-inp`, which exist nowhere, so every field
-           fell back to the browser's own control styling - the beige. -->
-      <div class="sform-row">
-        <div class="sform-group">
-          <label class="sform-label" for="cpName">Name <span style="color:var(--accent-err)">*</span></label>
+      <!-- sform-label / sform-input are the app's form classes, and they are not
+           decoration: `.sform-input` sets the dark background, the border and
+           the text colour. The first version of this dialog invented `rtr-lbl`
+           and `rtr-inp`, which exist nowhere, so every field fell back to the
+           browser's own control styling - the beige. Each field is the
+           label/control/help shape of app.css's FORM FIELDS. -->
+      <div class="ff-grid">
+        <div class="ff">
+          <label class="sform-label" for="cpName">Name <span class="ff-req">*</span></label>
           <input class="sform-input" id="cpName" type="text" placeholder="NOC read-only" autocomplete="off" maxlength="64">
+          <div class="ff-help"></div>
         </div>
-        <div class="sform-group">
-          <label class="sform-label" for="cpUser">RouterOS username <span style="color:var(--accent-err)">*</span></label>
+        <div class="ff">
+          <label class="sform-label" for="cpUser">RouterOS username <span class="ff-req">*</span></label>
           <input class="sform-input" id="cpUser" type="text" placeholder="noc" autocomplete="off" maxlength="64" spellcheck="false">
+          <div class="ff-help" id="cpUserNote">The account created on every linked router.
+            It cannot be the account MikroDash signs in with.</div>
         </div>
-      </div>
-      <div class="sform-group">
-        <label class="sform-label" for="cpDesc">Description</label>
-        <input class="sform-input" id="cpDesc" type="text" placeholder="What this account is for" autocomplete="off" maxlength="200">
-      </div>
-      <p class="rtr-note cp-note" id="cpUserNote">The account created on every linked router.
-        It cannot be the account MikroDash signs in with.</p>
-      <div class="sform-row">
-        <div class="sform-group">
+        <div class="ff ff-full">
+          <label class="sform-label" for="cpDesc">Description</label>
+          <input class="sform-input" id="cpDesc" type="text" placeholder="What this account is for" autocomplete="off" maxlength="200">
+          <div class="ff-help"></div>
+        </div>
+        <div class="ff">
           <label class="sform-label" for="cpPass">Password</label>
           <input class="sform-input" id="cpPass" type="password" autocomplete="new-password">
+          <div class="ff-help" id="cpPassNote">Required for a new profile. Leave blank when
+            editing to keep the current password.</div>
         </div>
-        <div class="sform-group">
+        <div class="ff">
           <label class="sform-label" for="cpPerm">Start from</label>
           <select class="sform-input" id="cpPerm">
             <option value="read">Read-only - view the configuration</option>
@@ -1260,33 +1314,30 @@
             <option value="full">Full access - everything, including users</option>
             <option value="">Nothing - choose each permission</option>
           </select>
+          <div class="ff-help" id="cpPermNote">A starting point. Every permission is
+            yours to change, and the profile gets a RouterOS group of its own holding exactly what you tick - it
+            never joins one of the router's existing groups.</div>
         </div>
       </div>
-      <p class="rtr-note cp-note" id="cpPassNote">Required for a new profile. Leave blank when
-        editing to keep the current password.</p>
-      <p class="rtr-note cp-note" id="cpPermNote">A starting point. Every permission is
-        yours to change, and the profile gets a RouterOS group of its own holding exactly what you tick - it
-        never joins one of the router's existing groups.</p>
-      <div id="cpCustom">
-        <div class="sform-group">
-          <label class="sform-label" for="cpGroup">Group name <span style="color:var(--accent-err)">*</span></label>
+      <div id="cpCustom" class="ff-grid">
+        <div class="ff">
+          <label class="sform-label" for="cpGroup">Group name <span class="ff-req">*</span></label>
           <input class="sform-input" id="cpGroup" type="text" placeholder="noc-readonly" autocomplete="off" maxlength="64" spellcheck="false">
+          <div class="ff-help">Created on each linked router, and used by this profile
+            alone. It cannot be renamed later: that would be a migration across every linked device, not an edit.</div>
         </div>
-        <p class="rtr-note cp-note">Created on each linked router, and used by this profile
-          alone. It cannot be renamed later: that would be a migration across every linked device, not an edit.</p>
-        <div class="sform-group">
-          <label class="sform-label">Policies</label>
-          <div id="cpPolicies" class="cp-policies"></div>
+        <div class="ff">
+          <label class="sform-label" for="cpDefault">Use this profile by default</label>
+          <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="cpDefault"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+          <div class="ff-help">Offered first when a device is provisioned. Only one profile can be the
+            default, so turning this on clears it from whichever profile holds it now.</div>
+        </div>
+        <div class="ff ff-full">
+          <label class="sform-label" for="cpPolicies">Policies</label>
+          <div id="cpPolicies" class="ff-multi"></div>
+          <div class="ff-help"></div>
         </div>
       </div>
-      <div class="sform-group" style="margin-bottom:.4rem">
-        <label class="cp-policy" for="cpDefault" style="font-size:.72rem">
-          <input type="checkbox" id="cpDefault">
-          <span>Use this profile by default</span>
-        </label>
-      </div>
-      <p class="rtr-note cp-note">Offered first when a device is provisioned. Only one profile can be the
-        default, so ticking this clears it from whichever profile holds it now.</p>
       <div id="cpError" class="rtr-note" style="display:none;color:var(--accent-err)"></div>
     </div>
     <div class="rtr-modal-footer">
@@ -1365,14 +1416,16 @@
     </div>
     <div class="rtr-modal-body" style="display:block">
       <div class="lp-fixed"><span>Account</span><strong>mikrodash</strong><span>Group</span><strong>mikrodash</strong></div>
-      <div class="sform-row">
-        <div class="sform-group">
+      <div class="ff-grid">
+        <div class="ff">
           <label class="sform-label" for="lpPass" id="lpPassLabel">Password</label>
           <input class="sform-input" id="lpPass" type="password" autocomplete="new-password">
+          <div class="ff-help"></div>
         </div>
-        <div class="sform-group">
+        <div class="ff">
           <label class="sform-label" for="lpPass2">Repeat it</label>
           <input class="sform-input" id="lpPass2" type="password" autocomplete="new-password">
+          <div class="ff-help"></div>
         </div>
       </div>
       <p class="rtr-note cp-note" id="lpPassNote">At least 12 characters. It signs in to every linked device with
@@ -1417,14 +1470,16 @@
     <div class="rtr-modal-body" style="display:block">
       <p class="rtr-note" style="margin-top:0"><strong id="lpOwnDevice">This device</strong> will sign in with the
         account below instead of the profile. The MikroDash account stays on the router.</p>
-      <div class="sform-row">
-        <div class="sform-group">
+      <div class="ff-grid">
+        <div class="ff">
           <label class="sform-label" for="lpOwnUser">Username</label>
           <input class="sform-input" id="lpOwnUser" type="text" autocomplete="off" spellcheck="false">
+          <div class="ff-help"></div>
         </div>
-        <div class="sform-group">
+        <div class="ff">
           <label class="sform-label" for="lpOwnPass">Password</label>
           <input class="sform-input" id="lpOwnPass" type="password" autocomplete="new-password">
+          <div class="ff-help"></div>
         </div>
       </div>
       <div id="lpOwnError" class="rtr-note" style="display:none;color:var(--accent-err)"></div>

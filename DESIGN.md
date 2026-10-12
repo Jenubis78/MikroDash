@@ -354,9 +354,7 @@ where it is limited to.
   - `sbtn-primary` is the blue tint; the variants are `-outline`, `-danger`, `-warn` and `-purple`.
   - Buttons are tinted, not solid.
   - Disabled is .4-.45 opacity with a `not-allowed` cursor.
-- **Forms**: `.sform-label` (uppercase, muted) over `.sform-input`.
-  - The input is `--bg-deep` with a 1px border that turns `--accent-rx` on focus.
-  - Toggles are `.stoggle`.
+- **Forms**: see "Form fields" below. Every field is a label, a control and a help line.
 - **Modal**: `.rtr-modal-bg` > `.rtr-modal` with `-hdr`, `-body` and `-footer`.
   - The footer's actions are right-aligned.
   - Wide modals split the body into two columns from 900px.
@@ -382,6 +380,64 @@ where it is limited to.
   - it stops animating while its page is hidden.
 - **Empty and unknown**: a value the router did not send is a `-` in muted text. A `title` tooltip
   says why when the reason is useful, as the Public IP row does.
+
+## Form fields
+
+Every field in a dialog has the same shape, and the stylesheet owns all of it. The rules exist
+because the dialogs drifted apart: toggles of two heights in one form, help text that staggered the
+rows below it, a select a few pixels off its neighbours, and placeholders in the browser's own grey.
+
+**The shape.** A field is three parts, always all three:
+
+```html
+<div class="ff-grid">
+  <div class="ff">
+    <label class="sform-label" for="host">Host <span class="ff-req">*</span></label>
+    <input class="sform-input" id="host" placeholder="192.168.88.1">
+    <div class="ff-help">The address to probe.</div>
+  </div>
+</div>
+```
+
+- **`.ff-grid`** lays fields out two to a row, one under 600px. Add `ff-one` for a single column,
+  and `ff-full` on a field that needs both columns (a list, a block of text).
+- **Each `.ff` is a subgrid of three rows.** Labels, boxes and help lines line up across a row
+  whichever field has help, so the help element is **always** there, even empty.
+- **In TypeScript, use `fieldHtml()` and `toggleHtml()`** from `web/src/form.ts`. In a template,
+  copy the markup above exactly.
+
+**The controls.**
+
+- **One box for everything**: a text input, a number, a select and a locked display value are all
+  `.sform-input`, `--ctl-h` tall, `--bg-deep`, with a 1px border that turns `--accent-rx` on focus.
+- **Values are mono** (they are router data); labels are the UI font, uppercase and muted.
+- **Placeholders are `--text-muted`.** A placeholder shows the default; it is never the browser's grey.
+- **A select is drawn by the stylesheet**, chevron included, so it matches the inputs beside it.
+- **A toggle is a field like any other**: an uppercase label above, and an `.ff-toggle` box of the
+  same height as an input, reading Off or On beside the switch. The Settings page's `.stoggle`
+  panel, with its label inside the box, is for page forms only, never a dialog.
+- **A set of options chosen together** is one `.ff-multi` box, full width.
+- **A data-entry table** (one input per router and variable) keeps its table: the column header is
+  each input's label, and every cell's control is still `.sform-input`.
+
+**Never.**
+
+- **No inline `style`** on a field or any part of one. The one exception is `display`, which a
+  script sets to show or hide the whole `.ff` (never just its input, which would leave an empty
+  label behind).
+- **No per-dialog patch** to line something up. If a field does not fit the shape, fix the shape
+  here and in the FORM FIELDS section of `app.css`, so every dialog gets the fix.
+
+**How it is held.**
+
+- `internal/verify/formfields_test.go` checks the templates and the TypeScript: every control in a
+  dialog is in an `.ff`, toggles are `.ff-toggle`, nothing inline, and `app.css` still defines the
+  control height, the subgrid and the themed placeholder.
+- **Geometry needs a browser.** After changing a dialog, open it, visit each tab, and run
+  `tools/form-geometry.js` in the console (or through Playwright's evaluate). It checks every
+  control is `--ctl-h` tall, labels and boxes line up across each row, and placeholders take the
+  palette's muted text. Break one field on purpose once, so you have seen it fail before you
+  trust a pass.
 
 ## Do's and Don'ts
 
