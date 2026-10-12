@@ -30,6 +30,7 @@ package sitedoc
 import (
 	"encoding/json"
 	"math"
+	"regexp"
 	"strings"
 )
 
@@ -296,6 +297,26 @@ func boundsOf(pts []MapPoint) (x, y, w, h float64) {
 	return minX, minY, maxX - minX, maxY - minY
 }
 
+// mapColourRe is the only shape an object's colour may have: a hex colour, as
+// the plan editor's picker stores it.
+var mapColourRe = regexp.MustCompile(`^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$`)
+
+// mapColour keeps a colour only if it is a hex colour, and clears anything else.
+//
+// THE COLOUR REACHES A STYLE. The plan editor draws an object's colour into its
+// SVG element's style, and a stored "red;background:url(https://...)" would add
+// declarations of its own - a request to any URL from every browser that opens
+// the plan. Anyone who may save a plan could plant it for everyone who views it.
+// So the shape is enforced here, where the plan is saved, and again where it is
+// drawn (objectColour in web/src/pages/wifi-map.ts) for plans saved before this.
+func mapColour(s string) string {
+	s = strings.TrimSpace(s)
+	if mapColourRe.MatchString(s) {
+		return s
+	}
+	return ""
+}
+
 // CleanWifiMap is total.
 func CleanWifiMap(raw json.RawMessage) WifiMap {
 	out := WifiMap{Objects: []MapObject{}, APs: []MapAP{}}
@@ -312,7 +333,7 @@ func CleanWifiMap(raw json.RawMessage) WifiMap {
 		if !mapKinds[o.Kind] {
 			o.Kind = "building"
 		}
-		o.ID, o.Label, o.Colour = clampName(o.ID), clampName(o.Label), clampName(o.Colour)
+		o.ID, o.Label, o.Colour = clampName(o.ID), clampName(o.Label), mapColour(o.Colour)
 		if o.ID == "" {
 			continue
 		}

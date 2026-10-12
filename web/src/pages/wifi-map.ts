@@ -165,11 +165,16 @@ const PALETTE: Array<[string, PaletteToken | null]> = [
   ['#fbbf24', '--accent-warn'], ['#f87171', '--accent-err'], ['#a78bfa', '--accent-alt'],
 ];
 
-/** A stored object colour at `alpha`, drawn from the palette. A colour the
- *  picker never offered is drawn as stored. */
-function objectColour(c: string, alpha = 1): string {
+/** A stored object colour at `alpha`, drawn from the palette. A hex colour the
+ *  picker never offered is drawn as stored; ANYTHING ELSE is drawn as no colour.
+ *
+ *  The value goes into a style, so a stored "red;background:url(...)" would add
+ *  declarations of its own. The server keeps only hex colours when a plan is
+ *  saved (mapColour in internal/sitedoc); this holds for plans saved before. */
+export function objectColour(c: string, alpha = 1): string {
   const hit = PALETTE.find((p) => p[0] === c);
   if (hit && hit[1]) return paletteCss(hit[1], alpha);
+  if (!/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(c)) return 'none';
   return alpha === 1 ? c : 'rgb(from ' + c + ' r g b / ' + alpha + ')';
 }
 
