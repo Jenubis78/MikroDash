@@ -309,7 +309,7 @@ function render(area: Area): void {
       ? '<table class="table table-vcenter mb-0"><tbody data-res-rows="' + esc(declared.resource) + '">' +
         declared.columns.map((c) =>
           '<tr' + resRow(r.id, r.identity, declared.resource) + '>' +
-          '<th style="width:34%;font-weight:500;color:var(--text-muted)">' + esc(columnLabel(c)) + '</th>' +
+          '<th style="width:34%">' + esc(columnLabel(c)) + '</th>' +
           '<td>' + valueCell(declared.pills[c], r.values?.[c]) + '</td></tr>').join('') +
         '</tbody></table>'
       : '<div class="empty-state">The router did not return these settings.</div>';

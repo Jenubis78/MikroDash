@@ -32,8 +32,8 @@ export function renderNetwatch(data: NetwatchPayload): void {
         : '<span style="color:var(--text-muted);font-size:.7rem">' + esc(h.status || '?') + '</span>';
     return '<tr>' +
       '<td>' + statusHtml + '</td>' +
-      '<td style="font-size:.78rem;font-weight:600">' + esc(h.name || '-') + '</td>' +
-      '<td style="font-size:.72rem;color:var(--text-muted)">' + esc(h.host || '-') + '</td>' +
+      '<td style="font-weight:600">' + esc(h.name || '-') + '</td>' +
+      '<td style="color:var(--text-muted)">' + esc(h.host || '-') + '</td>' +
       '</tr>';
   }).join('');
 }

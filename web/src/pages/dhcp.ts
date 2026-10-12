@@ -130,7 +130,7 @@ export function initDhcpPage(socket: Socket, isVisible: (page: string) => boolea
       return '<tr' + resRow(l.id, l.mac) + '>' +
         '<td style="font-weight:600">' + esc(l.name || l.hostName || '-') + '</td>' +
         '<td style="color:var(--accent-rx)">' + esc(l.ip) + '</td>' +
-        '<td style="font-size:.7rem;color:var(--text-muted)">' + esc(l.mac || '-') + '</td>' +
+        '<td style="color:var(--text-muted)">' + esc(l.mac || '-') + '</td>' +
         '<td><span class="lease-pill ' + pillCls + '">' + esc(l.status || '?') + '</span></td>' +
         '</tr>';
     }).join('');
@@ -238,7 +238,7 @@ export function initDhcpPage(socket: Socket, isVisible: (page: string) => boolea
       const poolLabel = pool > 0 ? (used + ' / ' + pool) : ('' + used + ' leases');
       const pctLabel = pool > 0 ? (' (' + pct + '%)') : '';
       return '<tr>' +
-        '<td style="font-size:.76rem;font-family:var(--font-mono);color:var(--accent-rx)">' + esc(n.cidr) + '</td>' +
+        '<td style="color:var(--accent-rx)">' + esc(n.cidr) + '</td>' +
         '<td class="td-label">' + esc(n.gateway || '-') + '</td>' +
         '<td class="td-label">' + esc(n.dns || '-') + '</td>' +
         '<td>' +

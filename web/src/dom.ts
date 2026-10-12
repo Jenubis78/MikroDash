@@ -125,10 +125,9 @@ export function renderSortHeader(
   if (!tr) return;
   tr.innerHTML = cols.map((c) => {
     const sortCls = c.key === sortState.col ? 'sort-' + sortState.dir : '';
-    const allCls = [c.cls || '', sortCls].filter(Boolean).join(' ');
+    const allCls = [c.cls || '', c.key ? 'th-sort' : '', sortCls].filter(Boolean).join(' ');
     const cls = allCls ? ` class="${allCls}"` : '';
-    const base = c.key ? 'cursor:pointer;user-select:none;' : '';
-    const sty = (base || c.style) ? ` style="${base}${c.style || ''}"` : '';
+    const sty = c.style ? ` style="${c.style}"` : '';
     return `<th${sty}${cls}>${c.label}</th>`;
   }).join('');
 

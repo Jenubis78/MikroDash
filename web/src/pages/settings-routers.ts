@@ -165,7 +165,7 @@ export function renderRouterTable(
   primaryId = '',
 ): string {
   if (!routers.length) {
-    return '<tr><td colspan="' + ROUTER_TABLE_COLUMNS + '" style="text-align:center;padding:1.2rem;color:var(--text-muted);font-size:.73rem">No routers configured. Click Add Router to get started.</td></tr>';
+    return '<tr><td class="tbl-empty" colspan="' + ROUTER_TABLE_COLUMNS + '">No routers configured. Click Add Router to get started.</td></tr>';
   }
   // The position is passed IN rather than worked out per row, because the ends
   // of the list are what decide which arrow is disabled and only the caller

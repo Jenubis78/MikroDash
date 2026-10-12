@@ -235,10 +235,10 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
     if (!tr) return;
     const live = data.filter((r) => r.ok);
     tr.innerHTML =
-      '<th style="cursor:pointer;user-select:none" data-dnssort="name">Record</th>' +
+      '<th class="th-sort" data-dnssort="name">Record</th>' +
       '<th>Type</th><th>Value</th>' +
       live.map((r) => '<th class="dns-fleet-col">' + esc(r.label) + '</th>').join('') +
-      '<th style="cursor:pointer;user-select:none" data-dnssort="presence">On</th>';
+      '<th class="th-sort" data-dnssort="presence">On</th>';
   }
 
   function sorted(): FleetRow[] {

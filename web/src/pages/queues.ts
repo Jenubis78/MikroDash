@@ -246,7 +246,7 @@ export function initQueuesPage(socket: Socket, isVisible: (page: string) => bool
         '<td>' + flags + esc(x.name) + (x.comment ? '<div class="muted-note">' + esc(x.comment) + '</div>' : '') + '</td>' +
         '<td>' + esc(x.parent || '-') + ft + '</td>' +
         '<td>' + (x.packetMark ? esc(x.packetMark) : mutedDash()) + '</td>' +
-        '<td style="font-size:.72rem">' + fmtLimit(x.maxLimit) + '</td>' +
+        '<td>' + fmtLimit(x.maxLimit) + '</td>' +
         '<td>' + rateCell('t' + x.id, x.rateBps, null, x.rateSource, x.rateWindowMs) + '</td>' +
         '<td></td>' +
       '</tr>';

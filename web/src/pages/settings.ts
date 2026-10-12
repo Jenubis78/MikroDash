@@ -606,9 +606,9 @@ export interface UserView {
  * is rebuilt on every refresh and the listeners are attached by the caller.
  */
 export function userRowHtml(u: UserView, look: PrincipalLookups): string {
-  return '<td style="padding:.45rem .5rem;font-size:.82rem">' + esc(u.username) + '</td>'
-    + '<td style="padding:.45rem .5rem" colspan="2">' + accessSummary(u.grants, look) + '</td>'
-    + '<td style="padding:.45rem .5rem;text-align:right;white-space:nowrap">'
+  return '<td>' + esc(u.username) + '</td>'
+    + '<td colspan="2">' + accessSummary(u.grants, look) + '</td>'
+    + '<td style="text-align:right;white-space:nowrap">'
     + '<button class="sbtn sbtn-ghost" style="margin-right:.3rem" data-action="edit">Edit</button>'
     + '<button class="sbtn sbtn-danger" data-action="del">Delete</button>'
     + '</td>';
@@ -642,10 +642,10 @@ export interface GroupView {
  */
 export function groupTableHtml(groups: GroupView[], look: PrincipalLookups): string {
   if (!groups.length) {
-    return '<tr><td colspan="4" style="padding:.75rem .5rem;color:var(--text-muted);font-size:.76rem">'
+    return '<tr><td class="tbl-empty" colspan="4">'
       + 'No groups yet. Add one to grant a role to several people at once.</td></tr>';
   }
-  const td = 'padding:.4rem .5rem;border-bottom:1px solid var(--border)';
+  const td = 'border-bottom:1px solid var(--border)';
   return groups.map((g) => {
     const access = (g.grants || []).length
       ? (g.grants || []).map((x) => esc(roleName(x, look) + ' - ' + scopeLabel(x, look))).join('<br>')
@@ -653,8 +653,8 @@ export function groupTableHtml(groups: GroupView[], look: PrincipalLookups): str
     return '<tr>'
       + '<td style="' + td + ';font-weight:600">' + esc(g.name)
         + (g.description ? '<div style="font-weight:400;font-size:.7rem;color:var(--text-muted)">' + esc(g.description) + '</div>' : '') + '</td>'
-      + '<td style="' + td + ';font-family:var(--font-mono);font-size:.72rem">' + (g.memberUserIds || []).length + '</td>'
-      + '<td style="' + td + ';font-size:.72rem">' + access + '</td>'
+      + '<td style="' + td + '">' + (g.memberUserIds || []).length + '</td>'
+      + '<td style="' + td + '">' + access + '</td>'
       + '<td style="' + td + ';text-align:right;white-space:nowrap">'
         + '<button class="sbtn sbtn-ghost" data-group-action="edit" data-group-id="' + esc(g.id) + '">Edit</button> '
         + '<button class="sbtn sbtn-danger" data-group-action="delete" data-group-id="' + esc(g.id) + '">Delete</button>'
@@ -668,13 +668,13 @@ export interface SiteView { id: string; name: string; description?: string | nul
 
 /** One row of the Sites table. */
 export function siteRowHtml(s: SiteView, routerCount: number): string {
-  const td = 'padding:.4rem .5rem;border-bottom:1px solid var(--border)';
+  const td = 'border-bottom:1px solid var(--border)';
   return '<tr>'
     + '<td style="' + td + ';font-weight:600">' + esc(s.name) + '</td>'
     // AN EM DASH, not an empty cell: a site with no description and one whose
     // description failed to load would otherwise look the same.
     + '<td style="' + td + ';color:var(--text-muted)">' + (s.description ? esc(s.description) : '-') + '</td>'
-    + '<td style="' + td + ';font-family:var(--font-mono);font-size:.72rem">' + routerCount + '</td>'
+    + '<td style="' + td + '">' + routerCount + '</td>'
     + '<td style="' + td + ';text-align:right;white-space:nowrap">'
       + '<button class="sbtn sbtn-ghost" data-site-action="edit" data-site-id="' + esc(s.id) + '">Edit</button> '
       + '<button class="sbtn sbtn-danger" data-site-action="delete" data-site-id="' + esc(s.id) + '">Delete</button>'
@@ -857,7 +857,7 @@ export function siteMembersOf(devices: SiteMemberDevice[], site: { id: string } 
 
 export function siteTableHtml(sites: SiteView[], counts: Record<string, number>): string {
   if (!sites.length) {
-    return '<tr><td colspan="4" style="padding:.75rem .5rem;color:var(--text-muted);font-size:.76rem">'
+    return '<tr><td class="tbl-empty" colspan="4">'
       + 'No sites yet. Add one to group your devices.</td></tr>';
   }
   return sites.map((s) => siteRowHtml(s, counts[s.id] || 0)).join('');
@@ -902,7 +902,7 @@ export function pageSummary(role: RoleView): string {
  */
 export function roleTableHtml(roles: RoleView[]): string {
   if (!roles.length) {
-    return '<tr><td colspan="4" style="padding:.75rem .5rem;color:var(--text-muted)">No roles yet.</td></tr>';
+    return '<tr><td class="tbl-empty" colspan="4">No roles yet.</td></tr>';
   }
   return roles.map((r) => {
     const actions = r.builtin
@@ -910,11 +910,11 @@ export function roleTableHtml(roles: RoleView[]): string {
       : '<button class="sbtn sbtn-outline is-sm" data-role-edit="' + esc(r.id) + '">Edit</button>'
         + ' <button class="sbtn sbtn-danger is-sm" data-role-del="' + esc(r.id) + '">Delete</button>';
     return '<tr style="border-bottom:1px solid var(--border)">'
-      + '<td style="padding:.4rem .5rem">' + esc(r.name)
+      + '<td>' + esc(r.name)
         + (r.description ? '<div style="color:var(--text-muted);font-size:.7rem">' + esc(r.description) + '</div>' : '') + '</td>'
-      + '<td style="padding:.4rem .5rem">' + pageSummary(r) + '</td>'
-      + '<td style="padding:.4rem .5rem">' + (r.grants ? r.grants + ' grant' + (r.grants === 1 ? '' : 's') : '<span style="color:var(--text-muted)">-</span>') + '</td>'
-      + '<td style="padding:.4rem .5rem;text-align:right;white-space:nowrap">' + actions + '</td>'
+      + '<td>' + pageSummary(r) + '</td>'
+      + '<td>' + (r.grants ? r.grants + ' grant' + (r.grants === 1 ? '' : 's') : '<span style="color:var(--text-muted)">-</span>') + '</td>'
+      + '<td style="text-align:right;white-space:nowrap">' + actions + '</td>'
       + '</tr>';
   }).join('');
 }

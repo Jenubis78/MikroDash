@@ -61,19 +61,19 @@ function applyAlertSort(): void {
             : '<button class="sbtn sbtn-ghost is-sm"' +
               ' data-ack-id="' + esc(String(r.id)) + '">Acknowledge</button>');
         return '<tr>' +
-          '<td style="font-family:var(--font-mono);font-size:.71rem;color:var(--text-muted)">' +
+          '<td style="color:var(--text-muted)">' +
           esc(fmtTs(r.fired_at)) + '</td>' +
-          '<td style="font-size:.71rem">' + esc(r.alert_label || r.alert_type || '') + '</td>' +
-          '<td style="font-family:var(--font-mono);font-size:.71rem;color:var(--text-muted)">' +
+          '<td>' + esc(r.alert_label || r.alert_type || '') + '</td>' +
+          '<td style="color:var(--text-muted)">' +
           esc(r.subject || '-') + '</td>' +
-          '<td style="font-size:.71rem;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+          '<td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
           esc(r.detail || '-') + '</td>' +
-          '<td style="font-family:var(--font-mono);font-size:.71rem">' + res + '</td>' +
-          '<td style="font-family:var(--font-mono);font-size:.71rem;color:var(--text-muted)">' + ack + '</td>' +
-          '<td style="font-family:var(--font-mono);font-size:.71rem;text-align:right">' +
+          '<td>' + res + '</td>' +
+          '<td style="color:var(--text-muted)">' + ack + '</td>' +
+          '<td style="text-align:right">' +
           esc(dt) + '</td></tr>';
       }).join('')
-      : '<tr><td colspan="7" class="rpt-empty">No alerts for this range.</td></tr>';
+      : '<tr><td colspan="7" class="tbl-empty">No alerts for this range.</td></tr>';
   }
   renderSortHeader('rptAlertThead', ALERT_COLS, alertSort, applyAlertSort);
 }

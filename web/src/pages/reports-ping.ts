@@ -73,13 +73,13 @@ export function renderPingPage(): void {
           ? ' style="color:var(--accent-err)"'
           : r.loss_pct > 0 ? ' style="color:var(--accent-warn)"' : '';
         return '<tr><td style="color:var(--text-muted)">' + esc(fmtTs(r.ts)) + '</td>' +
-          '<td style="font-family:var(--font-mono)">' + esc(r.target || '') + '</td>' +
-          '<td style="text-align:right;font-family:var(--font-mono)">' +
+          '<td>' + esc(r.target || '') + '</td>' +
+          '<td style="text-align:right">' +
           (r.rtt_ms != null ? esc((+r.rtt_ms).toFixed(1)) : '-') + '</td>' +
-          '<td style="text-align:right;font-family:var(--font-mono)"' + lossClass + '>' +
+          '<td style="text-align:right"' + lossClass + '>' +
           esc((+r.loss_pct).toFixed(1)) + '%</td></tr>';
       }).join('')
-      : '<tr><td colspan="4" class="rpt-empty">No data for this range.</td></tr>';
+      : '<tr><td colspan="4" class="tbl-empty">No data for this range.</td></tr>';
   }
 
   const pager = el('rptPingPager');
@@ -211,19 +211,19 @@ function applyConnSort(): void {
   if (tbody) {
     if (!sorted.length) {
       tbody.innerHTML = '<tr><td colspan="' + (connAgg ? 5 : 3) +
-        '" class="rpt-empty">No connectivity events for this range.</td></tr>';
+        '" class="tbl-empty">No connectivity events for this range.</td></tr>';
     } else if (connAgg) {
       tbody.innerHTML = sorted.map((r) =>
         '<tr>' +
-        '<td style="font-family:var(--font-mono);font-size:.71rem;color:var(--text-muted)">' +
+        '<td style="color:var(--text-muted)">' +
         esc(fmtTs(r.ts)) + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem">' +
+        '<td style="text-align:right">' +
         esc(String(r.total)) + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem;color:var(--accent-ok)">' +
+        '<td style="text-align:right;color:var(--accent-ok)">' +
         esc(String(r.online)) + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem;color:var(--accent-err)">' +
+        '<td style="text-align:right;color:var(--accent-err)">' +
         esc(String(r.offline)) + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem">' +
+        '<td style="text-align:right">' +
         esc((+(r.uptime_pct as number)).toFixed(1)) + '%</td></tr>').join('');
     } else {
       tbody.innerHTML = sorted.map((r) => {
@@ -240,10 +240,10 @@ function applyConnSort(): void {
             : '<span style="color:var(--accent-warn)">Ongoing</span>')
           : '<span style="color:var(--text-muted)">-</span>';
         return '<tr>' +
-          '<td style="font-family:var(--font-mono);font-size:.71rem;color:var(--text-muted)">' +
+          '<td style="color:var(--text-muted)">' +
           esc(fmtTs(r.ts)) + '</td>' +
           '<td>' + badge + '</td>' +
-          '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem">' + dur + '</td>' +
+          '<td style="text-align:right">' + dur + '</td>' +
           '</tr>';
       }).join('');
     }

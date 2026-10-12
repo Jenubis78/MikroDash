@@ -90,12 +90,11 @@ function rowHtml(p: ProviderView): string {
     : '<span class="vpn-hs-badge warn" title="Nobody can sign in through this provider '
       + 'until a claim value is mapped to a role">None</span>';
   return '<tr style="border-bottom:1px solid var(--border)">'
-    + '<td style="padding:.4rem .5rem">' + esc(p.name) + '</td>'
-    + '<td style="padding:.4rem .5rem;color:var(--text-muted);font-family:var(--font-mono);'
-    + 'font-size:.7rem;word-break:break-all">' + esc(p.issuer) + '</td>'
-    + '<td style="padding:.4rem .5rem">' + status + '</td>'
-    + '<td style="padding:.4rem .5rem">' + maps + '</td>'
-    + '<td style="padding:.4rem .5rem;text-align:right;white-space:nowrap">'
+    + '<td>' + esc(p.name) + '</td>'
+    + '<td style="color:var(--text-muted);word-break:break-all">' + esc(p.issuer) + '</td>'
+    + '<td>' + status + '</td>'
+    + '<td>' + maps + '</td>'
+    + '<td style="text-align:right;white-space:nowrap">'
     + '<button class="sbtn sbtn-outline" data-sso-edit="' + esc(p.id)
     + '">Edit</button> '
     + '<button class="sbtn sbtn-danger" data-sso-del="' + esc(p.id)
@@ -111,7 +110,7 @@ export async function loadSSOProviders(): Promise<void> {
   if (!tb) return;
   tb.innerHTML = providers.length
     ? providers.map(rowHtml).join('')
-    : '<tr><td colspan="5" style="padding:.75rem .5rem;color:var(--text-muted);font-size:.76rem">'
+    : '<tr><td class="tbl-empty" colspan="5">'
       + 'No providers yet. Add one to let people sign in with an existing account.</td></tr>';
 }
 

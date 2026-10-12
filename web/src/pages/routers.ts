@@ -356,7 +356,7 @@ function renderRoutersList(rows: RouterStatsRow[]): void {
   });
 
   if (!list.length) {
-    body.innerHTML = '<tr><td colspan="9" class="text-muted text-center py-3">'
+    body.innerHTML = '<tr><td colspan="9" class="tbl-empty">'
       + emptyText(rtrQuery()) + '</td></tr>';
     refreshHeaders();
     return;

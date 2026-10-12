@@ -110,7 +110,7 @@ function boot() {
 
 /** The group headings, in render order. */
 const groups = (html: string): string[] =>
-  [...html.matchAll(/font-weight:600;font-size:\.76rem">([^<]*)</g)].map((m) => m[1].trim());
+  [...html.matchAll(/\.12\);font-weight:600">([^<]*)</g)].map((m) => m[1].trim());
 
 /** The interface column of every data row. */
 const ifaces = (html: string): string[] =>

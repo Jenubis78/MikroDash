@@ -117,7 +117,7 @@
             <div class="cfg-hist-bar"><span class="cfg-meta">Every deploy, newest first. Open one for what each router
               said, in RouterOS's own words, and its restore point.</span>
               <button class="sbtn sbtn-outline is-sm" type="button" id="cfgHistRefresh">Refresh</button></div>
-            <div class="cfg-scroll"><table class="table table-sm cfg-hist">
+            <div class="cfg-scroll"><table class="table cfg-hist">
               <thead><tr id="cfgHistHead"></tr></thead><tbody id="cfgHistBody"></tbody></table></div>
             <div class="cfg-empty" id="cfgHistEmpty" hidden>No deploys yet. Deploy a template and it is recorded here.</div>
           </div>
@@ -125,7 +125,7 @@
             <div class="cfg-hist-bar"><span class="cfg-meta">What each router held in a template's menus when its last
               deploy finished. Checking reads that router now; nothing is checked on its own.</span>
               <button class="sbtn sbtn-outline is-sm" type="button" id="cfgDriftRefresh">Refresh</button></div>
-            <div class="cfg-scroll"><table class="table table-sm cfg-hist">
+            <div class="cfg-scroll"><table class="table cfg-hist">
               <thead><tr id="cfgDriftHead"></tr></thead><tbody id="cfgDriftBody"></tbody></table></div>
             <div class="cfg-empty" id="cfgDriftEmpty" hidden>No baselines yet. Each successful deploy records one for
               every router it reached.</div>
@@ -142,7 +142,7 @@
               and kept in step with it. The pinned <strong>MikroDash login</strong> is the account MikroDash itself
               signs in with; no other profile can take its account or its group.</span>
               <button class="sbtn sbtn-primary is-sm" type="button" id="cpNew">New profile</button></div>
-            <div class="cfg-scroll"><table class="table table-sm cfg-hist">
+            <div class="cfg-scroll"><table class="table cfg-hist">
               <thead><tr>
                 <th>Name</th><th>RouterOS user</th><th>Permissions</th><th>Devices</th><th>State</th><th></th>
               </tr></thead><tbody id="cpBody"></tbody></table></div>

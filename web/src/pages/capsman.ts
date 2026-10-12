@@ -117,7 +117,7 @@ export function initCapsmanPage(socket: Socket, isVisible: (page: string) => boo
   }
 
   function clientRow(c: CapsClient): string {
-    return '<tr class="cap-client"><td colspan="8" style="padding-left:2.2rem">' +
+    return '<tr class="cap-client"><td class="tbl-indent" colspan="8">' +
       '<span ' + MUTED + '>' + esc(c.interface) + '</span> &nbsp; ' +
       '<span class="mono">' + esc(c.mac) + '</span> &nbsp; ' +
       (c.ssid ? '<span class="wl-band wl-band-5">' + esc(c.ssid) + '</span> &nbsp; ' : '') +

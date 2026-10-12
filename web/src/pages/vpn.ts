@@ -273,10 +273,10 @@ export function initVpnPage(socket: Socket, isVisible: (page: string) => boolean
         '<tr>' +
         '<td style="font-weight:600">' + esc(s.name || '-') + '</td>' +
         '<td><span class="vpn-proto-pill">' + esc(s.service || '-') + '</span></td>' +
-        '<td style="font-family:var(--font-mono);font-size:.72rem">' + esc(s.address || '-') + '</td>' +
-        '<td style="font-family:var(--font-mono);font-size:.72rem;color:var(--text-muted)">' + esc(s.callerId || '-') + '</td>' +
-        '<td style="font-size:.72rem">' + esc(s.uptime || '-') + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);font-size:.72rem">' +
+        '<td>' + esc(s.address || '-') + '</td>' +
+        '<td style="color:var(--text-muted)">' + esc(s.callerId || '-') + '</td>' +
+        '<td>' + esc(s.uptime || '-') + '</td>' +
+        '<td style="text-align:right">' +
           '<span style="color:var(--accent-rx)">' + esc(fmtBytes(s.rx || 0)) + '</span> / ' +
           '<span style="color:var(--accent-tx)">' + esc(fmtBytes(s.tx || 0)) + '</span></td>' +
         '</tr>').join('');
@@ -291,12 +291,12 @@ export function initVpnPage(socket: Socket, isVisible: (page: string) => boolean
     if (ipBody && ipsec.length) {
       ipBody.innerHTML = ipsec.map((p) =>
         '<tr>' +
-        '<td style="font-family:var(--font-mono);font-size:.74rem;font-weight:600">' + esc(p.name || '-') + '</td>' +
+        '<td style="font-weight:600">' + esc(p.name || '-') + '</td>' +
         '<td><span class="vpn-proto-pill">' + esc(p.state || '-') + '</span></td>' +
-        '<td style="font-size:.72rem;color:var(--text-muted)">' + esc(p.side || '-') + '</td>' +
-        '<td style="font-size:.72rem">' + esc(p.uptime || '-') + '</td>' +
-        '<td style="font-family:var(--font-mono);font-size:.72rem">' + esc(p.enc || '-') + '</td>' +
-        '<td style="font-family:var(--font-mono);font-size:.72rem">' + esc(p.auth || '-') + '</td>' +
+        '<td style="color:var(--text-muted)">' + esc(p.side || '-') + '</td>' +
+        '<td>' + esc(p.uptime || '-') + '</td>' +
+        '<td>' + esc(p.enc || '-') + '</td>' +
+        '<td>' + esc(p.auth || '-') + '</td>' +
         '</tr>').join('');
     }
   });

@@ -148,7 +148,7 @@ export function renderSchedules(): void {
     // THE EMPTY TEXT DIFFERS BY PERMISSION, which is not a flourish: "yet"
     // implies the reader could add one, and saying that to somebody who cannot is
     // an invitation to hunt for a button that is not there.
-    body.innerHTML = '<tr><td colspan="6" class="rpt-empty">' +
+    body.innerHTML = '<tr><td colspan="6" class="tbl-empty">' +
       (state.permitted ? 'No scheduled reports for this router yet.'
         : 'No scheduled reports for this router.') + '</td></tr>';
     return;
@@ -404,7 +404,7 @@ export function wireScheduleActions(): void {
               // looking, and an absence says that better than a number.
               '<td>' + esc(r.bytes ? fmtBytes(r.bytes) : '-') + '</td>' +
               '<td class="bw-mac">' + esc(r.error || '') + '</td></tr>').join('')
-            : '<tr><td colspan="5" class="rpt-empty">No runs yet.</td></tr>') +
+            : '<tr><td colspan="5" class="tbl-empty">No runs yet.</td></tr>') +
           '</tbody></table></div>';
       })
       .catch(() => { /* leave whatever history is already shown */ });

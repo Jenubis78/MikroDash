@@ -69,7 +69,7 @@ export function valuesGrid(defs: VarDef[], routers: RouterOpt[], values: Record<
   return (secrets ? '<label class="cfg-reveal"><input type="checkbox" data-dep-reveal' + (reveal ? ' checked' : '') +
     '> Show passwords <span class="cfg-meta">(each was generated for this deploy; change it, or note it for ' +
     'whatever will use it)</span></label>' : '') +
-    '<div class="cfg-scroll"><table class="table table-sm cfg-grid-vals"><thead><tr><th>Router</th>' +
+    '<div class="cfg-scroll"><table class="table cfg-grid-vals"><thead><tr><th>Router</th>' +
     defs.map((d) => '<th><span class="cfg-var">{{' + esc(d.name) + '}}</span>' +
       (d.label ? '<div class="cfg-meta">' + esc(d.label) + '</div>' : '') + '</th>').join('') +
     '</tr></thead><tbody><tr class="cfg-grid-all"><td>All routers</td>' +

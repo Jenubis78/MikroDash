@@ -104,8 +104,7 @@ async function load(): Promise<void> {
     // that silently shows "No sites yet" after a failed load invites somebody to
     // create a site that already exists and be told the name is taken.
     if (tb) {
-      tb.innerHTML = '<tr><td colspan="4" style="padding:.75rem .5rem;color:var(--text-muted);'
-        + 'font-size:.76rem">Could not load sites.</td></tr>';
+      tb.innerHTML = '<tr><td colspan="4" class="tbl-empty">Could not load sites.</td></tr>';
     }
   }
 }

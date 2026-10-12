@@ -235,12 +235,12 @@ export function initWireguardPeers(socket: Socket): void {
         '<td style="font-weight:600">' + esc(t.name || '-') + '</td>' +
         '<td>' + esc(t.interface || '-') + '</td>' +
         '<td>' + hsBadge(t.lastHandshake, t.state) + '</td>' +
-        '<td style="font-size:.72rem">' + esc(t.lastHandshake || '-') + '</td>' +
-        '<td style="font-family:var(--font-mono);font-size:.72rem">' + esc(t.allowedIp || '-') +
+        '<td>' + esc(t.lastHandshake || '-') + '</td>' +
+        '<td>' + esc(t.allowedIp || '-') +
           (flags ? ' ' + flags : '') + '</td>' +
-        '<td style="font-family:var(--font-mono);font-size:.72rem">' + esc(t.endpoint || '-') + '</td>' +
-        '<td style="font-size:.72rem">' + esc(t.keepalive || '-') + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);font-size:.72rem">' + rate + '</td>' +
+        '<td>' + esc(t.endpoint || '-') + '</td>' +
+        '<td>' + esc(t.keepalive || '-') + '</td>' +
+        '<td style="text-align:right">' + rate + '</td>' +
         '<td style="text-align:right">' + config + '</td>' +
         '</tr>';
     }).join('');
@@ -252,7 +252,7 @@ export function initWireguardPeers(socket: Socket): void {
         '<span data-res-add="wgPeer"></span>' +
       '</div>' +
       '<div class="table-responsive">' +
-        '<table class="table table-sm rt-table">' +
+        '<table class="table rt-table">' +
           '<thead><tr id="wgPeerHead"></tr></thead>' +
           '<tbody id="wgPeerRows" data-res-rows="wgPeer"></tbody>' +
         '</table>' +

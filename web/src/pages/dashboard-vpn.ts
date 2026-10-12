@@ -75,7 +75,7 @@ export function renderVpnCard(data: VPNPayload): void {
     return '<tr>' +
       '<td><span class="wg-up">Up</span></td>' +
       '<td><div style="font-size:.78rem;font-weight:600">' + esc(t.name || t.interface || '-') + '</div>' + endStr + '</td>' +
-      '<td style="font-size:.7rem;color:var(--text-muted)">' + esc(t.lastHandshake || '-') + '</td>' +
+      '<td style="color:var(--text-muted)">' + esc(t.lastHandshake || '-') + '</td>' +
       '</tr>';
   }).join('');
 }

@@ -248,7 +248,7 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
     const peers = sortPeers(filterPeers(data.peers || []));
 
     if (!peers.length) {
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:.75rem">No BGP peers' +
+      tbody.innerHTML = '<tr><td class="tbl-empty" colspan="10">No BGP peers' +
         ((data.peers || []).length ? ' match current filter' : ' - BGP may not be configured') + '</td></tr>';
       return;
     }
@@ -269,13 +269,13 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
         : '<span style="color:var(--text-muted);font-size:.65rem">-</span>';
       return '<tr>' +
         '<td>' + nameCell + '</td>' +
-        '<td style="font-family:var(--font-mono);font-size:.7rem">' + esc(p.remoteAddr) + '</td>' +
-        '<td style="font-family:var(--font-mono)">' + (p.remoteAs || '-') + '</td>' +
+        '<td>' + esc(p.remoteAddr) + '</td>' +
+        '<td>' + (p.remoteAs || '-') + '</td>' +
         '<td>' + stateBadge(p.state, p.flapping) + '</td>' +
-        '<td style="font-family:var(--font-mono)">' + fmtUptime(p.uptimeSec) + '</td>' +
-        '<td style="font-family:var(--font-mono);text-align:right">' + (p.prefixes || 0).toLocaleString() + '</td>' +
-        '<td style="font-family:var(--font-mono);text-align:right">' + (p.messagesSent || 0).toLocaleString() + '</td>' +
-        '<td style="font-family:var(--font-mono);text-align:right">' + (p.messagesRecv || 0).toLocaleString() + '</td>' +
+        '<td>' + fmtUptime(p.uptimeSec) + '</td>' +
+        '<td style="text-align:right">' + (p.prefixes || 0).toLocaleString() + '</td>' +
+        '<td style="text-align:right">' + (p.messagesSent || 0).toLocaleString() + '</td>' +
+        '<td style="text-align:right">' + (p.messagesRecv || 0).toLocaleString() + '</td>' +
         '<td>' + errCell + '</td>' +
         '<td>' + sparkSvg(p.prefixHistory) + '</td>' +
         '</tr>';
@@ -357,7 +357,7 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
     if (!data || !routesTbody) return;
     const routes = sortRoutes(filterRoutes(data.routes || []));
     if (!routes.length) {
-      routesTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:.75rem">No routes' +
+      routesTbody.innerHTML = '<tr><td class="tbl-empty" colspan="6">No routes' +
         ((data.routes || []).length ? ' match current filter' : '') + '</td></tr>';
       return;
     }
@@ -375,12 +375,12 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
       // The family picks the RouterOS menu, so a v6 row overrides the table's
       // default resource on itself.
       return '<tr' + resRow(r.id, r.dst, r.family === 'ipv6' ? 'route6' : undefined) + '>' +
-        '<td style="font-family:var(--font-mono);font-size:.72rem">' + familyBadge + esc(r.dst || '-') + '</td>' +
-        '<td style="font-family:var(--font-mono);font-size:.72rem">' + esc(r.gateway || '-') + '</td>' +
-        '<td style="font-family:var(--font-mono);text-align:right">' + r.distance + '</td>' +
+        '<td>' + familyBadge + esc(r.dst || '-') + '</td>' +
+        '<td>' + esc(r.gateway || '-') + '</td>' +
+        '<td style="text-align:right">' + r.distance + '</td>' +
         '<td>' + activeCell + '</td>' +
         '<td>' + typeCell + '</td>' +
-        '<td style="font-size:.7rem;color:var(--text-muted)">' + esc(r.comment || '-') + '</td>' +
+        '<td style="color:var(--text-muted)">' + esc(r.comment || '-') + '</td>' +
         '</tr>';
     }).join('');
   }

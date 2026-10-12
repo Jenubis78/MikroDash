@@ -256,7 +256,7 @@ The scale is small, because the app is dense:
 | Card titles | UI, .82rem, 600, UPPERCASE, .04em tracking, muted |
 | Form labels, stat labels | UI, .65-.72rem, 600-700, UPPERCASE, .06-.08em tracking, muted |
 | Table headers | UI, .66rem, UPPERCASE, .06em tracking, muted, with a sort caret |
-| Table cells, values | mono, .68-.76rem |
+| Table cells | mono, .76rem: one size, set by the table (see Tables) |
 | Pills | mono, .62-.68rem |
 
 **Weights are 400, 600 and 700.** Uppercase with letter spacing marks a label; values are never
@@ -385,6 +385,20 @@ where it is limited to.
   - TCP is blue, UDP is green, ICMP is amber and anything else is grey.
   - Firewall actions use `actionBadge`.
 - **Tables**: use `renderSortHeader` / `sortRows`.
+  - **One density.** Every table, Tabler's `.table` or a page's own class, takes its cell padding
+    (`--tbl-pad-y` / `--tbl-pad-x`), row height (`--tbl-row-h`, about 34px) and header (.66rem UI,
+    uppercase, muted) from the TABLES section of `app.css`. A row is that height whatever it holds -
+    text, a pill, a row-size button - and grows only for content that is itself taller, such as two
+    stacked lines.
+  - **A page never sizes a cell**: no padding, font size, font family or height on a `td`/`th`, in
+    a stylesheet rule or inline, and no `table-sm`. A column may still be muted, bold, aligned or
+    narrow. `internal/verify` (`TestTablesHaveOneDensity`) and rule 6 of `tools/form-geometry.js`
+    hold this.
+  - **The exceptions are classes, kept in the TABLES section**: `.tbl-empty` (the one empty-state
+    cell), `.tbl-pick` (a checkbox column), `.tbl-indent` (a child row), and the firewall's
+    drag and move cells. A new exception goes there with its reason.
+  - A sortable header is marked `.th-sort` (`renderSortHeader` does it), which gives it the pointer
+    and the hover.
   - An **ordered** table (firewall chains, routing rules, IPsec policies, queues) keeps the router's
     order and its move arrows, and does not sort.
 - **Live graphs**: a new graph uses the Dashboard traffic graph's mechanics:

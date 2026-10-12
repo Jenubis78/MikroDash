@@ -250,7 +250,7 @@ export function initWirelessPage(socket: Socket, isVisible: (page: string) => bo
         '<div style="font-weight:600;font-size:.78rem">' + esc(c.name || c.mac) + '</div>' +
         ipStr + macStr +
       '</td>' +
-      '<td class="wl-col-iface" style="color:var(--text-muted);font-size:.73rem">' +
+      '<td class="wl-col-iface" style="color:var(--text-muted)">' +
         esc(c.iface || '-') + '</td>' +
       '<td>' + bandBadge(c.band) + '</td>' +
       '<td>' + standardBadge(c.standard) + '</td>' +
@@ -263,7 +263,7 @@ export function initWirelessPage(socket: Socket, isVisible: (page: string) => bo
         '<div class="wl-rate">' + esc(parseTxRate(c.txRate)) + '</div>' +
         (c.rxRate ? '<div class="wl-rate-rx">↑ ' + esc(parseTxRate(c.rxRate)) + '</div>' : '') +
       '</td>' +
-      '<td class="wl-col-uptime" style="color:var(--text-muted);font-size:.73rem">' +
+      '<td class="wl-col-uptime" style="color:var(--text-muted)">' +
         esc(c.uptime || '-') + '</td>' +
     '</tr>';
   }

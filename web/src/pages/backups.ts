@@ -208,7 +208,7 @@ export function initBackupsPage(socket: Socket, isVisible: (page: string) => boo
       const isPicked = pickable && picked.has(r.id);
 
       return '<tr' + (isPicked ? ' class="bk-row-picked"' : '') + '>' +
-        '<td class="text-center" style="padding-right:0">' +
+        '<td class="text-center tbl-pick">' +
           '<input type="checkbox" class="bk-pick" data-bk-pick="' + r.id + '"' +
           (isPicked ? ' checked' : '') + (pickable ? '' : ' disabled') +
           ' aria-label="Select this restore point">' +

@@ -288,7 +288,7 @@ export function initBandwidthPage(socket: Socket, isVisible: (page: string) => b
   function render(): void {
     const rows = filtered();
     if (!rows.length) {
-      tbody!.innerHTML = '<tr><td colspan="8" class="bw-empty">No active bandwidth</td></tr>';
+      tbody!.innerHTML = '<tr><td colspan="8" class="tbl-empty">No active bandwidth</td></tr>';
       if (stats) stats.textContent = '';
       return;
     }

@@ -171,7 +171,7 @@ export function findingRow(f: TemplateDetail['findings'][number]): string {
 
 export function drawerBody(d: TemplateDetail): string {
   const vars = d.variables.length
-    ? '<table class="table table-sm cfg-vars"><thead><tr><th>Setting</th><th>Type</th><th>Default</th></tr></thead><tbody>' +
+    ? '<table class="table cfg-vars"><thead><tr><th>Setting</th><th>Type</th><th>Default</th></tr></thead><tbody>' +
       d.variables.map((v) => '<tr><td><span class="cfg-var">{{' + esc(v.name) + '}}</span>' +
         (v.label ? '<div class="cfg-meta">' + esc(v.label) + '</div>' : '') + '</td><td>' + esc(v.type) +
         (v.required ? ' <span class="cfg-meta">required</span>' : '') + '</td><td>' +

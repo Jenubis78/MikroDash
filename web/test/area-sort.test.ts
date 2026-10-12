@@ -78,10 +78,10 @@ say('ok  the count pill is blue when it counts something, plain at zero');
 assert.deepStrictEqual(order('ip-pools'), ['*1', '*2', '*3'], 'an unsorted table is not in the router\'s order');
 clickHeader('ip-pools', 'name');
 assert.deepStrictEqual(order('ip-pools'), ['*3', '*2', '*1'], 'first click is not ascending by name');
-assert.ok(/class="sort-asc"/.test(doc.nodes['areaThead-ip-pools'].innerHTML), 'the header does not show ascending');
+assert.ok(/class="[^"]*\bsort-asc\b/.test(doc.nodes['areaThead-ip-pools'].innerHTML), 'the header does not show ascending');
 clickHeader('ip-pools', 'name');
 assert.deepStrictEqual(order('ip-pools'), ['*1', '*2', '*3'], 'second click is not descending by name');
-assert.ok(/class="sort-desc"/.test(doc.nodes['areaThead-ip-pools'].innerHTML), 'the header does not show descending');
+assert.ok(/class="[^"]*\bsort-desc\b/.test(doc.nodes['areaThead-ip-pools'].innerHTML), 'the header does not show descending');
 say('ok  a header click sorts ascending, a second descending');
 
 // A NUMBER SORTS AS A NUMBER: 10 follows 9.

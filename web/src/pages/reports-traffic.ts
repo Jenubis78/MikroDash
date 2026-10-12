@@ -117,15 +117,15 @@ function applyTrafficSort(): void {
     tbody.innerHTML = sorted.length
       ? sorted.map((r) =>
         '<tr><td style="color:var(--text-muted)">' + esc(fmtTs(r.ts)) + '</td>' +
-        '<td style="font-family:var(--font-mono)">' + esc(r.interface || '') + '</td>' +
+        '<td>' + esc(r.interface || '') + '</td>' +
         // THREE decimals on a rate where volume gets one: a link idling at
         // 0.004 Mbps and one at 0.000 are different facts, and rounding to 0.0
         // loses the distinction this tab exists to show.
-        '<td style="text-align:right;font-family:var(--font-mono);color:var(--accent-rx)">' +
+        '<td style="text-align:right;color:var(--accent-rx)">' +
         esc((+r.rx_mbps).toFixed(3)) + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);color:var(--accent-tx)">' +
+        '<td style="text-align:right;color:var(--accent-tx)">' +
         esc((+r.tx_mbps).toFixed(3)) + '</td></tr>').join('')
-      : '<tr><td colspan="4" class="rpt-empty">No data for this range.</td></tr>';
+      : '<tr><td colspan="4" class="tbl-empty">No data for this range.</td></tr>';
   }
   renderSortHeader('rptTrafficThead', TRAFFIC_COLS, trafficSort, applyTrafficSort);
 }
@@ -196,12 +196,12 @@ export function renderBwPage(): void {
       ? slice.map((r) =>
         '<tr>' +
         '<td style="color:var(--text-muted)">' + esc(fmtTs(r.ts)) + '</td>' +
-        '<td style="font-family:var(--font-mono)">' + esc(r.interface || '') + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);color:var(--accent-rx)">' +
+        '<td>' + esc(r.interface || '') + '</td>' +
+        '<td style="text-align:right;color:var(--accent-rx)">' +
         esc(fmtDataMB(+r.rx_mb)) + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);color:var(--accent-tx)">' +
+        '<td style="text-align:right;color:var(--accent-tx)">' +
         esc(fmtDataMB(+r.tx_mb)) + '</td></tr>').join('')
-      : '<tr><td colspan="4" class="rpt-empty">No data for this range.</td></tr>';
+      : '<tr><td colspan="4" class="tbl-empty">No data for this range.</td></tr>';
   }
 
   const pager = el('rptBwPager');

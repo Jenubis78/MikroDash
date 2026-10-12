@@ -219,9 +219,9 @@
     #connPanelList .conn-table thead th{position:sticky;top:0;z-index:1;background:linear-gradient(var(--bg-card),var(--bg-card)),var(--bg-deep)}
     .conn-list-bar{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:.4rem}
     .conn-scroll{overflow-x:auto}
-    .conn-table{margin:0;font-size:.74rem}
+    .conn-table{margin:0}
     .conn-table th{white-space:nowrap}
-    .conn-table td{vertical-align:middle;padding-top:.35rem;padding-bottom:.35rem}
+    .conn-table td{vertical-align:middle}
     .conn-num{text-align:right;white-space:nowrap}
     .conn-who{font-family:var(--font-mono);white-space:nowrap;color:var(--text-main)}
     .conn-sub{font-size:.66rem;color:var(--text-muted);font-family:var(--font-mono)}
@@ -238,14 +238,12 @@
     .conn-st-other{color:var(--accent-rx);background:color-mix(in srgb,var(--accent-rx) 12%,transparent);border-color:color-mix(in srgb,var(--accent-rx) 28%,transparent)}
     .conn-pager{display:flex;align-items:center;gap:.4rem}
     .conn-pager-end{justify-content:flex-end;margin-top:.4rem}
-    .conn-empty{text-align:center;color:var(--text-muted);padding:1.5rem!important}
 
     .bw-table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)}
-    .bw-table{width:100%;border-collapse:collapse;font-size:.75rem;table-layout:fixed}
-    .bw-table th{padding:.45rem .75rem;text-align:left;font-size:.66rem;font-weight:400;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);border-color:var(--border);background:rgb(from var(--border) r g b / .04);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;font-family:var(--font-ui)}
-    .bw-table th:hover{color:var(--text-main)}
+    .bw-table{width:100%;border-collapse:collapse;table-layout:fixed}
+    .bw-table th{text-align:left;border-color:var(--border);background:rgb(from var(--border) r g b / .04);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
     #page-dhcp th{cursor:pointer;user-select:none}
-    .bw-table td{padding:.4rem .7rem;border-bottom:1px solid rgb(from var(--border) r g b / .08);vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0}
+    .bw-table td{border-bottom:1px solid rgb(from var(--border) r g b / .08);vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0}
     .bw-table tr:last-child td{border-bottom:none}
     .bw-rate{font-family:var(--font-mono);font-size:.72rem}
     .bw-rate-rx{color:var(--accent-rx)}
@@ -263,7 +261,6 @@
     .bw-proto-icmp{background:rgb(from var(--accent-warn) r g b / .1);color:var(--accent-warn);border:1px solid rgb(from var(--accent-warn) r g b / .2)}
     .bw-proto-other{background:rgb(from var(--text-muted) r g b / .1);color:var(--text-muted);border:1px solid var(--border)}
     .bw-flag{font-size:.85rem;margin-right:.2rem}
-    .bw-empty{text-align:center;padding:2.5rem;color:var(--text-muted);font-size:.8rem}
     .nav-items{display:flex;flex-direction:column}
     .sform-label{font-size:.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;display:block}
     /* THE FORM CONTROL. One box for a text, number, select and locked display
@@ -874,10 +871,8 @@
        cascade. That rule paints a flat #1f2937 band and a neutral grey text -
        neither belongs on a translucent card in a blue-tinted palette. Matching
        its shape lets source order decide, and this sheet loads after Tabler. */
-    .routers-list thead th{font-size:.62rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted);font-weight:600;border-bottom:1px solid var(--border);padding:.3rem .5rem;background:transparent}
-    .routers-list td{padding:.3rem .5rem;border-bottom:1px solid rgb(from var(--border) r g b / .07);vertical-align:middle}
-    .routers-list th[data-sort]{cursor:pointer;user-select:none}
-    .routers-list th[data-sort]:hover{color:var(--text-main)}
+    .routers-list thead th{border-bottom:1px solid var(--border);background:transparent}
+    .routers-list td{border-bottom:1px solid rgb(from var(--border) r g b / .07);vertical-align:middle}
     .rtl-num{text-align:right;font-variant-numeric:tabular-nums}
     /* An offline router keeps its identity legible and lets its metrics recede -
        they are all em dashes anyway. */
@@ -1043,9 +1038,9 @@
       background:color-mix(in srgb,var(--accent-rx) 18%,transparent);color:var(--accent-rx)}
     .dvm-tab-count:empty{display:none}
     .dvm-clients-scroll{max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:8px}
-    .dvm-clients{margin:0;font-size:.74rem}
-    .dvm-clients thead th{position:sticky;top:0;z-index:1;background:var(--bg-card);backdrop-filter:blur(6px);font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600;border-bottom:1px solid var(--border);padding:.4rem .6rem}
-    .dvm-clients td{padding:.32rem .6rem;border-bottom:1px solid rgb(from var(--border) r g b / .07);vertical-align:middle;color:var(--text-main)}
+    .dvm-clients{margin:0}
+    .dvm-clients thead th{position:sticky;top:0;z-index:1;background:var(--bg-card);backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
+    .dvm-clients td{border-bottom:1px solid rgb(from var(--border) r g b / .07);vertical-align:middle;color:var(--text-main)}
     .dvm-clients tbody tr:hover td{background:rgb(from var(--accent-rx) r g b / .05)}
     .dvm-client-host{max-width:16rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     /* Violet, the colour the old cards gave clients; a theme token, so the light
@@ -1153,13 +1148,11 @@
     .cpick-clear:hover{color:var(--text-main);background:rgb(from var(--accent-rx) r g b / .1)}
     .cpick-hint{font-size:.68rem;color:var(--text-muted);margin-top:.3rem}
     .iface-list-wrap{overflow-x:auto}
-    .iface-list{font-family:var(--font-mono);font-size:.7rem;margin-bottom:0;white-space:nowrap}
-    .iface-list th{font-size:.62rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted);font-weight:600;border-bottom:1px solid var(--border);padding:.3rem .5rem}
-    .iface-list td{padding:.28rem .5rem;border-bottom:1px solid rgb(from var(--border) r g b / .07);vertical-align:middle}
+    .iface-list{margin-bottom:0;white-space:nowrap}
+    .iface-list th{border-bottom:1px solid var(--border)}
+    .iface-list td{border-bottom:1px solid rgb(from var(--border) r g b / .07);vertical-align:middle}
     .iface-list tr.down td{opacity:.6}
     .iface-list tr.disabled td{opacity:.38}
-    .iface-list th[data-sort]{cursor:pointer;user-select:none}
-    .iface-list th[data-sort]:hover{color:var(--text-main)}
     .ifl-num{text-align:right;font-variant-numeric:tabular-nums}
     /* Colour is carried inline, from the same palette the Interface Types card
        uses, so a type reads the same in both places. */
@@ -1171,7 +1164,7 @@
        inside a cell are unaffected, which is why the rules below this one do
        not need the same treatment. */
     .iface-list td.ifl-name{font-weight:600;color:var(--text-main);max-width:16rem;overflow:hidden;text-overflow:ellipsis}
-    .iface-list td.ifl-type{color:var(--text-muted);font-size:.65rem}
+    .iface-list td.ifl-type{color:var(--text-muted)}
     .iface-list td.ifl-ip{color:var(--accent-rx);max-width:12rem;overflow:hidden;text-overflow:ellipsis}
     /* Same variables the tile cards use for live rates, so the two views match */
     .iface-list td.ifl-rx{color:var(--accent-rx)} .iface-list td.ifl-tx{color:var(--accent-tx)}
@@ -1184,7 +1177,6 @@
        rather than historical. */
     .ifl-delta{margin-left:.3rem;font-size:.6rem;padding:0 .25rem;border-radius:3px;
                background:rgb(from var(--accent-err) r g b / .16);color:var(--accent-err)}
-    @media (max-width:1400px){ .iface-list{font-size:.66rem} }
     /* ── Router modal & management ─────────────────────────────── */
     .rtr-modal-bg{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center}
     .rtr-modal-bg.open{display:flex}
@@ -1216,7 +1208,7 @@
     .rtr-test-result.err{color:rgb(from var(--accent-err) r g b / .9);background:rgb(from var(--accent-err) r g b / .1);border:1px solid rgb(from var(--accent-err) r g b / .2)}
     /* Router list table */
     .rtr-list{width:100%;border-collapse:collapse;font-size:.76rem}
-    .rtr-list th{font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;padding:.4rem .6rem;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+    .rtr-list th{border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
     .rtr-status-badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:.65rem;font-weight:600;border-radius:4px;padding:1px 6px;white-space:nowrap;transition:color .3s,background .3s,border-color .3s}
     .rtr-status-badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0;transition:background .3s}
     .rtr-status-badge--on{color:var(--accent-ok);background:rgb(from var(--accent-ok) r g b / .08);border:1px solid rgb(from var(--accent-ok) r g b / .2)}
@@ -1227,7 +1219,7 @@
     .rtr-status-badge--unknown::before{background:var(--text-muted);opacity:.4}
     .rtr-status-badge--disabled{color:rgb(from var(--accent-warn) r g b / .9);background:rgb(from var(--accent-warn) r g b / .08);border:1px solid rgb(from var(--accent-warn) r g b / .2)}
     .rtr-status-badge--disabled::before{display:none}
-    .rtr-list td{padding:.5rem .6rem;border-bottom:1px solid rgb(from var(--border) r g b / .07);vertical-align:middle}
+    .rtr-list td{border-bottom:1px solid rgb(from var(--border) r g b / .07);vertical-align:middle}
     .rtr-list tr:last-child td{border-bottom:none}
     .rtr-active-badge{font-size:.6rem;font-family:var(--font-ui);padding:.1rem .45rem;border-radius:4px;background:rgb(from var(--accent-rx) r g b / .15);color:var(--accent-rx);border:1px solid rgb(from var(--accent-rx) r g b / .25);white-space:nowrap}
     .rtr-host{font-family:var(--font-mono);font-size:.7rem;color:var(--text-muted)}
@@ -1320,11 +1312,48 @@
       font-weight:700;letter-spacing:.06em;text-transform:uppercase;
       color:var(--text-muted);white-space:nowrap;overflow:hidden}
     .rtr-dd-head-n{font-family:var(--font-mono);font-weight:600;opacity:.75}
-    /* tables */
-    .table{font-family:var(--font-mono);font-size:.76rem}
-    .table th{color:var(--text-muted);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;border-color:var(--border) !important;font-weight:400;padding:.45rem .75rem}
+    /* ── TABLES: one density ────────────────────────────────────────────────
+       Every table, Tabler's .table or a page's own, has one cell padding, one
+       row height and one header. A row is --tbl-row-h tall whatever it holds -
+       text, a pill, a row-size button (--ctl-h-xs) - and only a cell whose
+       content is itself taller (wrapped text, a stacked block) grows it.
+
+       `html:root` is specificity, on purpose: Tabler pads cells through
+       `.table>:not(caption)>*>*` (0,1,1) and styles headers through
+       `.table thead th` (0,1,2), and both outranked every rule written here
+       before. The documented .66rem header lost to Tabler's .75rem on 33 tables.
+       At (0,1,3) this wins over both, and over any class-on-a-cell rule
+       elsewhere, so a page cannot drift by accident. The exceptions below are
+       the only ones, and internal/verify holds the rest of the stylesheet and
+       the markup to that. */
+    :root{--tbl-pad-y:.35rem;--tbl-pad-x:.6rem;--tbl-row-h:2.1rem}
+    html:root table{font-family:var(--font-mono);font-size:.76rem}
+    html:root table td{padding:var(--tbl-pad-y) var(--tbl-pad-x);height:var(--tbl-row-h);
+      font-family:var(--font-mono);font-size:.76rem;line-height:1.4;letter-spacing:normal;text-transform:none}
+    html:root table th{padding:var(--tbl-pad-y) var(--tbl-pad-x);font-family:var(--font-ui);font-size:.66rem;
+      font-weight:400;line-height:1rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);
+      white-space:nowrap}
+    /* A header that sorts says so: renderSortHeader marks it .th-sort, the
+       hand-built lists mark it [data-sort]. */
+    html:root table th:is(.th-sort,[data-sort]){cursor:pointer;user-select:none}
+    html:root table th:is(.th-sort,[data-sort]):hover{color:var(--text-main)}
+    /* An empty table says so in one place, one way. */
+    html:root table td.tbl-empty{padding:1.5rem var(--tbl-pad-x);height:auto;text-align:center;
+      font-family:var(--font-ui);color:var(--text-muted);white-space:normal}
+    /* A selection checkbox column hugs its box. */
+    html:root table :is(td,th).tbl-pick{padding-right:0}
+    /* A child row (a CAP's clients, a band's networks) indents under its parent. */
+    html:root table td.tbl-indent{padding-left:2rem}
+    /* The firewall's drag handle and move arrows: narrow columns, a glyph each. */
+    html:root table :is(td,th).fw-dragcell{padding-left:.3rem;padding-right:.35rem}
+    html:root table :is(td,th).fw-movecell{padding-left:.25rem;padding-right:.25rem}
+    /* Rows that hold a panel rather than cells: the gap a dragged row leaves,
+       a Wi-Fi group heading, and an expanded config-history entry. */
+    html:root table tr.res-drag-origin td,html:root table tr.wl-group-row td{padding:0;height:auto}
+    html:root table tr.cfg-hist-open > td{padding:.25rem var(--tbl-pad-x) 1rem;height:auto}
+    .table th{border-color:var(--border) !important}
     #talkersCard .table thead th,#vpnCard .table thead th,#netwatchCard .table thead th{background:transparent!important}
-    .table td{border-color:var(--border) !important;vertical-align:middle;padding:.45rem .75rem;color:var(--text-main)}
+    .table td{border-color:var(--border) !important;vertical-align:middle;color:var(--text-main)}
     /* signal bars */
     .signal-bars{display:inline-flex;align-items:flex-end;gap:2px;height:13px}
     .signal-bars span{width:3px;border-radius:1px;background:rgb(from var(--border) r g b / .2)}
@@ -1752,11 +1781,6 @@
     .fw-pos{font-family:var(--font-mono);font-size:.66rem;color:var(--text-muted);
       text-align:right;width:2.2rem;padding-right:.2rem}
     .fw-movecell{width:2.6rem;white-space:nowrap}
-    /* Tabler pads every cell 12px each side via `.table > :not(caption) > * > *`,
-       which outranks a bare class - so a plain `padding:0` here did nothing and
-       24px of it was most of these columns' width. Matched on td/th to win. */
-    .table td.fw-dragcell,.table th.fw-dragcell{padding-left:.3rem;padding-right:.35rem}
-    .table td.fw-movecell,.table th.fw-movecell{padding-left:.25rem;padding-right:.25rem}
     /* Bigger glyph, original padding - the size was the ask, the padding was me
        widening the column on the way past. */
     .fw-move{background:none;border:none;cursor:pointer;color:var(--text-muted);
@@ -1771,7 +1795,7 @@
     /* The drag handle. `grab` rather than `move`, because it is the handle that
        is grabbed and the row that travels. Sized to be an easy target: a grip
        you have to aim at is worse than no grip. */
-    .fw-dragcell{width:1.5rem;padding-right:0;text-align:center}
+    .fw-dragcell{width:1.5rem;text-align:center}
     .fw-drag{cursor:grab;color:var(--text-muted);font-size:1.15rem;line-height:1;
       user-select:none;touch-action:none;display:inline-block;padding:0 .1rem;
       border-radius:4px}
@@ -1800,7 +1824,6 @@
        the pills are values. The cell keeps the table's ordinary grey rule top and
        bottom, so the gap reads as an empty row rather than a boxed callout. */
     tr.res-drag-origin{background:rgb(from var(--accent-err) r g b / .09)}
-    tr.res-drag-origin td{padding:0}
     /* Home again. The engine cannot put the row INSIDE the gap - a row is either
        above it or below it - so as you dragged back the rule ended up beside its
        own marker and the slot never looked reoccupied. Collapsing the gap while
@@ -1884,7 +1907,7 @@
     /* A CAP row expands to its CLIENT list, so only a CAP with clients has
        anything to expand to. The class is what the handler binds to as well. */
     .cap-open{cursor:pointer}
-    .wl-group-row td{background:rgb(from var(--accent-rx) r g b / .04);border-top:1px solid rgb(from var(--accent-rx) r g b / .15)!important;padding:0!important}
+    .wl-group-row td{background:rgb(from var(--accent-rx) r g b / .04);border-top:1px solid rgb(from var(--accent-rx) r g b / .15)!important}
     .wl-group-label{font-family:var(--font-mono);font-size:.68rem;font-weight:700;color:var(--accent-rx);letter-spacing:.03em}
     .wl-group-sub{font-size:.62rem;color:var(--text-muted);margin-left:.5rem}
     /* The whole group header is the fold control. A real button, so it is
@@ -2106,8 +2129,8 @@
     .dhcp-card-title{font-family:var(--font-ui);font-weight:600;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.65rem}
     /* Subnet table */
     .dhcp-subnet-table{width:100%;border-collapse:collapse;table-layout:fixed}
-    .dhcp-subnet-table th{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);padding:.2rem .5rem .35rem;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden}
-    .dhcp-subnet-table td{font-size:.75rem;padding:.3rem .5rem;border-bottom:1px solid rgb(from var(--border) r g b / .07);font-family:var(--font-mono);color:var(--text-main);vertical-align:middle;overflow:hidden;min-width:0}
+    .dhcp-subnet-table th{border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden}
+    .dhcp-subnet-table td{border-bottom:1px solid rgb(from var(--border) r g b / .07);color:var(--text-main);vertical-align:middle;overflow:hidden;min-width:0}
     .dhcp-subnet-table tr:last-child td{border-bottom:none}
     .dhcp-subnet-table .td-label{font-family:var(--font-ui);font-size:.72rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .dhcp-util-bar{height:4px;border-radius:2px;background:rgb(from var(--border) r g b / .15);overflow:hidden;margin-top:3px}
@@ -2198,7 +2221,6 @@
     .rpt-export-row{display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;align-items:center}
     .rpt-iface-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem}
     .rpt-iface-label{font-size:.72rem;color:var(--text-muted)}
-    .rpt-empty{text-align:center;padding:2.5rem;color:var(--text-muted);font-size:.78rem}
     .rpt-pager{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border-top:1px solid var(--border);background:rgb(from var(--border) r g b / .03);font-family:var(--font-mono);font-size:.72rem}
     .rpt-pager-info{flex:1;color:var(--text-muted)}
     @media(max-width:600px){.rpt-bar{gap:.4rem}}
@@ -2241,10 +2263,10 @@
     /* Busiest menus: a small sortable table. The menu column shrinks and
        ellipsises for the same reason .diag-name does. */
     .diag-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:.76rem}
-    .diag-table th{font-size:.64rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);text-align:left;padding:.2rem .25rem;border-bottom:1px solid var(--border)}
+    .diag-table th{text-align:left;border-bottom:1px solid var(--border)}
     .diag-table th:nth-child(2){width:7rem}
     .diag-table th:nth-child(3){width:3.2rem}
-    .diag-table td{padding:.2rem .25rem;border-bottom:1px solid var(--border)}
+    .diag-table td{border-bottom:1px solid var(--border)}
     .diag-table tr:last-child td{border-bottom:none}
     .diag-menu{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);color:var(--text-muted)}
     .diag-num{text-align:right !important;font-weight:600}
@@ -2414,12 +2436,9 @@
     /* Tables. The wrapper scrolls so a wide table does not stretch the bubble. */
     .md-table-wrap{margin:.55rem 0;border:1px solid var(--border);border-radius:7px;
       overflow:auto;max-width:100%}
-    .md-table{border-collapse:collapse;width:100%;font-size:.74rem}
-    .md-table th{background:rgb(from var(--accent-rx) r g b / .1);color:var(--accent-rx);
-      font-family:var(--font-ui);font-weight:600;font-size:.68rem;
-      letter-spacing:.06em;text-transform:uppercase;text-align:left;
-      padding:.42rem .6rem;border-bottom:1px solid var(--border);white-space:nowrap}
-    .md-table td{padding:.38rem .6rem;border-bottom:1px solid var(--border);
+    .md-table{border-collapse:collapse;width:100%}
+    .md-table th{text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+    .md-table td{border-bottom:1px solid var(--border);
       color:var(--text-main);vertical-align:top}
     .md-table tbody tr:last-child td{border-bottom:0}
     .md-table tbody tr:nth-child(even){background:rgb(from var(--border) r g b / .05)}
@@ -2865,7 +2884,7 @@
     .cfg-drawer-body{padding:1rem 1.1rem 2rem;overflow:auto;flex:1}
     .cfg-drawer-desc{font-size:.82rem;color:var(--text-muted);margin:0 0 .9rem}
     .cfg-drawer-h{font-size:.66rem;text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted);margin:1.1rem 0 .5rem}
-    .cfg-vars td,.cfg-vars th{font-size:.76rem;vertical-align:top}
+    .cfg-vars td,.cfg-vars th{vertical-align:top}
     .cfg-findings{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.4rem}
     .cfg-finding{display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem;font-size:.76rem;color:var(--text-main);
       padding:.45rem .55rem;border-radius:8px;border:1px solid var(--border);background:color-mix(in srgb,var(--text-muted) 5%,transparent)}
@@ -2938,7 +2957,7 @@
     .cfg-dep-tpl{max-width:28rem}
     .vpn-hs-badge.cfg-pill-canary{background:color-mix(in srgb,var(--accent-alt) 15%,transparent);color:var(--accent-alt);border:1px solid color-mix(in srgb,var(--accent-alt) 34%,transparent)}
     .cfg-scroll{overflow-x:auto}
-    .cfg-grid-vals td,.cfg-grid-vals th{font-size:.74rem;vertical-align:middle;min-width:9rem}
+    .cfg-grid-vals td,.cfg-grid-vals th{vertical-align:middle;min-width:9rem}
     .cfg-grid-vals td:first-child,.cfg-grid-vals th:first-child{min-width:7rem;color:var(--text-main)}
     .cfg-grid-all td{background:color-mix(in srgb,var(--accent-rx) 6%,transparent)}
     .cfg-prevs{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:.6rem}
@@ -2970,7 +2989,6 @@
     .cfg-hist-row{cursor:pointer}
     .cfg-hist-row:hover td,.cfg-hist-row.is-open td{background:color-mix(in srgb,var(--accent-rx) 6%,transparent)}
     .cfg-hist-n{font-variant-numeric:tabular-nums;font-weight:600}
-    .cfg-hist-open > td{padding:.25rem .5rem 1rem}
     .cfg-hist-detail{display:flex;flex-direction:column;gap:.6rem}
     .cfg-hist-target{border:1px solid var(--border);border-radius:10px;padding:.6rem .75rem}
     .cfg-out{max-height:22rem;overflow:auto}
@@ -3576,7 +3594,6 @@
 .modal-tabs .stab-bar { margin-bottom: 0; }
 
 
-
     /* ── THE TERMINAL ─────────────────────────────────────────────────────────
        A console built out of the app's own tokens rather than a scheme of its
        own. The #logs pane above hardcodes two colours, so it needs a
@@ -3664,7 +3681,6 @@
 .dp-more, .dp-clear { border: 0; background: none; color: var(--accent-rx); font-size: .72rem; cursor: pointer; padding: .2rem .35rem; }
 .dp-clear { color: var(--text-muted); margin-left: auto; }
 .dp-empty { color: var(--text-muted); font-size: .74rem; padding: .3rem 0; }
-
 
 /* ── A TABBED RESOURCE FORM (the firewall rule) ──────────────────────────────
    The panels are the dialog-tab idiom above (.modal-panels / .modal-panel),

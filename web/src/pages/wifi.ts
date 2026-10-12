@@ -151,7 +151,7 @@ export function initWifiPage(socket: Socket, isVisible: (page: string) => boolea
     if (radio.channelWidth) bits.push(radio.channelWidth);
     if (radio.country) bits.push(radio.country);
     return '<tr class="wn-radio-row">' +
-      '<td colspan="7" style="background:rgb(from var(--text-muted) r g b / .12);font-weight:600;font-size:.76rem">' +
+      '<td colspan="7" style="background:rgb(from var(--text-muted) r g b / .12);font-weight:600">' +
         esc(radio.name) +
         (bits.length ? '<span class="muted-note" style="margin-left:.5rem;font-weight:400">' +
                        esc(bits.join(' · ')) + '</span>' : '') +
@@ -195,7 +195,7 @@ export function initWifiPage(socket: Socket, isVisible: (page: string) => boolea
         ' data-res="' + esc(n.resource) + '"'
       : '';
     return '<tr' + handle + '>' +
-      '<td style="padding-left:1.5rem">' + ssidPill(n) +
+      '<td class="tbl-indent">' + ssidPill(n) +
         (n.hidden ? badge('Hidden', 'bg-secondary-lt') : '') +
         (n.isVirtual ? badge('Virtual AP', 'bg-azure-lt') : '') +
         // Says WHY the row will not open, which is the difference between a
@@ -220,7 +220,7 @@ export function initWifiPage(socket: Socket, isVisible: (page: string) => boolea
   /** A group header that is not a radio - the AP view's. */
   function groupHeader(label: string, sub: string, count: number): string {
     return '<tr class="wn-radio-row">' +
-      '<td colspan="7" style="background:rgb(from var(--text-muted) r g b / .12);font-weight:600;font-size:.76rem">' +
+      '<td colspan="7" style="background:rgb(from var(--text-muted) r g b / .12);font-weight:600">' +
         esc(label) +
         (sub ? '<span class="muted-note" style="margin-left:.5rem;font-weight:400">' +
                esc(sub) + '</span>' : '') +

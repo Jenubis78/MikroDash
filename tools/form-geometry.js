@@ -144,5 +144,42 @@
     const h = b.getBoundingClientRect().height;
     if (Math.abs(h - xsH) > 0.5) issues.push(`${name(b)}: a button in a table row is ${h.toFixed(1)}px, --ctl-h-xs is ${xsH.toFixed(1)}px`);
   }
+  // 6. One table density (app.css TABLES): every cell's padding is the tokens',
+  // every header .66rem, and a row is --tbl-row-h tall unless a cell's content is
+  // itself taller. The section's recorded exceptions are skipped by class.
+  const tp = document.createElement('div');
+  tp.style.cssText = 'position:absolute;visibility:hidden;box-sizing:content-box;padding:var(--tbl-pad-y) var(--tbl-pad-x);height:var(--tbl-row-h);font-size:.66rem';
+  document.body.appendChild(tp);
+  const tcs = getComputedStyle(tp);
+  const padY = tcs.paddingTop, padX = tcs.paddingLeft, rowH = parseFloat(tcs.height), thFont = tcs.fontSize;
+  tp.remove();
+  const cellExempt = '.tbl-empty, .tbl-pick, .tbl-indent, .fw-dragcell, .fw-movecell';
+  const rowExempt = '.res-drag-origin, .wl-group-row, .cfg-hist-open';
+  for (const table of modal.querySelectorAll('table')) {
+    if (!shown(table)) continue;
+    const tname = table.id || String(table.className) || 'table';
+    const seen = new Set();
+    const once = (key, msg) => { if (!seen.has(key)) { seen.add(key); issues.push(`${tname}: ${msg}`); } };
+    for (const c of table.querySelectorAll('th, td')) {
+      if (!shown(c) || c.matches(cellExempt) || c.closest(rowExempt)) continue;
+      const cs = getComputedStyle(c);
+      if (cs.paddingTop !== padY || cs.paddingLeft !== padX) once('pad', `a ${c.tagName.toLowerCase()} is padded ${cs.paddingTop} ${cs.paddingLeft}, the table tokens are ${padY} ${padX}`);
+      if (c.tagName === 'TH' && cs.fontSize !== thFont) once('th', `a header is ${cs.fontSize}, not .66rem (${thFont})`);
+    }
+    for (const tr of table.querySelectorAll('tbody > tr')) {
+      if (!shown(tr) || tr.matches(rowExempt) || tr.querySelector(cellExempt)) continue;
+      const h = tr.getBoundingClientRect().height;
+      if (h < rowH - 1) { once('short', `a row is ${h.toFixed(1)}px, shorter than --tbl-row-h (${rowH.toFixed(1)}px)`); continue; }
+      if (h <= rowH + 1) continue;
+      // Taller is allowed only when a cell's own content needs it.
+      const room = rowH - 2 * parseFloat(padY) + 1;
+      const tall = [...tr.children].some((td) => {
+        const r = document.createRange();
+        r.selectNodeContents(td);
+        return r.getBoundingClientRect().height > room;
+      });
+      if (!tall) once('tall', `a row is ${h.toFixed(1)}px with no cell content taller than the row - something pads it`);
+    }
+  }
   return { ok: issues.length === 0, fields: fields.length, issues };
 })();
