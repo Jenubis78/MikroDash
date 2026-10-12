@@ -609,8 +609,8 @@ export function userRowHtml(u: UserView, look: PrincipalLookups): string {
   return '<td style="padding:.45rem .5rem;font-size:.82rem">' + esc(u.username) + '</td>'
     + '<td style="padding:.45rem .5rem" colspan="2">' + accessSummary(u.grants, look) + '</td>'
     + '<td style="padding:.45rem .5rem;text-align:right;white-space:nowrap">'
-    + '<button class="sbtn sbtn-ghost" style="font-size:.72rem;padding:.2rem .55rem;margin-right:.3rem" data-action="edit">Edit</button>'
-    + '<button class="sbtn sbtn-danger" style="font-size:.72rem;padding:.2rem .55rem" data-action="del">Delete</button>'
+    + '<button class="sbtn sbtn-ghost is-sm" style="margin-right:.3rem" data-action="edit">Edit</button>'
+    + '<button class="sbtn sbtn-danger is-sm" data-action="del">Delete</button>'
     + '</td>';
 }
 
@@ -656,8 +656,8 @@ export function groupTableHtml(groups: GroupView[], look: PrincipalLookups): str
       + '<td style="' + td + ';font-family:var(--font-mono);font-size:.72rem">' + (g.memberUserIds || []).length + '</td>'
       + '<td style="' + td + ';font-size:.72rem">' + access + '</td>'
       + '<td style="' + td + ';text-align:right;white-space:nowrap">'
-        + '<button class="sbtn sbtn-ghost" style="padding:.2rem .55rem;font-size:.7rem" data-group-action="edit" data-group-id="' + esc(g.id) + '">Edit</button> '
-        + '<button class="sbtn sbtn-danger" style="padding:.2rem .55rem;font-size:.7rem" data-group-action="delete" data-group-id="' + esc(g.id) + '">Delete</button>'
+        + '<button class="sbtn sbtn-ghost is-sm" data-group-action="edit" data-group-id="' + esc(g.id) + '">Edit</button> '
+        + '<button class="sbtn sbtn-danger is-sm" data-group-action="delete" data-group-id="' + esc(g.id) + '">Delete</button>'
       + '</td></tr>';
   }).join('');
 }
@@ -676,8 +676,8 @@ export function siteRowHtml(s: SiteView, routerCount: number): string {
     + '<td style="' + td + ';color:var(--text-muted)">' + (s.description ? esc(s.description) : '-') + '</td>'
     + '<td style="' + td + ';font-family:var(--font-mono);font-size:.72rem">' + routerCount + '</td>'
     + '<td style="' + td + ';text-align:right;white-space:nowrap">'
-      + '<button class="sbtn sbtn-ghost" style="padding:.2rem .55rem;font-size:.7rem" data-site-action="edit" data-site-id="' + esc(s.id) + '">Edit</button> '
-      + '<button class="sbtn sbtn-danger" style="padding:.2rem .55rem;font-size:.7rem" data-site-action="delete" data-site-id="' + esc(s.id) + '">Delete</button>'
+      + '<button class="sbtn sbtn-ghost is-sm" data-site-action="edit" data-site-id="' + esc(s.id) + '">Edit</button> '
+      + '<button class="sbtn sbtn-danger is-sm" data-site-action="delete" data-site-id="' + esc(s.id) + '">Delete</button>'
     + '</td></tr>';
 }
 
@@ -907,8 +907,8 @@ export function roleTableHtml(roles: RoleView[]): string {
   return roles.map((r) => {
     const actions = r.builtin
       ? '<span style="color:var(--text-muted);font-size:.7rem">built in</span>'
-      : '<button class="sbtn sbtn-outline" data-role-edit="' + esc(r.id) + '" style="padding:.15rem .5rem;font-size:.7rem">Edit</button>'
-        + ' <button class="sbtn sbtn-outline" data-role-del="' + esc(r.id) + '" style="padding:.15rem .5rem;font-size:.7rem;color:#f87171;border-color:rgba(248,113,113,.35)">Delete</button>';
+      : '<button class="sbtn sbtn-outline is-sm" data-role-edit="' + esc(r.id) + '">Edit</button>'
+        + ' <button class="sbtn sbtn-danger is-sm" data-role-del="' + esc(r.id) + '">Delete</button>';
     return '<tr style="border-bottom:1px solid var(--border)">'
       + '<td style="padding:.4rem .5rem">' + esc(r.name)
         + (r.description ? '<div style="color:var(--text-muted);font-size:.7rem">' + esc(r.description) + '</div>' : '') + '</td>'
@@ -940,10 +940,9 @@ export function rolePageRowHtml(
   const seg = ['none', 'read', 'write'].map((level) => {
     const on = (level === 'none' && !access) || level === access;
     const dead = level === 'write' && !writable;
-    return '<button type="button" class="sbtn ' + (on ? 'sbtn-primary' : 'sbtn-outline') + '"'
+    return '<button type="button" class="sbtn ' + (on ? 'sbtn-primary' : 'sbtn-outline') + ' is-sm"'
       + ' data-page-set="' + esc(page.key) + '" data-level="' + level + '"'
-      + (dead ? ' disabled title="No write actions on this page yet"' : '')
-      + ' style="padding:.1rem .5rem;font-size:.68rem' + (dead ? ';opacity:.4;cursor:not-allowed' : '') + '">'
+      + (dead ? ' disabled title="No write actions on this page yet"' : '') + '>'
       + level.charAt(0).toUpperCase() + level.slice(1) + '</button>';
   }).join('');
   return '<div data-page-row="' + esc(page.key) + '" style="display:flex;align-items:center;'
@@ -1001,7 +1000,7 @@ export function grantEditorHtml(
   const rows = (grants || []).map((g) =>
     '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">'
     + '<span style="flex:1">' + esc(roleName(g, look)) + ' - ' + esc(scopeLabel(g, look)) + '</span>'
-    + '<button class="sbtn sbtn-ghost" style="padding:.1rem .45rem;font-size:.65rem" data-grant-del="' + esc(String(g.id)) + '">Remove</button>'
+    + '<button class="sbtn sbtn-ghost is-sm" data-grant-del="' + esc(String(g.id)) + '">Remove</button>'
     + '</div>').join('');
 
   const sites = o.sitesById || {};

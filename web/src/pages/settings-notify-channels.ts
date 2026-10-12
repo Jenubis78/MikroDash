@@ -124,9 +124,9 @@ function card(c: ChannelView): string {
     + '<div class="apps-card-desc">' + dest + '</div>'
     + '<div class="apps-card-meta">' + esc(evs) + ' &middot; ' + esc(scope) + '</div>'
     + '<div class="apps-card-actions">'
-    + '<button class="apps-btn" data-nchan-act="test" data-nchan="' + esc(c.id) + '">Test</button>'
-    + '<button class="apps-btn" data-nchan-act="edit" data-nchan="' + esc(c.id) + '">Edit</button>'
-    + '<button class="apps-btn is-danger" data-nchan-act="delete" data-nchan="'
+    + '<button class="sbtn sbtn-outline is-sm" data-nchan-act="test" data-nchan="' + esc(c.id) + '">Test</button>'
+    + '<button class="sbtn sbtn-outline is-sm" data-nchan-act="edit" data-nchan="' + esc(c.id) + '">Edit</button>'
+    + '<button class="sbtn sbtn-danger is-sm" data-nchan-act="delete" data-nchan="'
     + esc(c.id) + '">Delete</button>'
     + '</div></div>';
 }

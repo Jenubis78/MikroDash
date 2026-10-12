@@ -260,29 +260,9 @@
 }
 
 /* ── Edit Dashboard button (topbar) ──────────────────────────────────────── */
+/* An action button (.sbtn, outline, compact); hidden until the dashboard shows it. */
 #dashEditBtn {
   display: none;
-  align-items: center;
-  gap: 0.35rem;
-  height: 28px;
-  padding: 0 0.65rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: rgba(99, 130, 190, 0.08);
-  cursor: pointer;
-  color: var(--text-muted);
-  font-family: var(--font-ui);
-  font-size: 0.73rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-#dashEditBtn:hover {
-  color: var(--accent-rx);
-  background: rgba(56, 189, 248, 0.1);
-  border-color: rgba(56, 189, 248, 0.25);
 }
 #dashEditBtn svg {
   width: 13px;
@@ -302,48 +282,8 @@
   display: none;
 }
 
-.dash-ctrl-btn {
-  height: 28px;
-  padding: 0 0.7rem;
-  border-radius: 6px;
-  font-family: var(--font-ui);
-  font-size: 0.73rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  white-space: nowrap;
-  border: 1px solid;
-  letter-spacing: 0.02em;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+#dashEditControls .sbtn {
   flex-shrink: 0;
-}
-.dash-ctrl-save {
-  background: rgba(56, 189, 248, 0.15);
-  color: var(--accent-rx);
-  border-color: rgba(56, 189, 248, 0.3);
-}
-.dash-ctrl-save:hover {
-  background: rgba(56, 189, 248, 0.25);
-}
-.dash-ctrl-discard {
-  background: transparent;
-  color: var(--text-muted);
-  border-color: var(--border);
-}
-.dash-ctrl-discard:hover {
-  color: var(--text-main);
-  border-color: var(--text-muted);
-}
-.dash-ctrl-add {
-  background: transparent;
-  color: var(--text-muted);
-  border-color: var(--border);
-}
-.dash-ctrl-add:hover {
-  color: var(--text-main);
-  border-color: var(--text-muted);
 }
 .dash-ctrl-add svg {
   width: 12px;
@@ -481,18 +421,7 @@ html[data-theme="light"] #dashAddPanel {
 #dc-card-agent .agent-cursor.is-typing { animation: none; opacity: 1; }
 @keyframes agent-blink { 50% { opacity: 0; } }
 
-:is(#dc-card-agent, #dc-card-secscore) .agent-refresh {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 1.5rem; height: 1.5rem; padding: 0; flex: none;
-  background: transparent; border: 1px solid transparent; border-radius: 6px;
-  color: var(--text-muted); cursor: pointer;
-}
-:is(#dc-card-agent, #dc-card-secscore) .agent-refresh:hover { color: var(--text-main); border-color: var(--border); }
 :is(#dc-card-agent, #dc-card-secscore) .agent-refresh:disabled { cursor: default; opacity: .8; }
-:is(#dc-card-agent, #dc-card-secscore) .agent-refresh svg {
-  width: .85rem; height: .85rem; fill: none; stroke: currentColor; stroke-width: 2;
-  stroke-linecap: round; stroke-linejoin: round;
-}
 :is(#dc-card-agent, #dc-card-secscore) .agent-refresh.is-busy svg { animation: agent-spin .8s linear infinite; }
 @keyframes agent-spin { to { transform: rotate(360deg); } }
 

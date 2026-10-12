@@ -71,7 +71,7 @@ export function initPackagesPage(socket: Socket, isVisible: (page: string) => bo
     if (!caps.permitted) return '';
     const dis = busy === p.name ? ' disabled' : '';
     const b = (act: string, label: string, cls?: string): string =>
-      '<button class="pkg-act' + (cls ? ' ' + cls : '') + '" data-act="' + act +
+      '<button class="sbtn ' + (cls === 'undo' ? 'sbtn-warn' : 'sbtn-outline') + ' is-sm pkg-act" data-act="' + act +
       '" data-name="' + esc(p.name) + '"' + dis + '>' + label + '</button>';
     if (p.scheduled) return b('unschedule', 'Undo', 'undo');
     if (p.state === 'available') return b('enable', 'Install');
@@ -175,8 +175,8 @@ export function initPackagesPage(socket: Socket, isVisible: (page: string) => bo
     // for the reason `updateSlotHtml` gives - a button with nothing to do, or
     // one that refuses on click, is worse than none.
     const updateBtn = (caps.permitted && u.updateAvailable && u.latestVersion)
-      ? ' <button class="sbtn sbtn-warn" data-upgrade-open'
-        + ' style="padding:.1rem .45rem;font-size:.64rem;margin-left:.4rem">Update</button>'
+      ? ' <button class="sbtn sbtn-warn is-sm" data-upgrade-open'
+        + ' style="margin-left:.4rem">Update</button>'
       : '';
 
     let html = '';

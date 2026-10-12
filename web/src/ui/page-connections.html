@@ -38,10 +38,10 @@
             <svg id="worldMap" viewBox="0 0 1000 500" style="width:100%;display:block;touch-action:none"></svg>
             <div class="map-tooltip" id="mapTooltip"></div>
             <div style="position:absolute;bottom:.5rem;right:.5rem;display:flex;flex-direction:column;gap:3px;z-index:2">
-              <button id="mapZoomReset" title="Reset zoom" style="width:26px;height:26px;background:rgba(13,18,30,.85);border:1px solid var(--border);border-radius:5px;color:var(--text-muted);font-size:.55rem;cursor:pointer;line-height:1">RST</button>
-              <button id="mapZoomIn"    style="width:26px;height:26px;background:rgba(13,18,30,.85);border:1px solid var(--border);border-radius:5px;color:var(--text-main);font-size:1rem;cursor:pointer;line-height:1">+</button>
-              <button id="mapZoomOut"   style="width:26px;height:26px;background:rgba(13,18,30,.85);border:1px solid var(--border);border-radius:5px;color:var(--text-main);font-size:1rem;cursor:pointer;line-height:1">−</button>
-              <button id="mapFullscreenBtn" title="Fullscreen map" style="width:26px;height:26px;background:rgba(13,18,30,.85);border:1px solid var(--border);border-radius:5px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
+              <button id="mapZoomReset" class="icon-btn" type="button" title="Reset zoom">&#8634;</button>
+              <button id="mapZoomIn" class="icon-btn" type="button" title="Zoom in">+</button>
+              <button id="mapZoomOut" class="icon-btn" type="button" title="Zoom out">−</button>
+              <button id="mapFullscreenBtn" class="icon-btn" type="button" title="Fullscreen map"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
             </div>
           </div>
         </div>

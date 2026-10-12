@@ -134,7 +134,9 @@ export function initWanPage(socket: Socket, isVisible: (page: string) => boolean
         : srcNames.length + ' selected';
     }
     const apply = el('wanPickerApply');
-    if (apply) apply.classList.toggle('is-dirty', srcDirty);
+    // A pending selection promotes Apply to the primary action (variants swapped,
+    // not stacked: -outline is declared after -primary).
+    if (apply) { apply.classList.toggle('sbtn-primary', srcDirty); apply.classList.toggle('sbtn-outline', !srcDirty); }
   }
 
   function renderPicker(): void {
@@ -196,7 +198,7 @@ export function initWanPage(socket: Socket, isVisible: (page: string) => boolean
     if (!w.dhcp) return '';
     if (!caps.permitted) return '';
     const b = (verb: string, label: string, cls?: string): string =>
-      '<button class="ru-act' + (cls ? ' ' + cls : '') + '" data-wanact="' + verb +
+      '<button class="sbtn ' + (cls === 'danger' ? 'sbtn-danger' : 'sbtn-outline') + ' is-sm" data-wanact="' + verb +
       '" data-id="' + esc(w.dhcp!.id) + '" data-name="' + esc(w.name) + '"' +
       (busy === w.dhcp!.id ? ' disabled' : '') + '>' + label + '</button>';
     return b('renew', 'Renew') + ' ' + b('release', 'Release', 'danger');

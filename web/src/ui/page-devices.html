@@ -74,7 +74,7 @@
         </select>
         <!-- Shown once a ztp:state arrives, which only an administrator's
              socket is sent (pages/ztp.ts). -->
-        <button class="sbtn sbtn-primary" type="button" id="ztpAddBtn" hidden
+        <button class="sbtn sbtn-primary is-sm" type="button" id="ztpAddBtn" hidden
                 title="Make a script that brings a new router into the fleet on its own">
           <svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add device
@@ -124,11 +124,11 @@
                role="img" aria-label="Map of configured routers"></svg>
           <div class="rtrmap-pop" id="rtrMapPop" hidden></div>
           <div class="rtrmap-zoom">
-            <button type="button" data-map-zoom="in"    title="Zoom in">+</button>
-            <button type="button" data-map-zoom="out"   title="Zoom out">&#8722;</button>
-            <button type="button" data-map-zoom="reset" title="Reset view - zoom right out to the whole world">&#8634;</button>
+            <button type="button" class="icon-btn" data-map-zoom="in"    title="Zoom in">+</button>
+            <button type="button" class="icon-btn" data-map-zoom="out"   title="Zoom out">&#8722;</button>
+            <button type="button" class="icon-btn" data-map-zoom="reset" title="Reset view - zoom right out to the whole world">&#8634;</button>
             <button type="button" data-map-zoom="autoframe" id="rtrMapAutoFrame"
-                    class="rtrmap-af" aria-pressed="false"
+                    class="icon-btn rtrmap-af" aria-pressed="false"
                     title="Auto Frame - keep every router in view. Panning or zooming turns it off.">AF</button>
           </div>
         </div>

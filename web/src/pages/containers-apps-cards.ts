@@ -100,21 +100,21 @@ export interface Pending {
 /** The buttons for an app in its state; only Open for a viewer who may not manage. */
 export function actions(a: AppRow, may: boolean, pending: Pending | undefined): string {
   const btn = (verb: string, label: string, cls: string): string =>
-    '<button type="button" class="apps-btn ' + cls + '" data-app-do="' + verb + '" data-app="' + esc(a.name) + '">' +
+    '<button type="button" class="sbtn is-sm ' + cls + '" data-app-do="' + verb + '" data-app="' + esc(a.name) + '">' +
     label + '</button>';
   const open = safeURL(a.uiUrl);
   const openBtn = open && a.state === 'running'
-    ? '<a class="apps-btn is-primary" href="' + esc(open) + '" target="_blank" rel="noopener noreferrer">Open ↗</a>' : '';
+    ? '<a class="sbtn sbtn-primary is-sm" href="' + esc(open) + '" target="_blank" rel="noopener noreferrer">Open ↗</a>' : '';
   if (pending && !pending.error) {
-    return '<button type="button" class="apps-btn is-busy" disabled><span class="apps-spin"></span>' +
+    return '<button type="button" class="sbtn sbtn-ghost is-sm is-busy" disabled><span class="sbtn-spin"></span>' +
       esc(pending.status || (pending.verb === 'remove' ? 'Removing…' : 'Working…')) + '</button>';
   }
   if (!may) return openBtn;
   switch (a.state) {
-    case 'available': return btn('install', 'Install', 'is-primary is-install');
-    case 'running': return openBtn + btn('stop', 'Stop', '') + btn('restart', 'Restart', '') + btn('remove', 'Remove', 'is-danger');
-    case 'stopped': return btn('start', 'Start', 'is-primary') + btn('remove', 'Remove', 'is-danger');
-    case 'error': return btn('start', 'Retry', 'is-primary') + btn('remove', 'Remove', 'is-danger');
+    case 'available': return btn('install', 'Install', 'sbtn-primary is-install');
+    case 'running': return openBtn + btn('stop', 'Stop', 'sbtn-outline') + btn('restart', 'Restart', 'sbtn-outline') + btn('remove', 'Remove', 'sbtn-danger');
+    case 'stopped': return btn('start', 'Start', 'sbtn-primary') + btn('remove', 'Remove', 'sbtn-danger');
+    case 'error': return btn('start', 'Retry', 'sbtn-primary') + btn('remove', 'Remove', 'sbtn-danger');
     default: return '';
   }
 }

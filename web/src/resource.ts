@@ -664,8 +664,8 @@ function showWarning(d: HandEvents['res:error']): void {
     (d.code === 'stale-warning'
       ? '<br><em>The values changed since you were asked, so please confirm again.</em>' : '') +
     '<div style="display:flex;gap:.4rem;justify-content:flex-end;margin-top:.5rem">' +
-    '<button class="sbtn sbtn-outline" id="res_warnCancel" style="padding:.3rem .7rem;font-size:.72rem">Cancel</button>' +
-    '<button class="sbtn sbtn-danger" id="res_warnGo" style="padding:.3rem .7rem;font-size:.72rem">Do it anyway</button></div>';
+    '<button class="sbtn sbtn-outline is-sm" id="res_warnCancel">Cancel</button>' +
+    '<button class="sbtn sbtn-danger is-sm" id="res_warnGo">Do it anyway</button></div>';
   box.style.display = '';
 
   const ack = d.fingerprint || '';
@@ -696,8 +696,8 @@ function actionBar(schema: Schema, avail: string[]): void {
     // DISABLE IS ORANGE, so it cannot be mistaken for the blue Save beside it
     // (operator, 2026-10-03): it takes something out of service.
     const tone = a && a.key === 'disable' ? 'sbtn-warn' : 'sbtn-primary';
-    return a ? '<button class="sbtn ' + tone + '" data-res-actionbtn="' + esc(a.key) + '" ' +
-      'style="padding:.3rem .7rem;font-size:.72rem">' + esc(a.label) + '</button>' : '';
+    return a ? '<button class="sbtn ' + tone + '" data-res-actionbtn="' + esc(a.key) + '">' +
+      esc(a.label) + '</button>' : '';
   }).join(' ');
 }
 
@@ -796,7 +796,7 @@ function histButton(kind: 'undo' | 'redo', key: string, on: boolean, label: stri
   const title = on
     ? (kind === 'undo' ? 'Undo ' : 'Redo ') + label
     : 'Nothing to ' + kind;
-  return '<button class="sbtn ' + (on ? 'sbtn-primary' : 'sbtn-ghost') + ' res-hist"' +
+  return '<button class="sbtn ' + (on ? 'sbtn-primary' : 'sbtn-ghost') + ' is-sm res-hist"' +
     ' data-res-hist="' + kind + '" data-res-histkey="' + esc(key) + '"' +
     (on ? '' : ' disabled') +
     ' title="' + esc(title) + '">' + glyph + '</button>';
@@ -1063,8 +1063,8 @@ function mountAddSlots(): void {
       // Add the server would refuse (found on the CHR, 2026-09-18). Undo and redo
       // still belong: those rows can be edited.
       ready.filter((s) => s.creatable !== false).map((s) =>
-      '<button class="sbtn sbtn-primary" data-res-addbtn="' + esc(s.key) + '"' +
-      ' style="padding:.28rem .65rem;font-size:.72rem">' + esc('+ Add ' + s.label) +
+      '<button class="sbtn sbtn-primary is-sm" data-res-addbtn="' + esc(s.key) + '">' +
+      esc('+ Add ' + s.label) +
       '</button>').join('');
   });
 }

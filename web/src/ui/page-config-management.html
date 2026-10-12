@@ -19,8 +19,8 @@
             </span>
           </div>
           <div class="hdr-actions d-flex align-items-center gap-2" id="cfgActions">
-            <button class="cfg-btn" type="button" id="cfgNew">New template</button>
-            <button class="cfg-btn cfg-btn-go" type="button" id="cfgCapture">Capture from a router</button>
+            <button class="sbtn sbtn-outline is-sm" type="button" id="cfgNew">New template</button>
+            <button class="sbtn sbtn-primary is-sm" type="button" id="cfgCapture">Capture from a router</button>
           </div>
         </div>
         <div class="card-body" id="cfgBody">
@@ -46,8 +46,8 @@
               <p class="cfg-hero-sub">Write one in RouterOS's own export syntax, customise a canned one from the
                 Library, or capture a menu or a whole router as it is configured today.</p>
               <div class="cfg-tpl-actions">
-                <button class="cfg-btn cfg-btn-go" type="button" id="cfgEdNew">New template</button>
-                <button class="cfg-btn" type="button" id="cfgEdCapture">Capture from a router</button>
+                <button class="sbtn sbtn-primary" type="button" id="cfgEdNew">New template</button>
+                <button class="sbtn sbtn-outline" type="button" id="cfgEdCapture">Capture from a router</button>
               </div>
               <div id="cfgCaptureBox" hidden></div>
             </div>
@@ -72,9 +72,9 @@
                 <section><h5 class="cfg-drawer-h">Settings</h5><div id="cfgEdVars"></div><div id="cfgEdServerVars"></div></section>
                 <section><h5 class="cfg-drawer-h">Checks</h5><div id="cfgEdChecks"></div></section>
                 <div class="cfg-ed-acts">
-                  <button class="cfg-btn" type="button" id="cfgEdDelete">Delete</button>
-                  <button class="cfg-btn" type="button" id="cfgEdClose">Close</button>
-                  <button class="cfg-btn cfg-btn-go" type="button" id="cfgEdSave">Save</button>
+                  <button class="sbtn sbtn-danger" type="button" id="cfgEdDelete">Delete</button>
+                  <button class="sbtn sbtn-outline" type="button" id="cfgEdClose">Close</button>
+                  <button class="sbtn sbtn-primary" type="button" id="cfgEdSave">Save</button>
                 </div>
               </aside>
             </div>
@@ -93,14 +93,14 @@
                 <p class="cfg-meta">Each setting starts at the template's default, ready to deploy as it is; change
                   any of them first if they do not fit this network.</p>
                 <div id="cfgDepValues"></div>
-                <div class="cfg-dep-save"><button class="cfg-btn" type="button" id="cfgDepSaveDefaults">Save these
+                <div class="cfg-dep-save"><button class="sbtn sbtn-outline" type="button" id="cfgDepSaveDefaults">Save these
                   settings as the template's defaults</button><span class="cfg-meta" id="cfgDepSaveWhy"></span></div>
                 </div></section>
               <section class="cfg-step"><div class="cfg-step-n">4</div><div class="cfg-step-body">
                 <h5 class="cfg-step-title">Preview and checks</h5>
                 <p class="cfg-meta">Each router is read as it is now: its interfaces, its rules, and where it sees
                   MikroDash from. What it will receive, and anything that needs your OK, appears below.</p>
-                <button class="cfg-btn cfg-btn-go" type="button" id="cfgDepPreview">Preview on each router</button>
+                <button class="sbtn sbtn-primary" type="button" id="cfgDepPreview">Preview on each router</button>
                 <div class="cfg-prevs" id="cfgDepPreviews"></div></div></section>
               <section class="cfg-step"><div class="cfg-step-n">5</div><div class="cfg-step-body">
                 <h5 class="cfg-step-title">Deploy</h5>
@@ -108,7 +108,7 @@
                   MikroDash logs in afresh afterwards to prove it still can.</p>
                 <div class="cfg-dep-go">
                   <input class="sform-input" id="cfgDepConfirm" autocomplete="off" aria-label="Confirm">
-                  <button class="cfg-btn cfg-btn-go" type="button" id="cfgDepStart">Deploy</button>
+                  <button class="sbtn sbtn-primary" type="button" id="cfgDepStart">Deploy</button>
                 </div>
                 <div class="cfg-meta cfg-dep-why" id="cfgDepWhy"></div></div></section>
             </div>
@@ -116,7 +116,7 @@
           <div class="cfg-panel" id="cfgPanel-history" hidden>
             <div class="cfg-hist-bar"><span class="cfg-meta">Every deploy, newest first. Open one for what each router
               said, in RouterOS's own words, and its restore point.</span>
-              <button class="cfg-btn" type="button" id="cfgHistRefresh">Refresh</button></div>
+              <button class="sbtn sbtn-outline is-sm" type="button" id="cfgHistRefresh">Refresh</button></div>
             <div class="cfg-scroll"><table class="table table-sm cfg-hist">
               <thead><tr id="cfgHistHead"></tr></thead><tbody id="cfgHistBody"></tbody></table></div>
             <div class="cfg-empty" id="cfgHistEmpty" hidden>No deploys yet. Deploy a template and it is recorded here.</div>
@@ -124,7 +124,7 @@
           <div class="cfg-panel" id="cfgPanel-drift" hidden>
             <div class="cfg-hist-bar"><span class="cfg-meta">What each router held in a template's menus when its last
               deploy finished. Checking reads that router now; nothing is checked on its own.</span>
-              <button class="cfg-btn" type="button" id="cfgDriftRefresh">Refresh</button></div>
+              <button class="sbtn sbtn-outline is-sm" type="button" id="cfgDriftRefresh">Refresh</button></div>
             <div class="cfg-scroll"><table class="table table-sm cfg-hist">
               <thead><tr id="cfgDriftHead"></tr></thead><tbody id="cfgDriftBody"></tbody></table></div>
             <div class="cfg-empty" id="cfgDriftEmpty" hidden>No baselines yet. Each successful deploy records one for
@@ -141,7 +141,7 @@
             <div class="cfg-hist-bar"><span class="cfg-meta">Accounts created on every router a profile is linked to
               and kept in step with it. The pinned <strong>MikroDash login</strong> is the account MikroDash itself
               signs in with; no other profile can take its account or its group.</span>
-              <button class="cfg-btn cfg-btn-go" type="button" id="cpNew">New profile</button></div>
+              <button class="sbtn sbtn-primary is-sm" type="button" id="cpNew">New profile</button></div>
             <div class="cfg-scroll"><table class="table table-sm cfg-hist">
               <thead><tr>
                 <th>Name</th><th>RouterOS user</th><th>Permissions</th><th>Devices</th><th>State</th><th></th>
@@ -160,7 +160,7 @@
           <h4 class="cfg-drawer-title" id="cfgDrawerTitle"></h4>
           <div class="cfg-drawer-meta" id="cfgDrawerMeta"></div>
         </div>
-        <button class="cfg-btn" type="button" id="cfgDrawerClose" aria-label="Close">✕</button>
+        <button class="sbtn sbtn-outline is-sm" type="button" id="cfgDrawerClose" aria-label="Close">✕</button>
       </header>
       <div class="cfg-drawer-body" id="cfgDrawerBody"></div>
     </aside>

@@ -504,7 +504,7 @@ export function popHtml(r: RouterStatsRow): string {
     + (r.openAlerts ? '<span>Alerts</span><b style="color:var(--accent-amber,#f59f00)">' + r.openAlerts + '</b>' : '')
     + '</div>'
     + '<div class="rmp-loc">' + loc + '</div>'
-    + '<button type="button" data-device="' + esc(r.id) + '">Open overview</button>';
+    + '<button type="button" class="sbtn sbtn-outline is-sm" data-device="' + esc(r.id) + '">Open overview</button>';
 }
 
 /**

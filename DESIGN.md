@@ -350,10 +350,20 @@ where it is limited to.
 - **Tabs**: `.stab-bar` / `.stab`.
   - The active tab gets a 2px `--accent-rx` underline and blue text.
   - Page tabs use `rttab-bar` for the compact size.
-- **Buttons**: `.sbtn` plus a variant.
-  - `sbtn-primary` is the blue tint; the variants are `-outline`, `-danger`, `-warn` and `-purple`.
-  - Buttons are tinted, not solid.
-  - Disabled is .4-.45 opacity with a `not-allowed` cursor.
+- **Buttons**: `.sbtn` plus a variant, for every action.
+  - `sbtn-primary` is the blue tint; the variants are `-outline`/`-ghost` (neutral), `-danger`,
+    `-warn` and `-purple`. Pick by meaning: primary for the main action, danger for a destructive
+    one, warn for a caution (a reboot).
+  - **Two sizes, set by the control tokens.** The default is `--ctl-h`, for a form or a dialog's
+    footer. `.is-sm` is `--ctl-h-sm`, for a toolbar, a card header or a table row: a button is as
+    tall as the controls beside it. (`.is-sm`, not `sbtn-sm`: a bare button's hover is guarded with
+    `:not([class*="sbtn-"])`.)
+  - **A glyph-only button is `.icon-btn`**: a `--ctl-h-sm` square for the theme toggle, sign out,
+    notifications, a map's zoom and refresh.
+  - A button never carries its own height, padding, font size, fill or border, inline or in a page
+    class; a page class may only place it. Tabs, chips, segmented choices, close and move glyphs and
+    sort headers are components of their own, listed by name in `internal/verify`.
+  - Buttons are tinted, not solid. Disabled is .4-.45 opacity with a `not-allowed` cursor.
 - **Forms**: see "Form fields" below. Every field is a label, a control and a help line.
 - **Modal**: `.rtr-modal-bg` > `.rtr-modal` with `-hdr`, `-body` and `-footer`.
   - The footer's actions are right-aligned.

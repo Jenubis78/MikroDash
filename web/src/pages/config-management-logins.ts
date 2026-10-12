@@ -81,9 +81,9 @@ export const MIKRODASH_LOGIN = 'MikroDash login';
 export function pinnedRow(p: LoginProfileView | null): string {
   const busy = !!(p && p.op && p.op.running);
   const actions = p
-    ? `<button class="cfg-btn" type="button" data-lp-edit="${esc(p.id)}"${busy ? ' disabled' : ''}>Edit</button> `
-      + `<button class="cfg-btn" type="button" data-lp-devices="${esc(p.id)}">Devices</button>`
-    : '<button class="cfg-btn cfg-btn-go" type="button" data-lp-new="1">Set password</button>';
+    ? `<button class="sbtn sbtn-outline is-sm" type="button" data-lp-edit="${esc(p.id)}"${busy ? ' disabled' : ''}>Edit</button> `
+      + `<button class="sbtn sbtn-outline is-sm" type="button" data-lp-devices="${esc(p.id)}">Devices</button>`
+    : '<button class="sbtn sbtn-primary is-sm" type="button" data-lp-new="1">Set password</button>';
   return '<tr class="lp-pinned">'
     + `<td><strong>${esc(p ? p.name : MIKRODASH_LOGIN)}</strong> `
     + '<span class="cp-pill cp-wait" title="The account MikroDash itself signs in with. Always first, never deleted.">'

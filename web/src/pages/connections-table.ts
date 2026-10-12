@@ -113,9 +113,9 @@ export function pagerHTML(shown: number, matched: number, page: number, pages: n
   const from = page * PAGE_SIZE + 1;
   return '<span class="conn-sub">' + from.toLocaleString() + '–' + (from + shown - 1).toLocaleString() + ' of ' +
     matched.toLocaleString() + '</span>' +
-    '<button class="conn-page-btn" type="button" data-conn-page="' + (page - 1) + '"' + (page <= 0 ? ' disabled' : '') +
+    '<button class="sbtn sbtn-outline is-sm" type="button" data-conn-page="' + (page - 1) + '"' + (page <= 0 ? ' disabled' : '') +
     ' aria-label="Previous page">‹</button>' +
     '<span class="conn-sub">page ' + (page + 1) + ' of ' + pages + '</span>' +
-    '<button class="conn-page-btn" type="button" data-conn-page="' + (page + 1) + '"' +
+    '<button class="sbtn sbtn-outline is-sm" type="button" data-conn-page="' + (page + 1) + '"' +
     (page >= pages - 1 ? ' disabled' : '') + ' aria-label="Next page">›</button>';
 }

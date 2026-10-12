@@ -406,3 +406,109 @@ func TestEveryControlIsTheSharedControl(t *testing.T) {
 		}
 	}
 }
+
+// ONE ACTION BUTTON, ONE ICON BUTTON, AND NAMED COMPONENTS.
+//
+// Buttons had the controls' problem: .cfg-btn, .topo-btn, .apps-btn, Tabler's
+// .btn, pager and toolbar classes, and dozens of .sbtn with inline padding and
+// font sizes - a Load button 36px tall beside 30px controls. Now an action is
+// .sbtn (--ctl-h, or .is-sm for --ctl-h-sm beside toolbar controls), a glyph is
+// .icon-btn, and anything else must be one of the components below, each named
+// with what it is. A class that is neither fails; so does an entry nobody uses.
+
+// buttonComponents are the button classes that are not actions: tabs, chips,
+// segmented choices, close and move glyphs, headers. Each draws itself.
+var buttonComponents = map[string]string{
+	"stab": "a tab", "ptab": "a tab (Access Management's sections)", "nav-group-hdr": "a sidebar category header",
+	"rtr-modal-close": "a dialog's close glyph", "topo-panel-close": "the topology panel's close glyph",
+	"apps-close": "an app card's close glyph", "dash-remove-btn": "a dashboard card's remove glyph in edit mode",
+	"fw-move": "an ordered table's move arrows", "res-neg": "a field's \"not\" toggle",
+	"poll-profile-btn": "a segmented preset choice", "view-preset-btn": "a segmented preset choice",
+	"bw-unit-btn": "a segmented unit choice", "cfg-seg": "a segmented choice",
+	"dvm-range": "a segmented time-range choice", "ifh-range": "a segmented time-range choice",
+	"topo-chip": "a toggle chip", "sec-chip": "a filter chip", "sec-sev": "a severity filter chip",
+	"apps-chip": "a category filter chip", "apps-seg-btn": "a segmented show filter", "rtr-dd-chip": "the router dropdown's site chips",
+	"ai-suggest": "a suggested-question chip", "wm-swatch": "a colour swatch",
+	"wl-sort-btn": "a sortable column header", "wl-group-toggle": "a group's disclosure header",
+	"dp-act": "the device picker's own controls", "dp-all": "the device picker's own controls",
+	"dp-clear": "the device picker's own controls", "dp-more": "the device picker's own controls",
+	"dp-x": "the device picker's remove glyph", "cpick-clear": "the location search's Clear, part of its control row",
+	"nchan-gear": "a notification event's settings gear, beside its toggle",
+	"apps-copy":  "a Copy link set inside a credential line", "notif-clear-btn": "the notification panel's Clear link",
+}
+
+// buttonIDs are buttons that are components of their own, by id.
+var buttonIDs = map[string]string{
+	"burgerBtn":       "the phone menu button, a floating glass control over the page",
+	"routerSelectBtn": "the top bar's router chip: status dot, name and caret",
+}
+
+var (
+	ffButtonRe    = regexp.MustCompile(`<button\s[^>]*>`)
+	ffBtnStyleBad = regexp.MustCompile(`(?:^|;)\s*(?:height|padding[-a-z]*|font-size|line-height|background[-a-z]*|border[-a-z]*|color)\s*:`)
+	ffStyleRe     = regexp.MustCompile(`\sstyle="([^"]*)"`)
+)
+
+func TestEveryButtonIsAnActionAnIconOrANamedComponent(t *testing.T) {
+	root := repoRoot(t)
+	files := readFiles(t, root, "web/src/", func(rel string) bool {
+		return (strings.HasSuffix(rel, ".html") || strings.HasSuffix(rel, ".ts")) &&
+			!strings.HasPrefix(rel, "web/src/gen/") && !isTestSource(rel)
+	})
+	usedClass, usedID := map[string]bool{}, map[string]bool{}
+	for rel, src := range files {
+		if controlExemptFiles[rel] != "" {
+			continue
+		}
+		for _, m := range ffButtonRe.FindAllStringIndex(src, -1) {
+			tag := src[m[0]:m[1]]
+			at := rel + ":" + strconv.Itoa(strings.Count(src[:m[0]], "\n")+1)
+			var classes []string
+			if g := ffClassRe.FindStringSubmatch(tag); g != nil {
+				// A class assembled in code ('... ' + cls + '...') still names its
+				// fixed classes; the quote marks split them off.
+				for _, c := range strings.Fields(strings.NewReplacer("'", " ", "+", " ").Replace(g[1])) {
+					classes = append(classes, c)
+				}
+			}
+			has := func(c string) bool {
+				for _, x := range classes {
+					if x == c {
+						return true
+					}
+				}
+				return false
+			}
+			if has("sbtn") || has("icon-btn") {
+				if g := ffStyleRe.FindStringSubmatch(tag); g != nil && ffBtnStyleBad.MatchString(g[1]) {
+					t.Errorf("%s: a button sized or painted inline (%q) - .sbtn/.is-sm and .icon-btn own that", at, g[1])
+				}
+				continue
+			}
+			named := false
+			for _, c := range classes {
+				if buttonComponents[c] != "" {
+					usedClass[c], named = true, true
+				}
+			}
+			if !named {
+				if g := ffIDRe.FindStringSubmatch(tag); g != nil && buttonIDs[g[1]] != "" {
+					usedID[g[1]], named = true, true
+				}
+			}
+			if !named {
+				t.Errorf("%s: %q is not an action (.sbtn), an icon (.icon-btn) or a named component", at, tag[:min(len(tag), 90)])
+			}
+		}
+	}
+	for c := range buttonComponents {
+		if !usedClass[c] {
+			t.Errorf("button component %q is recorded but no button uses it - remove it", c)
+		}
+	}
+	for id := range buttonIDs {
+		if !usedID[id] {
+			t.Errorf("button id %q is recorded but no such button exists - remove it", id)
+		}
+	}
+}

@@ -51,7 +51,7 @@
           <option value="week">Week</option>
           <option value="month">Month</option>
         </select>
-        <button class="sbtn sbtn-primary" id="rptLoadBtn">Load</button>
+        <button class="sbtn sbtn-primary is-sm" id="rptLoadBtn">Load</button>
         <span id="rptSpinner" style="display:none;font-family:var(--font-mono);font-size:.7rem;color:var(--text-muted)">Loading…</span>
       </div>
 
@@ -83,8 +83,8 @@
           </table>
           <div class="rpt-pager" id="rptPingPager" style="display:none">
             <span class="rpt-pager-info" id="rptPingPageInfo"></span>
-            <button class="rpt-pager-btn" id="rptPingPrev">&#8592; Prev</button>
-            <button class="rpt-pager-btn" id="rptPingNext">Next &#8594;</button>
+            <button class="sbtn sbtn-outline is-sm" id="rptPingPrev">&#8592; Prev</button>
+            <button class="sbtn sbtn-outline is-sm" id="rptPingNext">Next &#8594;</button>
           </div>
         </div>
       </div>
@@ -99,9 +99,9 @@
         <div class="rpt-iface-row">
           <span class="rpt-iface-label">Interface:</span>
           <select id="rptTrafficIface" class="sform-input sform-sm" style="width:auto" aria-label="Interface"></select>
-          <label style="display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;color:var(--text-muted);cursor:pointer;margin-left:.6rem">
-            <input type="checkbox" id="rptShowCapacity" style="accent-color:var(--accent-rx);cursor:pointer">
-            Show link capacity
+          <label class="stoggle stoggle-bare tb-switch">
+            <span class="stoggle-label">Show link capacity</span>
+            <span class="stoggle-switch"><input type="checkbox" id="rptShowCapacity"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span>
           </label>
         </div>
         <div class="rpt-export-row">
@@ -140,8 +140,8 @@
         </div>
         <div class="rpt-pager" id="rptBwPager" style="display:none">
           <span class="rpt-pager-info" id="rptBwPageInfo"></span>
-          <button class="rpt-pager-btn" id="rptBwPrev">&#8592; Prev</button>
-          <button class="rpt-pager-btn" id="rptBwNext">Next &#8594;</button>
+          <button class="sbtn sbtn-outline is-sm" id="rptBwPrev">&#8592; Prev</button>
+          <button class="sbtn sbtn-outline is-sm" id="rptBwNext">Next &#8594;</button>
         </div>
       </div>
 

@@ -165,7 +165,7 @@ export function rolloutView(p: CfgDeployPayload): string {
   const ask = p.state === 'awaiting-canary'
     ? '<div class="cfg-decide"><span>Check the canary, then type <strong>' + p.targets.length +
       '</strong> to deploy to every router.</span><input class="sform-input sform-sm" id="cfgDepCount" ' +
-      'autocomplete="off" placeholder="' + p.targets.length + '"><button class="cfg-btn cfg-btn-go" type="button" ' +
+      'autocomplete="off" placeholder="' + p.targets.length + '"><button class="sbtn sbtn-primary is-sm" type="button" ' +
       'id="cfgDepContinue">Continue</button></div>'
     : '';
   const reset = p.kind === 'full-export'
@@ -174,7 +174,7 @@ export function rolloutView(p: CfgDeployPayload): string {
     : '';
   return '<div class="cfg-roll-head state-' + esc(p.state) + '"><div><div class="cfg-roll-title">' +
     esc(RUN_WORD[p.state] ?? p.state) + '</div><div class="cfg-meta">' + esc(p.templateName) + ' · started by ' +
-    esc(p.startedBy) + '</div></div>' + (live ? '<button class="cfg-btn" type="button" id="cfgDepCancel">Cancel</button>' : '') +
+    esc(p.startedBy) + '</div></div>' + (live ? '<button class="sbtn sbtn-outline is-sm" type="button" id="cfgDepCancel">Cancel</button>' : '') +
     '</div>' + (p.error ? '<div class="cfg-banner is-bad">' + esc(p.error) + '</div>' : '') + reset + ask +
     '<div class="cfg-tiles">' + p.targets.map(deployTile).join('') + '</div>';
 }

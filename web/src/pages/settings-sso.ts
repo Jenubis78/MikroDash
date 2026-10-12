@@ -96,10 +96,10 @@ function rowHtml(p: ProviderView): string {
     + '<td style="padding:.4rem .5rem">' + status + '</td>'
     + '<td style="padding:.4rem .5rem">' + maps + '</td>'
     + '<td style="padding:.4rem .5rem;text-align:right;white-space:nowrap">'
-    + '<button class="sbtn sbtn-outline" data-sso-edit="' + esc(p.id)
-    + '" style="padding:.15rem .5rem;font-size:.68rem">Edit</button> '
-    + '<button class="sbtn sbtn-danger" data-sso-del="' + esc(p.id)
-    + '" style="padding:.15rem .5rem;font-size:.68rem">Delete</button>'
+    + '<button class="sbtn sbtn-outline is-sm" data-sso-edit="' + esc(p.id)
+    + '">Edit</button> '
+    + '<button class="sbtn sbtn-danger is-sm" data-sso-del="' + esc(p.id)
+    + '">Delete</button>'
     + '</td></tr>';
 }
 
@@ -138,8 +138,8 @@ function mapRowHtml(claimValue: string, roleId: string): string {
     + '">'
     + '<select class="sform-input" data-sso-role aria-label="Role">'
     + '<option value="">Choose a role&#8230;</option>' + opts + '</select>'
-    + '<button type="button" class="sbtn sbtn-outline" data-sso-map-del '
-    + 'style="padding:.3rem .6rem;font-size:.72rem">Remove</button>'
+    + '<button type="button" class="sbtn sbtn-outline" data-sso-map-del>'
+    + 'Remove</button>'
     + '</div>';
 }
 

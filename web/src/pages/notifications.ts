@@ -114,7 +114,7 @@ export function panelHTML(alerts: AlertRow[], now: number): string {
       `${a.routerName ? `<span class="notif-item-router">${esc(a.routerName)}</span> · ` : ''}` +
       `${alertAge(when, now)}</div>` +
       (isOpen(a)
-        ? `<button class="notif-ack-btn" data-ack="${id}">Acknowledge</button>` : '') +
+        ? `<button class="sbtn sbtn-outline is-sm notif-ack-btn" data-ack="${id}">Acknowledge</button>` : '') +
       `</div>`;
   };
 

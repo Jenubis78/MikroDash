@@ -170,9 +170,6 @@
     .topbar-right{margin-left:auto;display:flex;align-items:center;gap:.65rem}
     #uptimeChip{font-family:var(--font-mono);font-size:.67rem;color:var(--text-muted);background:rgba(99,130,190,.08);border:1px solid var(--border);border-radius:5px;padding:2px 8px;white-space:nowrap;display:none}
     #routerTag{font-family:var(--font-mono);font-size:.68rem;color:var(--text-muted)}
-    #themeToggle{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:rgba(99,130,190,.08);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:color .15s,background .15s;flex-shrink:0}
-    #themeToggle:hover{color:var(--accent-rx);background:rgba(56,189,248,.1)}
-    #themeToggle svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
     /* kbd hint */
     #kbdHint{position:fixed;bottom:.85rem;right:.85rem;z-index:400;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.55rem .8rem;font-family:var(--font-mono);font-size:.66rem;color:var(--text-muted);opacity:0;pointer-events:none;transition:opacity .25s}
     #kbdHint.show{opacity:1}
@@ -241,8 +238,6 @@
     .conn-st-other{color:var(--accent-rx);background:color-mix(in srgb,var(--accent-rx) 12%,transparent);border-color:color-mix(in srgb,var(--accent-rx) 28%,transparent)}
     .conn-pager{display:flex;align-items:center;gap:.4rem}
     .conn-pager-end{justify-content:flex-end;margin-top:.4rem}
-    .conn-page-btn{width:24px;height:24px;border:1px solid var(--border);border-radius:5px;background:var(--bg-card);color:var(--text-main);line-height:1;cursor:pointer}
-    .conn-page-btn:disabled{opacity:.35;cursor:default}
     .conn-empty{text-align:center;color:var(--text-muted);padding:1.5rem!important}
 
     .bw-table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)}
@@ -320,6 +315,10 @@
        border and padding, which is right in a form and reads as a black slab
        when one sits inside a card. This drops the box and keeps the switch. */
     .stoggle-bare{background:none;border:none;padding:0}
+    /* The inline switch in a toolbar: its words at the toolbar's size, on the
+       controls' line. */
+    .tb-switch{display:inline-flex;gap:.45rem;height:var(--ctl-h-sm);margin-left:.6rem}
+    .tb-switch .stoggle-label{font-size:.72rem;color:var(--text-muted);display:inline-flex;align-items:center;gap:.35rem}
     /* ── .sbtn PAINTS ITSELF, so a missing variant is not browser chrome ─────
        It used to declare layout and `border:none` and NO background or colour,
        leaving both to the user agent: `ButtonFace`/`ButtonText`, which resolve
@@ -337,12 +336,29 @@
        IS SAFE: all five variants (-primary, -warn, -danger, -purple, and
        -ghost/-outline) declare their own `border:1px solid`, so `border:none`
        was dead for every one of them and only ever reached a bare .sbtn. */
-    .sbtn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.1rem;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s,background .15s,color .15s,border-color .15s;background:transparent;color:var(--text-muted);border:1px solid var(--border)}
+    /* ONE ACTION BUTTON, TWO SIZES, BOTH SET BY THE CONTROL TOKENS: a button is as
+       tall as the box beside it - --ctl-h in a form or a dialog's footer, and with
+       .is-sm, --ctl-h-sm in a toolbar or a table row, next to .sform-sm controls.
+       Named is-sm, not sbtn-sm: the bare-button hover below is guarded with
+       :not([class*="sbtn-"]), which a sbtn- size would silently switch off. */
+    .sbtn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;box-sizing:border-box;height:var(--ctl-h);padding:0 1rem;white-space:nowrap;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s,background .15s,color .15s,border-color .15s;background:transparent;color:var(--text-muted);border:1px solid var(--border)}
     /* GUARDED WITH :not - a bare .sbtn:hover would otherwise reach every variant.
        -primary's hover declares only `background`, so an unguarded base hover
        would repaint its text and border on the way past. */
     .sbtn:not([class*="sbtn-"]):hover{color:var(--text-main);border-color:var(--text-muted);background:rgba(99,130,190,.07)}
     .sbtn:active{transform:scale(.97)}
+    /* An <a> can be a .sbtn (a download, an external page); Tabler underlines a:hover. */
+    .sbtn,.sbtn:hover{text-decoration:none}
+    .sbtn.is-sm{height:var(--ctl-h-sm);padding:0 .7rem;font-size:.72rem;gap:.3rem}
+    /* THE ICON BUTTON: a square, --ctl-h-sm each way, for a button that is only an
+       icon or a glyph (theme, sign out, notifications, a map's zoom). There were
+       26px, 28px, 1.6rem and 34px ones, each with its own border and fill. */
+    .icon-btn{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;box-sizing:border-box;
+      width:var(--ctl-h-sm);height:var(--ctl-h-sm);padding:0;border-radius:6px;border:1px solid var(--border);
+      background:var(--bg-card);color:var(--text-muted);font-size:.85rem;line-height:1;cursor:pointer;
+      transition:color .15s,background .15s,border-color .15s}
+    .icon-btn:hover{color:var(--accent-rx);background:color-mix(in srgb,var(--accent-rx) 10%,var(--bg-card))}
+    .icon-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
     .sbtn-primary{background:rgba(56,189,248,.15);color:var(--accent-rx);border:1px solid rgba(56,189,248,.3)}
     .sbtn-primary:hover{background:rgba(56,189,248,.25)}
     /* For a button sitting ON a warn surface - the RouterOS update banner.
@@ -831,13 +847,6 @@
     .pkg-pending-body{font-family:var(--font-mono);font-size:.72rem;color:var(--text-muted);margin-top:.2rem}
     /* Shared by the Packages and Router Users row actions - the same control in
        two tables, so one rule rather than a second one that drifts. */
-    .pkg-act,.ru-act{font-family:var(--font-mono);font-size:.62rem;padding:1px 6px;border-radius:3px;
-             border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer}
-    .pkg-act:hover,.ru-act:hover{border-color:var(--accent-rx)}
-    .pkg-act[disabled],.ru-act[disabled]{opacity:.35;cursor:not-allowed}
-    .pkg-act.undo{border-color:rgba(245,159,0,.5);color:var(--accent-tx,#f59f00)}
-    .ru-act.danger{border-color:rgba(248,113,113,.4);color:rgba(248,113,113,.9)}
-    .ru-act.danger:hover{border-color:rgba(248,113,113,.7)}
 
     /* ── Interfaces: list view ─────────────────────────────────── */
     /* Wide table, so it scrolls inside its own container rather than pushing
@@ -1109,15 +1118,12 @@
     .rtrmap-pop .rmp-row[data-open-router]:hover{background:rgba(56,189,248,.12)}
     .rtrmap-pop .rmp-rl{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .rtrmap-pop .rmp-rh{color:var(--text-muted);font-family:var(--font-mono);font-size:.66rem}
-    .rtrmap-pop button{margin-top:.5rem;width:100%;font-size:.7rem;padding:.25rem;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text-main);cursor:pointer}
-    .rtrmap-pop button:hover{background:rgba(56,189,248,.1)}
+    .rtrmap-pop .sbtn{margin-top:.5rem;width:100%}
     .rtrmap-zoom{position:absolute;right:.5rem;top:.5rem;display:flex;flex-direction:column;gap:.25rem}
-    .rtrmap-zoom button{width:1.6rem;height:1.6rem;line-height:1;font-size:.85rem;border-radius:5px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);cursor:pointer}
-    .rtrmap-zoom button:hover{color:var(--text-main);background:rgba(56,189,248,.1)}
     /* Auto Frame: a toggle, lit when on, so its state is readable at a glance
        rather than only discoverable by panning and seeing what happens. */
-    .rtrmap-af{font-size:.6rem!important;font-weight:700;letter-spacing:.03em}
-    .rtrmap-af.is-on{color:var(--accent-green,#2fb344);border-color:var(--accent-green,#2fb344)}
+    .rtrmap-af{font-size:.6rem;font-weight:700;letter-spacing:.03em}
+    .rtrmap-af.is-on{color:var(--accent-ok);border-color:var(--accent-ok)}
     /* The "no location" tray. Required by the issue: an unlocated router has to
        stay reachable, and this is also where somebody discovers they need to set
        a town. */
@@ -1227,7 +1233,7 @@
        do not shift sideways as a device moves up or down the list. */
     .rtr-order-th{width:3.4rem}
     .rtr-order{white-space:nowrap;width:3.4rem}
-    .rtr-move{padding:.05rem .3rem;font-size:.6rem;line-height:1.4;min-width:1.4rem}
+    .rtr-move{min-width:1.6rem;padding:0 .3rem}
     /* DISABLED, NOT HIDDEN, at the ends of the list: hiding one would change the
        cell's width and jog every row beside it. */
     .rtr-move:disabled{opacity:.25;cursor:default}
@@ -1615,7 +1621,7 @@
     #mapFsOverlay{display:none;position:fixed;inset:0;z-index:9999;background:var(--bg-deep);flex-direction:column}
     #mapFsOverlay.active{display:flex}
     #mapFsOverlay svg{flex:1;width:100%;display:block;touch-action:none}
-    #mapFsClose{position:absolute;top:.6rem;right:.6rem;width:34px;height:34px;background:rgba(13,18,30,.85);border:1px solid var(--border);border-radius:7px;color:var(--text-main);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10000}
+    #mapFsClose{position:absolute;top:.6rem;right:.6rem;z-index:10000}
     @media(max-width:767px){
       .conn-map-row{ padding:.25rem .35rem }
       .conn-sparkline{ display:none }
@@ -1647,11 +1653,7 @@
     .notif-sep{padding:.3rem .75rem;font-family:var(--font-mono);font-size:.58rem;
                letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);
                background:var(--bg-deep);border-bottom:1px solid var(--border)}
-    .notif-ack-btn{margin-top:.3rem;padding:.15rem .45rem;font-family:var(--font-mono);
-                   font-size:.58rem;letter-spacing:.04em;text-transform:uppercase;
-                   color:var(--text-muted);background:transparent;
-                   border:1px solid var(--border);border-radius:3px;cursor:pointer}
-    .notif-ack-btn:hover{color:var(--text-main);border-color:var(--accent-rx)}
+    .notif-ack-btn{margin-top:.3rem}
     /* Geo flag */
     /* Wireless enhancements */
     .wl-sort-btn{background:rgba(99,130,190,.08);border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:var(--font-mono);font-size:.63rem;padding:2px 7px;cursor:pointer;transition:background .15s,color .15s}
@@ -1809,7 +1811,7 @@
     @media (prefers-reduced-motion:reduce){tr.fw-pulse td{animation:none;background:rgba(56,189,248,.14)}}
     /* Undo / redo. Grey until there is something to reverse; the disabled state
        is the whole affordance, so it must not look clickable. */
-    .res-hist{padding:.24rem .5rem;font-size:.78rem;line-height:1;min-width:1.9rem}
+    .res-hist{min-width:1.9rem;padding:0 .5rem}
     .res-hist:disabled{opacity:.38;cursor:default;pointer-events:none}
     /* The right-hand end of a card header: whatever already lived there, plus
        the Add button, as ONE group. The auto margin belongs to the group, not
@@ -2192,9 +2194,6 @@
     .rpt-empty{text-align:center;padding:2.5rem;color:var(--text-muted);font-size:.78rem}
     .rpt-pager{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border-top:1px solid var(--border);background:rgba(99,130,190,.03);font-family:var(--font-mono);font-size:.72rem}
     .rpt-pager-info{flex:1;color:var(--text-muted)}
-    .rpt-pager-btn{background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:.28rem .65rem;font-size:.72rem;font-family:var(--font-mono);color:var(--text-muted);cursor:pointer;transition:color .15s,border-color .15s}
-    .rpt-pager-btn:hover:not(:disabled){color:var(--text-main);border-color:var(--accent-rx)}
-    .rpt-pager-btn:disabled{opacity:.35;cursor:default}
     @media(max-width:600px){.rpt-bar{gap:.4rem}}
     .poll-profile-btn{background:transparent;border:1px solid var(--border);border-radius:4px;padding:.22rem .65rem;font-size:.72rem;font-family:var(--font-ui);color:var(--text-muted);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
     .poll-profile-btn.active{background:var(--accent-rx);border-color:var(--accent-rx);color:#fff}
@@ -2249,8 +2248,7 @@
 .wan-picker{border-top:1px solid var(--border);padding:.6rem .85rem}
 .wan-picker-hdr{display:flex;align-items:center;gap:.6rem;font-size:.74rem;
   color:var(--text-main);margin-bottom:.5rem}
-.wan-picker-hdr .topo-btn{margin-left:auto}
-.wan-picker-hdr .topo-btn.is-dirty{border-color:var(--accent-rx);color:var(--accent-rx)}
+.wan-picker-hdr .sbtn{margin-left:auto}
 .wan-picker-list{display:flex;flex-wrap:wrap;gap:.35rem}
 .wan-pick{display:flex;align-items:center;gap:.35rem;padding:.2rem .5rem;
   border:1px solid var(--border);border-radius:5px;cursor:pointer;
@@ -2268,10 +2266,6 @@
 .dns-fleet-col{text-align:center;width:5.5rem}
 .dns-fleet-yes{color:rgba(52,211,153,.9);font-weight:700}
 .dns-fleet-yes.is-odd{color:var(--accent-warn)}
-.dns-fleet-copy{background:rgba(99,130,190,.1);border:1px solid var(--border);border-radius:4px;
-  color:var(--text-muted);font-family:var(--font-mono);font-size:.6rem;padding:1px 5px;cursor:pointer}
-.dns-fleet-copy:hover{border-color:rgba(56,189,248,.45);color:var(--accent-rx)}
-.dns-fleet-copy[disabled]{opacity:.45;cursor:default}
 #dnsFleetTable tr.is-partial td:first-child{border-left:2px solid var(--accent-warn)}
 .dns-extra{margin-top:.7rem;padding:.55rem .7rem;border:1px solid var(--border);
   border-radius:6px;background:rgba(99,130,190,.05)}
@@ -2480,10 +2474,9 @@
     .trace-map-wrap{position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden;
       height:clamp(240px,46vh,460px);user-select:none;touch-action:none}
     .trace-map{width:100%;height:100%;display:block;--k:1}
-    .trace-map-ctrls{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:2}
-    .trace-map-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--bg-card);
-      border:1px solid var(--border);border-radius:6px;color:var(--text-main);font-size:1rem;line-height:1;cursor:pointer}
-    .trace-map-btn:hover{border-color:var(--accent-rx);color:var(--accent-rx)}
+    /* The zoom buttons are .sbtn-outline, which is transparent; the strip they sit
+       in is what keeps the map from showing through them. */
+    .trace-map-ctrls{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:2;background:var(--bg-card);border-radius:6px}
     .trace-tip{position:absolute;display:none;z-index:3;max-width:18rem;padding:.45rem .6rem;background:var(--bg-deep);border:1px solid var(--border);
       border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.35);font-size:.72rem;color:var(--text-main);pointer-events:none}
     .trace-tip-row + .trace-tip-row{margin-top:.35rem;padding-top:.35rem;border-top:1px solid var(--border)}
@@ -2730,18 +2723,8 @@
     .apps-meta{font-size:.64rem;padding:.1rem .45rem;border-radius:6px;background:rgba(99,130,190,.09);color:var(--text-muted)}
     .apps-meta.is-mono{font-family:var(--font-mono)}
     .apps-card-actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:auto;padding-top:.2rem}
-    .apps-btn{display:inline-flex;align-items:center;gap:.4rem;font-size:.76rem;font-weight:600;padding:.4rem .8rem;border-radius:9px;
-      border:1px solid var(--border);background:transparent;color:var(--text-main);cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,transform .1s}
-    .apps-btn:hover{border-color:var(--accent-rx)}
-    .apps-btn:active{transform:scale(.97)}
-    .apps-btn.is-primary{background:linear-gradient(135deg,var(--accent-rx),var(--accent-tx));border-color:transparent;color:#05121c}
-    .apps-btn.is-primary:hover{filter:brightness(1.08)}
-    .apps-btn.is-install{flex:1;justify-content:center}
-    .apps-btn.is-danger{color:var(--accent-err);border-color:rgba(248,113,113,.35)}
-    .apps-btn.is-danger:hover{background:rgba(248,113,113,.1)}
-    .apps-btn.is-busy{flex:1;justify-content:center;color:var(--accent-rx);border-color:rgba(56,189,248,.35);cursor:default}
-    .apps-btn:disabled{opacity:.55;cursor:not-allowed}
-    .apps-spin{width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+    /* Install and the busy state take the row's spare width; .sbtn draws them. */
+    .apps-card-actions .is-install,.apps-card-actions .is-busy{flex:1}
     .apps-shimmer{height:3px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--accent-rx),transparent);
       background-size:200% 100%;animation:apps-shimmer 1.3s linear infinite}
     @keyframes apps-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
@@ -2772,7 +2755,7 @@
     .apps-modal-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.9rem}
     @media (prefers-reduced-motion: reduce){
       .apps-card,.apps-drawer{animation:none}
-      .apps-shimmer,.apps-spin{animation:none}
+      .apps-shimmer{animation:none}
       .apps-card:hover{transform:none}
     }
 
@@ -2849,23 +2832,6 @@
       border-top:1px solid var(--border);flex-wrap:wrap}
     .cfg-tpl-actions{display:flex;gap:.35rem;flex-wrap:wrap}
     .cfg-meta{font-size:.68rem;color:var(--text-muted)}
-    .cfg-btn{display:inline-flex;align-items:center;gap:.3rem;padding:.28rem .62rem;border-radius:7px;font-size:.72rem;font-weight:600;
-      cursor:pointer;text-decoration:none;color:var(--text-main);background:color-mix(in srgb,var(--text-muted) 9%,transparent);
-      border:1px solid var(--border);transition:background .2s,border-color .2s,color .2s}
-    .cfg-btn:hover{border-color:color-mix(in srgb,var(--cfg-c,var(--accent-rx)) 50%,var(--border));color:var(--text-main)}
-    .cfg-btn-go{color:var(--cfg-c,var(--accent-rx));background:color-mix(in srgb,var(--cfg-c,var(--accent-rx)) 14%,transparent);
-      border-color:color-mix(in srgb,var(--cfg-c,var(--accent-rx)) 38%,transparent)}
-    .cfg-btn-go:hover{background:color-mix(in srgb,var(--cfg-c,var(--accent-rx)) 24%,transparent);color:var(--cfg-c,var(--accent-rx))}
-    /* ── BESIDE .cfg-btn, AND THAT POSITION IS THE WHOLE FIX ───────────────
-       The same red as .sbtn-danger, values and all. It first sat 900 lines
-       EARLIER in this file, next to the other credential-profile rules where
-       it was convenient to write. `.cfg-btn` and `.cfg-btn-danger` are one
-       class each, so they have equal specificity and the LATER one wins - the
-       base button simply overwrote the colour and the button rendered grey,
-       identical to Edit beside it. A modifier belongs next to what it
-       modifies, not next to the feature that uses it. */
-    .cfg-btn-danger{background:rgba(248,113,113,.12);color:rgba(248,113,113,.9);border-color:rgba(248,113,113,.25)}
-    .cfg-btn-danger:hover{background:rgba(248,113,113,.22);border-color:rgba(248,113,113,.45);color:rgba(248,113,113,1)}
     .cfg-empty{padding:2rem 1rem;text-align:center;color:var(--text-muted);font-size:.82rem}
 
     /* Pills, by meaning. */
@@ -2947,7 +2913,7 @@
     /* A transfer's one field grows to fill its row. */
     .files-transfer .ff-inline>.ff{flex:1 1 22rem;min-width:0}
     .cfg-ed-acts{display:flex;justify-content:flex-end;gap:.4rem;margin-top:.6rem;flex-wrap:wrap}
-    .cfg-ed-acts #cfgEdDelete{margin-right:auto;color:var(--accent-err)}
+    .cfg-ed-acts #cfgEdDelete{margin-right:auto}
 
     /* The Deploy tab: a numbered stepper, each router's preview, the rollout. */
     .cfg-dep{display:flex;flex-direction:column;gap:.2rem}
@@ -2958,7 +2924,7 @@
     .cfg-step-body{min-width:0;display:flex;flex-direction:column;gap:.5rem}
     .cfg-step-title{margin:0;font-size:.9rem;font-weight:650;color:var(--text-main)}
     .cfg-step-body > .cfg-meta,.cfg-step-body p.cfg-meta{margin:0}
-    .cfg-step-body > .cfg-btn{align-self:flex-start}
+    .cfg-step-body > .sbtn{align-self:flex-start}
     .cfg-reveal{display:flex;align-items:baseline;gap:.4rem;font-size:.78rem;margin-bottom:.4rem;flex-wrap:wrap}
     .cfg-dep-save{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
     .cfg-dep-save .is-ok{color:var(--accent-ok)}
@@ -3003,7 +2969,7 @@
     .cfg-out{max-height:22rem;overflow:auto}
     .cfg-out-line.is-bad{color:var(--accent-err);font-weight:600}
     .cfg-drift-acts{white-space:nowrap;text-align:right}
-    .cfg-drift-acts .cfg-btn + .cfg-btn{margin-left:.35rem}
+    .cfg-drift-acts .sbtn + .sbtn{margin-left:.35rem}
     .cfg-drift-go{display:flex;gap:.5rem;flex-wrap:wrap}
     .vpn-hs-badge.cfg-run-ok{background:color-mix(in srgb,var(--accent-ok) 13%,transparent);color:var(--accent-ok);border:1px solid color-mix(in srgb,var(--accent-ok) 32%,transparent)}
     .vpn-hs-badge.cfg-run-bad{background:color-mix(in srgb,var(--accent-err) 13%,transparent);color:var(--accent-err);border:1px solid color-mix(in srgb,var(--accent-err) 32%,transparent)}

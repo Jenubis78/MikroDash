@@ -25,13 +25,13 @@
           <div class="scard-header">
             <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:var(--accent-rx);stroke-width:2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="var(--accent-rx)" stroke="none"/></svg>
             <span class="scard-title">Devices</span>
-            <button class="sbtn sbtn-primary" id="rtrAddBtn" style="padding:.3rem .8rem;font-size:.72rem">
+            <button class="sbtn sbtn-primary is-sm" id="rtrAddBtn">
               <svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add Device
             </button>
             <!-- Bulk import from a CSV (#150): device-import.ts. Shown with Add
                  Device by caps.ts, since it is a batch of the same create. -->
-            <button class="sbtn sbtn-outline" id="rtrImportBtn" style="padding:.3rem .8rem;font-size:.72rem;margin-left:.4rem">
+            <button class="sbtn sbtn-outline is-sm" id="rtrImportBtn" style="margin-left:.4rem">
               <svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.5"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
               Import
             </button>
@@ -247,7 +247,7 @@
                    900px, where two columns would be narrower than the labels. -->
               <div class="ff-grid" id="pollSlidersWrap"></div>
               <div style="margin-top:.7rem;display:flex;align-items:center;gap:.6rem">
-                <button id="pollCustomSaveBtn" style="font-size:.72rem;font-family:var(--font-ui);padding:.28rem .8rem;border-radius:4px;border:1px solid var(--accent-rx);background:transparent;color:var(--accent-rx);cursor:pointer">Save Custom Profile</button>
+                <button id="pollCustomSaveBtn" type="button" class="sbtn sbtn-outline is-sm">Save Custom Profile</button>
                 <span id="pollCustomSaveStatus" style="font-size:.72rem;opacity:0;transition:opacity .25s"></span>
               </div>
             </details>
@@ -852,7 +852,7 @@
           <div class="ptab-panel" id="ptab-sites" role="tabpanel">
             <div class="ptab-head">
               <span class="ptab-desc">A site groups devices by location. Since #117 a device may belong to several sites, or none - assign them in the device's settings.</span>
-              <button class="sbtn sbtn-primary" id="addSiteBtn" style="padding:.25rem .65rem;font-size:.75rem;flex-shrink:0">+ Add Site</button>
+              <button class="sbtn sbtn-primary is-sm" id="addSiteBtn" style="flex-shrink:0">+ Add Site</button>
             </div>
             <table style="width:100%;border-collapse:collapse;font-size:.78rem" id="siteTable">
               <thead>
@@ -926,7 +926,7 @@
           <div class="ptab-panel" id="ptab-groups" role="tabpanel">
             <div class="ptab-head">
               <span class="ptab-desc">A group collects users so a role can be granted to all of them at once - for example a support team given Operator access to one site. Members get the group's access on top of anything granted to them directly.</span>
-              <button class="sbtn sbtn-primary" id="addGroupBtn" style="padding:.25rem .65rem;font-size:.75rem;flex-shrink:0">+ Add Group</button>
+              <button class="sbtn sbtn-primary is-sm" id="addGroupBtn" style="flex-shrink:0">+ Add Group</button>
             </div>
             <table style="width:100%;border-collapse:collapse;font-size:.78rem" id="groupTable">
               <thead>
@@ -985,7 +985,7 @@
           <div class="ptab-panel" id="ptab-roles" role="tabpanel">
             <div class="ptab-head">
               <span class="ptab-desc">A role decides which pages someone sees. Grant it to a user or a group over a scope - the role says <em>what</em>, the scope says <em>which devices</em>. Administrator is built in and always sees everything.</span>
-              <button class="sbtn sbtn-primary" id="addRoleBtn" style="padding:.25rem .65rem;font-size:.75rem;flex-shrink:0">+ Add Role</button>
+              <button class="sbtn sbtn-primary is-sm" id="addRoleBtn" style="flex-shrink:0">+ Add Role</button>
             </div>
             <table style="width:100%;border-collapse:collapse;font-size:.78rem" id="roleTable">
               <thead>
@@ -1026,13 +1026,13 @@
                   <label class="sform-label">Page access</label>
                   <div>
                     <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.4rem">
-                      <button class="sbtn sbtn-outline rf-bulk" data-bulk="none"  style="padding:.15rem .5rem;font-size:.68rem">All none</button>
-                      <button class="sbtn sbtn-outline rf-bulk" data-bulk="read"  style="padding:.15rem .5rem;font-size:.68rem">All read</button>
-                      <button class="sbtn sbtn-outline rf-bulk" data-bulk="write" style="padding:.15rem .5rem;font-size:.68rem">All write</button>
+                      <button class="sbtn sbtn-outline is-sm rf-bulk" data-bulk="none">All none</button>
+                      <button class="sbtn sbtn-outline is-sm rf-bulk" data-bulk="read">All read</button>
+                      <button class="sbtn sbtn-outline is-sm rf-bulk" data-bulk="write">All write</button>
                       <span style="font-size:.68rem;color:var(--text-muted);margin-left:.4rem">Preset</span>
-                      <button type="button" class="sbtn sbtn-outline rf-preset" data-role-preset="home"     style="padding:.15rem .5rem;font-size:.68rem">Home</button>
-                      <button type="button" class="sbtn sbtn-outline rf-preset" data-role-preset="standard" style="padding:.15rem .5rem;font-size:.68rem">Standard</button>
-                      <button type="button" class="sbtn sbtn-outline rf-preset" data-role-preset="advanced" style="padding:.15rem .5rem;font-size:.68rem">Advanced</button>
+                      <button type="button" class="sbtn sbtn-outline is-sm rf-preset" data-role-preset="home">Home</button>
+                      <button type="button" class="sbtn sbtn-outline is-sm rf-preset" data-role-preset="standard">Standard</button>
+                      <button type="button" class="sbtn sbtn-outline is-sm rf-preset" data-role-preset="advanced">Advanced</button>
                     </div>
                     <div id="rf_pages" class="ff-box ff-scroll-tall"></div>
                   </div>
@@ -1059,7 +1059,7 @@
           <div class="ptab-panel" id="ptab-sso" role="tabpanel">
             <div class="ptab-head">
               <span class="ptab-desc">Let people sign in with an existing account - Entra ID, Okta, Keycloak, anything that speaks OpenID Connect. The provider decides who gets in and which role they arrive with. <strong>The password form never goes away</strong>, so the local administrator is always a way back in.</span>
-              <button class="sbtn sbtn-primary" id="addSsoBtn" style="padding:.25rem .65rem;font-size:.75rem;flex-shrink:0">+ Add provider</button>
+              <button class="sbtn sbtn-primary is-sm" id="addSsoBtn" style="flex-shrink:0">+ Add provider</button>
             </div>
             <table style="width:100%;border-collapse:collapse;font-size:.78rem" id="ssoTable">
               <thead>
@@ -1178,8 +1178,8 @@
                       <div class="ff-row">
                         <img id="so_iconPreview" alt="" style="width:32px;height:32px;border-radius:6px;display:none;background:var(--bg-deep)">
                         <input type="file" id="so_iconFile" accept="image/png,image/jpeg" style="display:none">
-                        <button type="button" class="sbtn sbtn-outline" id="so_iconPick" style="padding:.2rem .6rem;font-size:.72rem">Choose image&#8230;</button>
-                        <button type="button" class="sbtn sbtn-outline" id="so_iconClear" style="padding:.2rem .6rem;font-size:.72rem;display:none">Remove</button>
+                        <button type="button" class="sbtn sbtn-outline" id="so_iconPick">Choose image&#8230;</button>
+                        <button type="button" class="sbtn sbtn-outline" id="so_iconClear" style="display:none">Remove</button>
                         <span id="so_iconNote" style="font-size:.68rem;color:var(--text-muted)"></span>
                       </div>
                       <div class="ff-help">Optional. A mark beside the label on the sign-in button. Square PNG or JPEG, 64 to 512 px.</div>
@@ -1204,7 +1204,7 @@
                   <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:.9rem 0 .5rem">Mappings</div>
                   <p style="font-size:.68rem;color:var(--text-muted);margin:.25rem 0 0;line-height:1.5" style="margin:0 0 .5rem">The first match wins. Somebody matching none of these cannot sign in, and loses any access they had.</p>
                   <div id="so_mapRows"></div>
-                  <button type="button" class="sbtn sbtn-outline" id="so_addMap" style="padding:.2rem .6rem;font-size:.72rem;margin-top:.5rem">+ Add mapping</button>
+                  <button type="button" class="sbtn sbtn-outline" id="so_addMap" style="margin-top:.5rem">+ Add mapping</button>
                   <p style="font-size:.68rem;color:var(--text-muted);margin:.25rem 0 0;line-height:1.5" style="margin-top:.7rem">The role is re-evaluated on <strong>every</strong> sign-in, so a role changed here by hand is overwritten the next time that person signs in. Change it at the provider.</p>
                 </div>
 
@@ -1225,7 +1225,7 @@
           <div class="ptab-panel active" id="ptab-users" role="tabpanel">
             <div class="ptab-head">
               <span class="ptab-desc">Each user signs in with their own account. Access comes from the roles granted to them here, and from any group they belong to.</span>
-              <button class="sbtn sbtn-primary" id="addUserBtn" style="padding:.25rem .65rem;font-size:.75rem;flex-shrink:0">+ Add User</button>
+              <button class="sbtn sbtn-primary is-sm" id="addUserBtn" style="flex-shrink:0">+ Add User</button>
             </div>
             <table style="width:100%;border-collapse:collapse;font-size:.78rem" id="userTable">
               <thead>
@@ -1352,7 +1352,7 @@
             <!-- Test Connection sits with the connection settings it tests, under the
                  last of them, rather than at the foot of the card below unrelated ones. -->
             <div style="display:flex;align-items:center;gap:.6rem">
-              <button id="btn-test-ai" class="sbtn sbtn-ghost" type="button" style="padding:.3rem .8rem;font-size:.72rem">Test Connection</button>
+              <button id="btn-test-ai" class="sbtn sbtn-ghost" type="button">Test Connection</button>
               <span id="test-ai-result" style="font-size:.75rem"></span>
             </div>
             <div id="aiCertTrust" hidden style="margin-top:.5rem;padding:.5rem .6rem;border:1px solid var(--border);border-radius:6px;font-size:.72rem;color:var(--text-main);word-break:break-all"></div>
@@ -1424,8 +1424,7 @@
             <!-- Reset sits under the box it resets. It writes the box only; the
                  operator still saves. -->
             <div style="display:flex;justify-content:flex-end">
-              <button id="aiOverviewPromptReset" class="sbtn sbtn-ghost" type="button"
-                      style="padding:.2rem .6rem;font-size:.68rem">Reset to Default</button>
+              <button id="aiOverviewPromptReset" class="sbtn sbtn-ghost is-sm" type="button">Reset to Default</button>
             </div>
           </div>
         </div>
@@ -1440,8 +1439,8 @@
           <div class="scard-header">
             <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:var(--accent-rx);stroke-width:2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
             <span class="scard-title">System Prompt</span>
-            <button id="aiPromptReset" class="sbtn sbtn-ghost" type="button"
-                    style="margin:0 0 0 auto;padding:.25rem .7rem;font-size:.7rem">Reset to Default</button>
+            <button id="aiPromptReset" class="sbtn sbtn-ghost is-sm" type="button"
+                    style="margin:0 0 0 auto">Reset to Default</button>
           </div>
           <div class="scard-body">
             <p style="font-size:.74rem;color:var(--text-muted);margin-bottom:.7rem">

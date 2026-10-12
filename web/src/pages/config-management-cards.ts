@@ -98,11 +98,11 @@ export function templateCard(t: LibTemplate): string {
     '<div class="cfg-tpl-scope">' + scope + '</div>' +
     '<footer class="cfg-tpl-foot">' + vars +
     '<span class="cfg-tpl-actions">' +
-    (t.canned ? '<button class="cfg-btn" type="button" data-cfg-act="preview">Preview</button>' +
-      '<button class="cfg-btn" type="button" data-cfg-act="clone">Customise</button>'
-      : '<button class="cfg-btn" type="button" data-cfg-act="edit">Edit</button>' +
-      '<button class="cfg-btn" type="button" data-cfg-act="clone">Duplicate</button>') +
-    '<button class="cfg-btn cfg-btn-go" type="button" data-cfg-act="deploy">Deploy</button>' +
+    (t.canned ? '<button class="sbtn sbtn-outline is-sm" type="button" data-cfg-act="preview">Preview</button>' +
+      '<button class="sbtn sbtn-outline is-sm" type="button" data-cfg-act="clone">Customise</button>'
+      : '<button class="sbtn sbtn-outline is-sm" type="button" data-cfg-act="edit">Edit</button>' +
+      '<button class="sbtn sbtn-outline is-sm" type="button" data-cfg-act="clone">Duplicate</button>') +
+    '<button class="sbtn sbtn-primary is-sm" type="button" data-cfg-act="deploy">Deploy</button>' +
     '</span></footer></article>';
 }
 
@@ -118,7 +118,7 @@ export function generatorCard(): string {
     'It opens in a new tab and needs internet access. MikroDash has not reviewed it: paste what it gives you ' +
     'into a new template, and the editor checks every line before anything reaches a router.</p>' +
     '<footer class="cfg-tpl-foot"><span class="cfg-meta">Nothing is sent to it from here</span>' +
-    '<span class="cfg-tpl-actions"><a class="cfg-btn cfg-btn-go" href="' + GENERATOR_URL + '" target="_blank" ' +
+    '<span class="cfg-tpl-actions"><a class="sbtn sbtn-primary is-sm" href="' + GENERATOR_URL + '" target="_blank" ' +
     'rel="noopener noreferrer">Open generator</a></span></footer></article>';
 }
 

@@ -223,7 +223,7 @@ export function initWireguardPeers(socket: Socket): void {
           '<span style="color:var(--accent-tx)">↑ ' + esc(fmtBytes(Math.round(txR))) + '/s</span>'
         : '<span style="color:var(--accent-rx)">↓ ' + esc(fmtBytes(t.rx || 0)) + '</span> ' +
           '<span style="color:var(--accent-tx)">↑ ' + esc(fmtBytes(t.tx || 0)) + '</span>';
-      const config = '<button class="btn btn-sm" data-wg-config="' + esc(t.publicKey) +
+      const config = '<button class="sbtn sbtn-outline is-sm" data-wg-config="' + esc(t.publicKey) +
         '" title="Show this peer\'s client configuration and QR code">Config</button>';
       const flags =
         (t.disabled ? '<span class="vpn-hs-badge hs-warn">disabled</span> ' : '') +
@@ -270,9 +270,9 @@ export function initWireguardPeers(socket: Socket): void {
           '</div>' +
           '<p id="wgConfNote" style="font-size:.75rem;color:var(--text-muted);margin:.6rem 0 0"></p>' +
           '<div class="hdr-actions" style="justify-content:flex-end;gap:.4rem;margin-top:.8rem">' +
-            '<button class="btn btn-sm" data-wg-copy>Copy</button>' +
-            '<a class="btn btn-sm" id="wgConfDownload" download>Download</a>' +
-            '<button class="btn btn-sm" data-wg-close>Close</button>' +
+            '<button class="sbtn sbtn-outline" data-wg-copy>Copy</button>' +
+            '<a class="sbtn sbtn-primary" id="wgConfDownload" download>Download</a>' +
+            '<button class="sbtn sbtn-outline" data-wg-close>Close</button>' +
           '</div>' +
         '</div>' +
       '</div>';

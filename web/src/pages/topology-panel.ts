@@ -123,7 +123,7 @@ export function topoPanel(st: TopoState, deps: {
     const me = (st.data?.nodes || []).find((m) => m.key === key);
     const port = (me && 'port' in me ? me.port : '') || '';
     const allMine = sib.every((m) => st.pins[m.key] === key);
-    return '<button class="topo-btn topo-pin-port" id="topoPinPort" type="button">' +
+    return '<button class="sbtn sbtn-outline topo-pin-port" id="topoPinPort" type="button">' +
       (allMine
         ? 'Put the ' + sib.length + ' back on the router'
         : 'Everything else on ' + esc(port) + ' (' + sib.length + ') is behind this') +

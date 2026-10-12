@@ -58,7 +58,7 @@ function applyAlertSort(): void {
           ? esc(fmtTs(r.acknowledged_at)) +
             (r.acknowledged_by ? ' · ' + esc(r.acknowledged_by) : '')
           : (r.resolved_at ? '-'
-            : '<button class="sbtn sbtn-ghost" style="padding:.15rem .5rem;font-size:.65rem"' +
+            : '<button class="sbtn sbtn-ghost is-sm"' +
               ' data-ack-id="' + esc(String(r.id)) + '">Acknowledge</button>');
         return '<tr>' +
           '<td style="font-family:var(--font-mono);font-size:.71rem;color:var(--text-muted)">' +

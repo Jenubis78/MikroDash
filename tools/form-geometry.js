@@ -43,7 +43,10 @@
     if (c.type === 'hidden' || c.type === 'file') continue;
     // A toggle, a checklist, or a choice card (a whole card is the option, its
     // radio hidden inside it) - each draws its own box.
-    if (c.closest('.ff-toggle, .ff-multi, .ztp-choice')) continue;
+    if (c.closest('.ff-toggle, .ff-multi, .ztp-choice, .stoggle-bare')) continue;
+    // The recorded exceptions (internal/verify, controlExceptions): the
+    // Terminal's prompt line and the template editor's code pane.
+    if (c.id === 'terminalInput' || c.id === 'cfgEdBody') continue;
     if (!shown(c)) continue;
     // A table's selection column: a checkbox per row is the table's, not a field.
     if ((c.type === 'checkbox' || c.type === 'radio') && c.closest('td, th')) continue;
@@ -114,6 +117,19 @@
       const tops = row.map((f) => f.children[part].getBoundingClientRect().top);
       if (Math.max(...tops) - Math.min(...tops) > 0.5) {
         issues.push(`row ${row.map(name).join(' | ')}: ${part ? 'controls' : 'labels'} start at ${tops.map((t) => t.toFixed(1)).join(' / ')}`);
+      }
+    }
+  }
+  // 4. A button on a compact control's line is compact too (.is-sm): a toolbar's
+  // Load or Add beside its filters is the toolbar's height, not a form's.
+  for (const c of modal.querySelectorAll('.sform-input.sform-sm')) {
+    if (!shown(c)) continue;
+    const cr = c.getBoundingClientRect(), cy = cr.top + cr.height / 2;
+    for (const b of c.parentElement.querySelectorAll(':scope > .sbtn, :scope > * > .sbtn')) {
+      if (!shown(b)) continue;
+      const br = b.getBoundingClientRect();
+      if (Math.abs(br.top + br.height / 2 - cy) < 6 && Math.abs(br.height - cr.height) > 0.5) {
+        issues.push(`${name(b)}: a button on a toolbar control's line is ${br.height.toFixed(1)}px, the control ${cr.height.toFixed(1)}px - give it .is-sm`);
       }
     }
   }

@@ -263,7 +263,7 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
     const e = row.on[r.id];
     if (!e) {
       return '<td class="dns-fleet-col">' +
-        '<button class="dns-fleet-copy" data-dnscopy="' + esc(row.id) + '"' +
+        '<button class="sbtn sbtn-outline is-sm" data-dnscopy="' + esc(row.id) + '"' +
           ' data-dnsto="' + esc(r.id) + '"' + (busy ? ' disabled' : '') +
           ' title="Copy this record to ' + esc(r.label) + '">copy &rarr;</button></td>';
     }

@@ -165,7 +165,7 @@ export function initRosUsersPage(socket: Socket, isVisible: (page: string) => bo
 
   function btn(act: string, id: string, name: string, label: string, cls?: string): string {
     const pending = busy === busyKey(act, id);
-    return '<button class="ru-act' + (cls ? ' ' + cls : '') + '" data-act="' + act +
+    return '<button class="sbtn ' + (cls === 'danger' ? 'sbtn-danger' : 'sbtn-outline') + ' is-sm ru-act" data-act="' + act +
       '" data-id="' + esc(id) + '" data-name="' + esc(name) + '"' +
       (pending ? ' disabled' : '') + '>' +
       (pending ? (PENDING[act] || label) : label) + '</button>';

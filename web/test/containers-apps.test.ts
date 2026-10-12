@@ -120,7 +120,7 @@ assert.ok(/apps-chip active" data-cat="monitoring"/.test(String(n.appsCats.inner
 click({ '[data-cat]': { 'data-cat': '' } });
 click({ '[data-show]': { 'data-show': 'running' } });
 assert.ok(grid().includes('librespeed') && !grid().includes('pihole') && !grid().includes('uptime-kuma'), 'Running shows others');
-assert.ok(/class="active">Running/.test(String(n.appsSeg.innerHTML)), 'Running is not lit');
+assert.ok(/apps-seg-btn active" data-show="running">Running/.test(String(n.appsSeg.innerHTML)), 'Running is not lit');
 click({ '[data-show]': { 'data-show': 'all' } });
 
 // INSTALL: one click, one request, and the card follows the progress.

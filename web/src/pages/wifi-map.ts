@@ -864,7 +864,7 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
         '<span class="wm-tray-name" title="' + esc(c.ifaces.join(', ')) + '">' +
           esc(c.label) + '</span>' +
         (on ? '<span class="wm-tray-note">placed</span>'
-          : '<button class="topo-btn" data-place="' + esc(c.key) + '">Place</button>') +
+          : '<button class="sbtn sbtn-outline is-sm" data-place="' + esc(c.key) + '">Place</button>') +
       '</div>';
     }).join('');
     return '<div class="wm-panel-title">Site</div>' +
@@ -928,7 +928,10 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
     const lf = el('wmLabelFields'); if (lf) lf.style.display = mode === 'edit' ? 'none' : '';
     const btn = el('wmSave');
     if (btn) {
-      btn.classList.toggle('is-dirty', dirty);
+      // Unsaved changes promote Save to the primary action; the two variants
+      // are swapped, not stacked, because -outline is declared after -primary.
+      btn.classList.toggle('sbtn-primary', dirty);
+      btn.classList.toggle('sbtn-outline', !dirty);
       btn.textContent = dirty ? 'Save *' : 'Save';
     }
   }

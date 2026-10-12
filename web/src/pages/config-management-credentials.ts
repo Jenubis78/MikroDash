@@ -172,12 +172,12 @@ export function profileRow(p: CredProfile, links: readonly CredLink[]): string {
     + `<td>${p.links}</td>`
     + `<td>${state ? statePill(state) : statePill('not linked')}</td>`
     + '<td class="text-end cp-actions">'
-    + `<button class="cfg-btn" type="button" data-cp-edit="${esc(p.id)}">Edit</button> `
-    + `<button class="cfg-btn" type="button" data-cp-links="${esc(p.id)}">Devices</button> `
+    + `<button class="sbtn sbtn-outline is-sm" type="button" data-cp-edit="${esc(p.id)}">Edit</button> `
+    + `<button class="sbtn sbtn-outline is-sm" type="button" data-cp-links="${esc(p.id)}">Devices</button> `
     // DELETE IS NOT INSTANT when routers hold the account, and the label says
     // which it will be. A button that reads "Delete" and then leaves the row in
     // place for a minute reads as a failure.
-    + `<button class="cfg-btn cfg-btn-danger" type="button" data-cp-del="${esc(p.id)}">`
+    + `<button class="sbtn sbtn-danger is-sm" type="button" data-cp-del="${esc(p.id)}">`
     + (p.links > 0 ? 'Remove &amp; delete' : 'Delete') + '</button>'
     + '</td></tr>';
 }

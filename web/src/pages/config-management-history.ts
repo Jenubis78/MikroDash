@@ -193,9 +193,9 @@ export function driftRows(rows: DriftRow[], checks: Record<string, DriftCheck>, 
     const c = checks[key];
     const busy = c?.state === 'checking';
     const drifted = c?.state === 'done' && c.drifted;
-    const acts = '<button class="cfg-btn" type="button" data-drift-act="check"' + (busy ? ' disabled' : '') + '>' +
+    const acts = '<button class="sbtn sbtn-outline is-sm" type="button" data-drift-act="check"' + (busy ? ' disabled' : '') + '>' +
       (c ? 'Check again' : 'Check') + '</button>' +
-      (drifted ? '<button class="cfg-btn" type="button" data-drift-act="diff">' +
+      (drifted ? '<button class="sbtn sbtn-outline is-sm" type="button" data-drift-act="diff">' +
         (open === key ? 'Hide changes' : 'Show changes') + '</button>' : '');
     const tr = '<tr data-drift="' + esc(key) + '"><td><strong>' + esc(r.templateName) + '</strong></td>' +
       '<td>' + esc(r.routerLabel) + '</td><td>' + esc(fmtTs(r.takenAt, false)) + '</td>' +
@@ -218,7 +218,7 @@ export function driftDiff(hunks: Hunk[], truncated: boolean): string {
     'gone; lines marked + are on the router now and were not.</p>' +
     (truncated ? '<div class="cfg-banner is-warn">The difference is too large to show in full.</div>' : '') +
     '<div class="bk-diff cfg-drift-diff">' + hunksHTML(hunks) + '</div>' +
-    '<div class="cfg-drift-go"><button class="cfg-btn cfg-btn-go" type="button" data-drift-act="reapply">Re-apply ' +
-    'the template</button><button class="cfg-btn" type="button" data-drift-act="accept">Accept as the new baseline' +
+    '<div class="cfg-drift-go"><button class="sbtn sbtn-primary is-sm" type="button" data-drift-act="reapply">Re-apply ' +
+    'the template</button><button class="sbtn sbtn-outline is-sm" type="button" data-drift-act="accept">Accept as the new baseline' +
     '</button></div></div>';
 }

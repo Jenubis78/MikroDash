@@ -86,7 +86,7 @@ export function renderRouterRow(
   // each end is disabled rather than hidden, so the column keeps its width and
   // rows do not shift sideways as they move.
   const arrow = (dir: 'up' | 'down', glyph: string, off: boolean) =>
-    '<button class="sbtn sbtn-ghost rtr-move" data-rtr-id="' + esc(r.id) + '"'
+    '<button class="sbtn sbtn-ghost is-sm rtr-move" data-rtr-id="' + esc(r.id) + '"'
     + ' data-rtr-action="move" data-rtr-dir="' + dir + '"'
     + (off ? ' disabled' : '') + ' title="Move ' + dir + '">' + glyph + '</button>';
   const orderCell = '<td class="rtr-order">'
@@ -97,8 +97,8 @@ export function renderRouterRow(
   const ztp = ztpDeviceForRouter(r.id);
   const ztpBadge = ztp ? '<span class="rtr-ztp-badge" title="Added by zero-touch provisioning (' +
     (ztp.mode === 'local' ? 'local' : 'through its tunnel') + ')">ZTP</span>' : '';
-  const delBtn = '<button class="sbtn sbtn-danger" style="padding:.25rem .6rem;font-size:.68rem" data-rtr-id="' + esc(r.id) + '" data-rtr-label="' + esc(r.label) + '" data-rtr-action="delete" title="Delete">&#128465;</button>';
-  const toggleBtn = '<button class="sbtn sbtn-ghost" style="padding:.25rem .6rem;font-size:.68rem"'
+  const delBtn = '<button class="sbtn sbtn-danger is-sm" data-rtr-id="' + esc(r.id) + '" data-rtr-label="' + esc(r.label) + '" data-rtr-action="delete" title="Delete">&#128465;</button>';
+  const toggleBtn = '<button class="sbtn sbtn-ghost is-sm"'
     + (isActive ? ' disabled title="Cannot disable the active router"' : '')
     + ' data-rtr-id="' + esc(r.id) + '" data-rtr-action="toggle">'
     + (r.disabled ? 'Enable' : 'Disable') + '</button>';
@@ -149,7 +149,7 @@ export function renderRouterRow(
     '<td style="text-align:right;white-space:nowrap">' +
       '<div style="display:flex;gap:.3rem;justify-content:flex-end">' +
         toggleBtn +
-        '<button class="sbtn sbtn-ghost" style="padding:.25rem .6rem;font-size:.68rem" data-rtr-id="' + esc(r.id) + '" data-rtr-action="edit">Edit</button>' +
+        '<button class="sbtn sbtn-ghost is-sm" data-rtr-id="' + esc(r.id) + '" data-rtr-action="edit">Edit</button>' +
         delBtn +
       '</div>' +
     '</td>' +

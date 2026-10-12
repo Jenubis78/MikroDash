@@ -88,7 +88,7 @@ export function initContainersApps(socket: Socket): void {
         : '<div class="apps-setup-form ff-inline">' +
           fieldHtml({ id: 'appsDisk', label: 'Store apps on' }, '<select class="sform-input" id="appsDisk">' + disks + '</select>') +
           fieldHtml({ id: 'appsBridge', label: 'LAN bridge' }, '<select class="sform-input" id="appsBridge">' + bridges + '</select>') +
-          '<button type="button" class="apps-btn is-primary" data-apps-setup>Set up apps</button></div>';
+          '<button type="button" class="sbtn sbtn-primary" data-apps-setup>Set up apps</button></div>';
     return '<div class="apps-hero-card is-setup"><div class="apps-hero-text"><h4>Set up the app store</h4>' +
       '<p>Choose where apps are stored. RouterOS then handles each app’s containers, network and firewall.</p>' +
       body + '</div>' + stats + '</div>';
@@ -114,7 +114,7 @@ export function initContainersApps(socket: Socket): void {
     const seg = el('appsSeg');
     if (seg) {
       seg.innerHTML = ok ? (['all', 'installed', 'running'] as const).map((s) =>
-        '<button type="button" data-show="' + s + '"' + (view.show === s ? ' class="active"' : '') + '>' +
+        '<button type="button" class="apps-seg-btn' + (view.show === s ? ' active' : '') + '" data-show="' + s + '">' +
         s.charAt(0).toUpperCase() + s.slice(1) + '</button>').join('') : '';
     }
     const cats = el('appsCats');
@@ -163,8 +163,8 @@ export function initContainersApps(socket: Socket): void {
       '<div class="ff-grid ff-one"><div class="ff"><label class="sform-label" for="appsConfirm">App name</label>' +
       '<input type="text" class="sform-input" id="appsConfirm" autocomplete="off" spellcheck="false">' +
       '<div class="ff-help">Type <code>' + esc(removing) + '</code> to confirm.</div></div></div>' +
-      '<div class="apps-modal-actions"><button type="button" class="apps-btn" data-apps-cancel>Cancel</button>' +
-      '<button type="button" class="apps-btn is-danger" id="appsRemove" data-apps-remove disabled>Remove app</button></div></div>';
+      '<div class="apps-modal-actions"><button type="button" class="sbtn sbtn-outline" data-apps-cancel>Cancel</button>' +
+      '<button type="button" class="sbtn sbtn-danger" id="appsRemove" data-apps-remove disabled>Remove app</button></div></div>';
     m.hidden = false;
     el<HTMLInputElement>('appsConfirm')?.focus?.();
   }
