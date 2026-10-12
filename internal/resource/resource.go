@@ -2660,30 +2660,121 @@ func addressFamily(want string) func(map[string]string) []Error {
 // NetWatch write on this page put code on the router, so they are not fields: a
 // save never sends them, and a row keeps whatever scripts it already has.
 //
-// ── NOR A DNS PROBE'S RECORD TYPE ───────────────────────────────────────────
+// ── A BLANK BOX IS THE ROUTEROS DEFAULT ─────────────────────────────────────
 //
-// RouterOS documents no list of `record-type` values, and a select that misses
-// one rewrites the probe on save, which is the dnsStatic lesson in CLAUDE.md. A
-// DNS probe keeps its `dns-server` and `record-type`; the rest is editable.
+// Measured on the CHR, 7.24.5: `print` OMITS every property at its default, so
+// a fresh probe reports only host, type, comment and disabled. Every tunable
+// here is therefore Clearable with ClearBang, so the box reads as print does:
+// blank is the default, shown as the placeholder, and saving it blank sends
+// `=!prop=`, which RouterOS accepts on every one of these, set or never set. An
+// empty value is not the same thing - `=thr-avg=` is refused as "invalid time
+// value", and `=certificate=` as ambiguous, its word for none being `none`.
+//
+// ── THE PROBE TYPE DECIDES WHAT IS SHOWN, NOT WHAT IS STORED ────────────────
+//
+// Every type accepts every property, and changing the type keeps the others'
+// values (measured), so ShowIf is presentation only: the ICMP thresholds are
+// drawn for an ICMP probe because only an ICMP probe reads them. The types each
+// property applies to are the CLI Reference's.
+//
+// ── THE DNS RECORD TYPE IS A LIST NOW ───────────────────────────────────────
+//
+// The CLI Reference documents `record-type` as A, AAAA, MX or NS, and the CHR
+// refuses anything else (`TXT`: "input does not match any value"), so the select
+// cannot meet a value it lacks - the dnsStatic lesson in CLAUDE.md, answered.
 //
 // No guard: a probe watches a host, it is not a path to the router.
 var Netwatch = &Resource{
 	Key: "netwatch", Page: "netwatch", Label: "NetWatch Host",
 	Title: "NetWatch Host", Menu: "/tool/netwatch", Identity: []string{"host"},
 	Fields: []Field{
-		{Name: "name", ROS: "name", Label: "Name", Type: TypeText, Clearable: true, Placeholder: "isp-gateway"},
-		{Name: "host", ROS: "host", Label: "Host", Type: TypeText, Required: true, Placeholder: "8.8.8.8",
+		{Name: "name", ROS: "name", Label: "Name", Type: TypeText, Clearable: true, Placeholder: "isp-gateway", Tab: nwTabGeneral},
+		{Name: "host", ROS: "host", Label: "Host", Type: TypeText, Required: true, Placeholder: "8.8.8.8", Tab: nwTabGeneral,
 			Help: "The address to probe. For a DNS probe, the name to resolve."},
-		{Name: "type", ROS: "type", Label: "Probe", Type: TypeSelect, Required: true,
+		{Name: "type", ROS: "type", Label: "Probe", Type: TypeSelect, Required: true, Tab: nwTabGeneral,
 			Options: []string{"simple", "icmp", "tcp-conn", "http-get", "https-get", "dns"}},
-		{Name: "port", ROS: "port", Label: "Port", Type: TypeInt, Min: intp(1), Max: intp(65535),
+		nwTime("start-delay", "Start delay", "3s", nwTabGeneral, nil,
+			"Wait before the first probe after the entry is added or enabled."),
+		nwTime("startup-delay", "Startup delay", "5m", nwTabGeneral, nil,
+			"Wait before probing after the router boots."),
+		{Name: "ignore-initial-up", ROS: "ignore-initial-up", Label: "Ignore initial up", Type: TypeBool, Clearable: true, Tab: nwTabGeneral,
+			Help: "Do not run the up script when the first result is up."},
+		{Name: "ignore-initial-down", ROS: "ignore-initial-down", Label: "Ignore initial down", Type: TypeBool, Clearable: true, Tab: nwTabGeneral,
+			Help: "Do not run the down script when the first result is down."},
+		{Name: "comment", ROS: "comment", Label: "Comment", Type: TypeText, Clearable: true, Tab: nwTabGeneral},
+		{Name: "disabled", ROS: "disabled", Label: "Disabled", Type: TypeBool, Clearable: true, Tab: nwTabGeneral},
+
+		nwTime("interval", "Interval", "10s", nwTabProbe, nil, "How often to probe, in RouterOS time: 30s, 5m, 1h."),
+		nwTime("timeout", "Timeout", "1s", nwTabProbe, nil, ""),
+		{Name: "src-address", ROS: "src-address", Label: "Source address", Type: TypeText, Clearable: true, ClearBang: true, Tab: nwTabProbe,
+			Help: "Probe from this address. If the router does not hold it, the host reads as down."},
+		{Name: "port", ROS: "port", Label: "Port", Type: TypeInt, Min: intp(1), Max: intp(65535), Clearable: true, ClearBang: true, Tab: nwTabProbe,
 			ShowIf: &ShowIf{Field: "type", In: []string{"tcp-conn", "http-get", "https-get"}}},
-		{Name: "interval", ROS: "interval", Label: "Interval", Type: TypeText, Placeholder: "10s",
-			Help: "How often to probe, in RouterOS time: 30s, 5m, 1h."},
-		{Name: "timeout", ROS: "timeout", Label: "Timeout", Type: TypeText, Placeholder: "1s"},
-		{Name: "comment", ROS: "comment", Label: "Comment", Type: TypeText, Clearable: true},
-		{Name: "disabled", ROS: "disabled", Label: "Disabled", Type: TypeBool, Clearable: true},
+
+		// ICMP: the packets, then the thresholds a test fails on.
+		nwInt("packet-count", "Packet count", "10", 1, 0, nwICMP, "ICMP packets sent per test."),
+		nwTime("packet-interval", "Packet interval", "50ms", nwTabProbe, nwICMP, "Time between the packets of one test."),
+		nwInt("packet-size", "Packet size", "50", 1, 65535, nwICMP, "Total IP packet size, sent with don't-fragment set."),
+		nwInt("ttl", "TTL", "255", 1, 255, nwICMP, ""),
+		{Name: "accept-icmp-time-exceeded", ROS: "accept-icmp-time-exceeded", Label: "Accept ICMP time exceeded", Type: TypeBool, Clearable: true, Tab: nwTabProbe, ShowIf: nwICMP,
+			Help: "Count a time-exceeded reply as a response, for probing with a low TTL."},
+		{Name: "early-failure-detection", ROS: "early-failure-detection", Label: "Early failure detection", Type: TypeBool, Clearable: true, Tab: nwTabProbe, ShowIf: nwICMP,
+			Help: "Report down as soon as the test cannot pass, without waiting for every packet."},
+		{Name: "early-success-detection", ROS: "early-success-detection", Label: "Early success detection", Type: TypeBool, Clearable: true, Tab: nwTabProbe, ShowIf: nwICMP,
+			Help: "Report up as soon as the test cannot fail, without waiting for every packet."},
+		nwTime("thr-avg", "Max average RTT", "100ms", nwTabProbe, nwICMP, "Down when the average round trip exceeds this."),
+		nwTime("thr-max", "Max RTT", "1s", nwTabProbe, nwICMP, "Down when any round trip exceeds this."),
+		nwTime("thr-jitter", "Max jitter", "1s", nwTabProbe, nwICMP, "Down when the round trip's max minus min exceeds this."),
+		nwTime("thr-stdev", "Max RTT deviation", "250ms", nwTabProbe, nwICMP, "Down when the round trip's standard deviation exceeds this."),
+		nwInt("thr-loss-percent", "Max loss %", "85", 0, 100, nwICMP, "Down when this share of the packets is lost."),
+		nwInt("thr-loss-count", "Max lost packets", "no limit", 0, 0, nwICMP, "Down when this many packets are lost."),
+
+		nwTime("thr-tcp-conn-time", "Max connect time", "1s", nwTabProbe, &ShowIf{Field: "type", In: []string{"tcp-conn"}},
+			"Down when the TCP handshake takes longer. Up to 30s."),
+
+		{Name: "http-codes", ROS: "http-codes", Label: "Accepted HTTP codes", Type: TypeText, Clearable: true, ClearBang: true, Tab: nwTabProbe,
+			Placeholder: "100-299", ShowIf: nwHTTP, Help: "Status codes that count as up: ranges, comma separated, e.g. 200-299,301-302."},
+		nwTime("thr-http-time", "Max response time", "10s", nwTabProbe, nwHTTP, "Down when the response takes longer."),
+		{Name: "check-certificate", ROS: "check-certificate", Label: "Check certificate", Type: TypeBool, Clearable: true, Tab: nwTabProbe,
+			ShowIf: &ShowIf{Field: "type", In: []string{"https-get"}}, Help: "Validate the server's chain against the router's certificate store."},
+		{Name: "certificate", ROS: "certificate", Label: "Client certificate", Type: TypeText, Clearable: true, ClearBang: true, Tab: nwTabProbe,
+			ShowIf: &ShowIf{Field: "type", In: []string{"https-get"}}, Placeholder: "none", Help: "A certificate's name in /certificate."},
+
+		{Name: "dns-server", ROS: "dns-server", Label: "DNS server", Type: TypeText, Clearable: true, ClearBang: true, Tab: nwTabProbe,
+			ShowIf: &ShowIf{Field: "type", In: []string{"dns"}}, Placeholder: "from /ip/dns", Help: "Ask this server rather than the router's own."},
+		{Name: "record-type", ROS: "record-type", Label: "Record type", Type: TypeSelect, Default: "A", Tab: nwTabProbe,
+			Options: []string{"A", "AAAA", "MX", "NS"}, ShowIf: &ShowIf{Field: "type", In: []string{"dns"}}},
 	},
+}
+
+// The NetWatch form's two tabs: what the entry is and when it starts, then how
+// it probes and what it fails on. A tab of thresholds alone would be empty for a
+// simple or DNS probe, which has none; every probe has an interval and timeout.
+const (
+	nwTabGeneral = "General"
+	nwTabProbe   = "Probe"
+)
+
+var (
+	nwICMP = &ShowIf{Field: "type", In: []string{"icmp"}}
+	nwHTTP = &ShowIf{Field: "type", In: []string{"http-get", "https-get"}}
+)
+
+// nwTime is a NetWatch duration: blank is the RouterOS default, `def`.
+func nwTime(ros, label, def, tab string, show *ShowIf, help string) Field {
+	return Field{Name: ros, ROS: ros, Label: label, Type: TypeText, Clearable: true, ClearBang: true,
+		Placeholder: def, Tab: tab, ShowIf: show, Help: help}
+}
+
+// nwInt is a NetWatch count on the Probe tab: blank is the RouterOS default,
+// `def`. A zero max is unbounded.
+func nwInt(ros, label, def string, min, max int, show *ShowIf, help string) Field {
+	f := Field{Name: ros, ROS: ros, Label: label, Type: TypeInt, Clearable: true, ClearBang: true,
+		Placeholder: def, Tab: nwTabProbe, ShowIf: show, Help: help, Min: intp(min)}
+	if max > 0 {
+		f.Max = intp(max)
+	}
+	return f
 }
 
 // Iface is any interface on the Interfaces page: its comment, and whether it is
