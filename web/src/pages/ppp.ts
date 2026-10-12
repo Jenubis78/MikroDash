@@ -138,7 +138,7 @@ export function initPppPage(socket: Socket, isVisible: (page: string) => boolean
       const r = s.rxRate === null
         ? '<span style="color:var(--text-muted)" title="No measurement window yet">-</span>'
         : '<span style="color:var(--accent-rx)">' + fmtMbps((s.rxRate * 8) / 1e6) + '</span> / ' +
-          '<span style="color:var(--accent-tx,#f59f00)">' + fmtMbps(((s.txRate as number) * 8) / 1e6) + '</span>';
+          '<span style="color:var(--accent-tx)">' + fmtMbps(((s.txRate as number) * 8) / 1e6) + '</span>';
       return '<tr>' +
         '<td>' + esc(s.name) + '</td>' +
         '<td><span class="vpn-proto-pill">' + esc(s.service || 'PPP') + '</span></td>' +

@@ -125,7 +125,7 @@ export function initAiAgentPage(socket: Socket, isVisible: (page: string) => boo
     body.style.borderRadius = '.5rem';
     body.style.border = '1px solid var(--border)';
     if (role === 'you') body.style.background = 'rgba(56,189,248,.08)';
-    if (role === 'error') body.style.borderColor = 'var(--accent-red, #f87171)';
+    if (role === 'error') body.style.borderColor = 'var(--accent-err)';
 
     if (role === 'assistant') {
       // THE ONLY PLACE MODEL TEXT IS RENDERED, and it goes through the subset

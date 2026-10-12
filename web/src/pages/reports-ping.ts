@@ -219,9 +219,9 @@ function applyConnSort(): void {
         esc(fmtTs(r.ts)) + '</td>' +
         '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem">' +
         esc(String(r.total)) + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem;color:var(--accent-ok,#4ade80)">' +
+        '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem;color:var(--accent-ok)">' +
         esc(String(r.online)) + '</td>' +
-        '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem;color:var(--accent-err,#f87171)">' +
+        '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem;color:var(--accent-err)">' +
         esc(String(r.offline)) + '</td>' +
         '<td style="text-align:right;font-family:var(--font-mono);font-size:.71rem">' +
         esc((+(r.uptime_pct as number)).toFixed(1)) + '%</td></tr>').join('');

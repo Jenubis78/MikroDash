@@ -38,7 +38,7 @@ export interface SessionRow {
 export function acctSay(target: HTMLElement | null, ok: boolean, msg: string): void {
   if (!target) return;
   target.textContent = msg;
-  target.style.color = ok ? 'var(--accent-green, #4ade80)' : 'var(--accent-red, #f87171)';
+  target.style.color = ok ? 'var(--accent-ok)' : 'var(--accent-err)';
   if (ok) setTimeout(() => { if (target.textContent === msg) target.textContent = ''; }, 5000);
 }
 

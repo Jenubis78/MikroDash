@@ -49,7 +49,7 @@ function rate(b: Bridge): string {
     return '<span style="color:var(--text-muted)" title="Interface rates are unavailable">-</span>';
   }
   return '<span style="color:var(--accent-rx)">' + fmtMbps(b.rxMbps || 0) + '</span> / ' +
-    '<span style="color:var(--accent-tx,#f59f00)">' + fmtMbps(b.txMbps || 0) + '</span>';
+    '<span style="color:var(--accent-tx)">' + fmtMbps(b.txMbps || 0) + '</span>';
 }
 
 function sorted<T>(rows: T[], sort: SortState, valFn: (row: T, key: string) => string | number): T[] {

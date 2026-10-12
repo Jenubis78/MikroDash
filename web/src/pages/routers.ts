@@ -275,8 +275,8 @@ export function renderRoutersSummary(rows: RouterStatsRow[] | null): void {
   }
 
   // Colour only when there is something to say: a red zero reads as a problem.
-  offline$.style.color = total - online > 0 ? 'var(--accent-red, #f87171)' : '';
-  alerting$.style.color = alerting > 0 ? 'var(--accent-amber, #f59f00)' : '';
+  offline$.style.color = total - online > 0 ? 'var(--accent-err)' : '';
+  alerting$.style.color = alerting > 0 ? 'var(--accent-warn)' : '';
 }
 
 /** The search box's current query, trimmed and lower-cased. */
@@ -367,7 +367,7 @@ function renderRoutersList(rows: RouterStatsRow[]): void {
   body.innerHTML = list.map((r) => {
     const up = r.uptime ? ((r.uptime.match(/\d+[wdhm]/g) || []).join(' ') || r.uptime) : null;
     const alerts = r.openAlerts > 0
-      ? '<span style="color:var(--accent-amber,#f59f00);font-weight:600">' + r.openAlerts + '</span>'
+      ? '<span style="color:var(--accent-warn);font-weight:600">' + r.openAlerts + '</span>'
       : dash;
     const o = overviewOf(r.id);
     const conn = o
@@ -385,7 +385,7 @@ function renderRoutersList(rows: RouterStatsRow[]): void {
     // see the three states on the card badge.
     return '<tr class="rtl-row' + (st === 'offline' ? ' rtl-offline' : '') + '" data-device="' + esc(r.id)
       + '" tabindex="0" role="button" aria-label="' + esc('Open overview of ' + r.label) + '">'
-      + '<td><span class="rtl-dot" style="background:' + (st === 'unknown' ? '#6c7a91' : st === 'online' ? '#34d399' : '#f87171') + '" title="'
+      + '<td><span class="rtl-dot" style="background:' + (st === 'unknown' ? 'rgb(from var(--text-muted) r g b / 1)' : st === 'online' ? 'var(--accent-tx)' : 'var(--accent-err)') + '" title="'
         + (st === 'unknown' ? 'Checking\u2026' : st === 'online' ? 'Online' : 'Offline') + '"></span></td>'
       + '<td>' + esc(r.label) + (r.isActive ? ' <span class="badge badge-outline text-blue">active</span>' : '') + '</td>'
       + '<td class="text-muted">' + esc(r.host || '') + '</td>'
@@ -481,8 +481,8 @@ export function layout(located: RouterStatsRow[]): MapGroup[] {
  * whole fleet red.
  */
 export function dotColour(r: RouterStatsRow): string {
-  if (!r.known) return 'var(--accent-muted,#6c7a91)';
-  return r.online ? 'var(--accent-green,#2fb344)' : 'var(--accent-red,#f87171)';
+  if (!r.known) return 'var(--text-muted)';
+  return r.online ? 'var(--accent-ok)' : 'var(--accent-err)';
 }
 
 export function popHtml(r: RouterStatsRow): string {
@@ -501,7 +501,7 @@ export function popHtml(r: RouterStatsRow): string {
     + '<span>Host</span><b>' + esc(r.host) + '</b>'
     + '<span>Uptime</span><b>' + esc(up) + '</b>'
     + '<span>24h up</span><b>' + uptimeLabel(overviewOf(r.id)?.uptimePct ?? null) + '</b>'
-    + (r.openAlerts ? '<span>Alerts</span><b style="color:var(--accent-amber,#f59f00)">' + r.openAlerts + '</b>' : '')
+    + (r.openAlerts ? '<span>Alerts</span><b style="color:var(--accent-warn)">' + r.openAlerts + '</b>' : '')
     + '</div>'
     + '<div class="rmp-loc">' + loc + '</div>'
     + '<button type="button" class="sbtn sbtn-outline is-sm" data-device="' + esc(r.id) + '">Open overview</button>';
@@ -525,7 +525,7 @@ export function groupPopHtml(g: MapGroup): string {
   return '<div class="rmp-name">' + g.routers.length + ' routers</div>'
     + '<div class="rmp-loc" style="margin-top:.2rem;padding-top:0;border-top:0">'
     + esc(place)
-    + (down ? ' <span style="color:var(--accent-err,#f87171)">- ' + down + ' offline</span>' : '')
+    + (down ? ' <span style="color:var(--accent-err)">- ' + down + ' offline</span>' : '')
     + '</div>'
     + '<div class="rmp-list">' + g.routers.map((r) => {
         return '<div class="rmp-row" data-device="' + esc(r.id) + '"'
@@ -551,7 +551,7 @@ export function renderTray(unlocated: RouterStatsRow[]): void {
     + unlocated.length + '):</span>'
     + unlocated.map((r) => '<span class="rmt-pill" data-device="' + esc(r.id) + '" title="'
         + esc(r.host) + '"><span class="rtl-dot" style="background:'
-        + (r.online ? 'var(--accent-green,#2fb344)' : 'var(--accent-red,#f87171)')
+        + (r.online ? 'var(--accent-ok)' : 'var(--accent-err)')
         + '"></span>' + esc(r.label) + '</span>').join('')
     + '<span class="rmt-label" style="flex-basis:100%;margin-top:.25rem">'
     + 'Their WAN address is private or unroutable, so it cannot be geolocated. '

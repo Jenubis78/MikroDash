@@ -200,9 +200,9 @@ check('the list dims by the verdict, not the socket', () => {
 
 // ── the popover dot ─────────────────────────────────────────────────────────
 check('a popover dot follows the verdict', () => {
-  assert.ok(page.dotColour(BLIP).indexOf('green') !== -1,
+  assert.ok(page.dotColour(BLIP).indexOf('--accent-ok') !== -1,
     'the map popover reddened a router inside its threshold');
-  assert.ok(page.dotColour(SETTLING).indexOf('red') !== -1);
+  assert.ok(page.dotColour(SETTLING).indexOf('--accent-err') !== -1);
 });
 
 say(failed ? '  ' + failed + ' failed' : 'devices-debounced-badge: all checks passed');

@@ -68,5 +68,5 @@ export function renderNetworks(data: LanPayload): void {
       esc(n.cidr) + '</div>' +
     '<div class="lan-meta">GW: ' + esc(n.gateway || '-') + ' ' + DOT +
       ' DNS: ' + esc(n.dns || '-') + ' ' + DOT +
-      ' <strong style="color:rgba(200,215,240,.75)">' + n.leaseCount + '</strong> leases</div></div>').join('');
+      ' <strong style="color:rgb(from var(--text-main) r g b / .75)">' + n.leaseCount + '</strong> leases</div></div>').join('');
 }

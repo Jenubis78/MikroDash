@@ -205,7 +205,7 @@ export function initSetupOverlay(socket: SetupSocket): void {
         if (test) test.disabled = false;
         if (res) {
           res.textContent = setupTestResultText(!!d.ok, d.boardName || '', d.error || '');
-          res.style.color = d.ok ? 'var(--color-success, #34d399)' : '#f87171';
+          res.style.color = d.ok ? 'var(--accent-ok)' : '#f87171';
         }
         setSaveReady(!!d.ok);
       })

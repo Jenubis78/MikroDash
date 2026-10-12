@@ -27,7 +27,7 @@
 
 /* ── Edit mode: tint + grid-line overlay ─────────────────────────────────── */
 #dash-grid-root.dashboard--editing {
-  background: rgba(74, 144, 217, 0.02);
+  background: rgb(from var(--accent-rx) r g b / .02);
 }
 
 #dash-grid-root.dashboard--editing::before {
@@ -112,8 +112,8 @@
 
 /* ── Edit mode card border ───────────────────────────────────────────────── */
 .dashboard--editing .dash-card {
-  border: 1px dashed #4a90d9 !important;
-  box-shadow: 0 0 0 1px rgba(74, 144, 217, 0.3) !important;
+  border: 1px dashed var(--accent-rx) !important;
+  box-shadow: 0 0 0 1px rgb(from var(--accent-rx) r g b / .3) !important;
 }
 
 /* ── Drag handle ────────────────────────────────────────────────────────── */
@@ -169,11 +169,11 @@
   transition: background 0.15s;
 }
 .dashboard--editing .dash-card:hover .dash-resize::after {
-  background: rgba(74, 144, 217, 0.45);
+  background: rgb(from var(--accent-rx) r g b / .45);
 }
 .dash-resize:hover::after,
 .dash-resize:active::after {
-  background: rgba(74, 144, 217, 0.8) !important;
+  background: rgb(from var(--accent-rx) r g b / .8) !important;
 }
 
 .dash-resize.n  { top: 0;      left: 10px;  right: 10px; height: 8px; cursor: ns-resize;   }
@@ -195,9 +195,9 @@
   width: 20px;
   height: 20px;
   border-radius: 4px;
-  border: 1px solid rgba(248, 113, 113, 0.3);
-  background: rgba(248, 113, 113, 0.12);
-  color: rgba(248, 113, 113, 0.85);
+  border: 1px solid rgb(from var(--accent-err) r g b / .3);
+  background: rgb(from var(--accent-err) r g b / .12);
+  color: rgb(from var(--accent-err) r g b / .85);
   cursor: pointer;
   align-items: center;
   justify-content: center;
@@ -211,26 +211,26 @@
   display: flex;
 }
 .dash-remove-btn:hover {
-  background: rgba(248, 113, 113, 0.3);
-  color: #f87171;
+  background: rgb(from var(--accent-err) r g b / .3);
+  color: var(--accent-err);
 }
 
 /* ── Swap-pending: 1.5 s hover countdown highlight ──────────────────────── */
 @keyframes dash-swap-pulse {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.7); }
-  50%      { box-shadow: 0 0 0 5px rgba(74, 144, 217, 0.2), 0 0 18px 4px rgba(74, 144, 217, 0.12); }
+  0%, 100% { box-shadow: 0 0 0 2px rgb(from var(--accent-rx) r g b / .7); }
+  50%      { box-shadow: 0 0 0 5px rgb(from var(--accent-rx) r g b / .2), 0 0 18px 4px rgb(from var(--accent-rx) r g b / .12); }
 }
 .dashboard--editing .dash-card.dash-swap-pending {
   animation: dash-swap-pulse 0.65s ease-in-out infinite;
-  border-color: #4a90d9 !important;
+  border-color: var(--accent-rx) !important;
   border-style: solid !important;
 }
 
 /* ── Drag placeholder ────────────────────────────────────────────────────── */
 #dash-placeholder {
   position: absolute;
-  background: rgba(74, 144, 217, 0.1);
-  border: 1.5px dashed rgba(74, 144, 217, 0.5);
+  background: rgb(from var(--accent-rx) r g b / .1);
+  border: 1.5px dashed rgb(from var(--accent-rx) r g b / .5);
   border-radius: 8px;
   pointer-events: none;
   z-index: 5;
@@ -247,12 +247,12 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
   border-radius: 10px;
   overflow: hidden;
-  background: var(--bg-card, rgba(13, 18, 30, 0.85));
-  border: 1px dashed #4a90d9;
+  background: var(--bg-card);
+  border: 1px dashed var(--accent-rx);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(148, 163, 190, 0.55);
+  color: rgb(from var(--text-muted) r g b / .55);
   font-family: var(--font-mono, monospace);
   font-size: 0.72rem;
   font-weight: 600;
@@ -305,7 +305,7 @@
   top: calc(100% + 7px);
   right: 0;
   z-index: 600;
-  background: rgba(13, 18, 30, 0.97);
+  background: rgb(from var(--bg-card) r g b / .97);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.65rem 0.75rem 0.55rem;
@@ -315,7 +315,7 @@
   display: none;
 }
 html[data-theme="light"] #dashAddPanel {
-  background: rgba(240, 242, 247, 0.97);
+  background: rgb(from var(--bg-card) r g b / .97);
 }
 #dashAddPanel.open {
   display: block;
@@ -327,7 +327,7 @@ html[data-theme="light"] #dashAddPanel {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(99, 130, 190, 0.55);
+  color: rgb(from var(--border) r g b / .55);
   margin-bottom: 0.5rem;
 }
 .dash-add-chips {
@@ -342,7 +342,7 @@ html[data-theme="light"] #dashAddPanel {
   padding: 0.22rem 0.5rem;
   border-radius: 5px;
   border: 1px solid var(--border);
-  background: rgba(99, 130, 190, 0.07);
+  background: rgb(from var(--border) r g b / .07);
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 0.68rem;
@@ -351,8 +351,8 @@ html[data-theme="light"] #dashAddPanel {
 }
 .dash-add-chip:hover {
   color: var(--accent-rx);
-  background: rgba(56, 189, 248, 0.1);
-  border-color: rgba(56, 189, 248, 0.25);
+  background: rgb(from var(--accent-rx) r g b / .1);
+  border-color: rgb(from var(--accent-rx) r g b / .25);
 }
 .dash-add-empty {
   font-family: var(--font-mono);
@@ -367,7 +367,7 @@ html[data-theme="light"] #dashAddPanel {
   border-top: 1px solid var(--border);
   font-family: var(--font-mono);
   font-size: 0.62rem;
-  color: rgba(99, 130, 190, 0.5);
+  color: rgb(from var(--border) r g b / .5);
   text-align: center;
   cursor: pointer;
   text-decoration: none;
@@ -401,8 +401,8 @@ html[data-theme="light"] #dashAddPanel {
   min-height: 0;
   overflow-y: auto;
   background: #000;
-  color: #38bdf8;
-  border: 1px solid #1c2733;
+  color: var(--accent-rx);
+  border: 1px solid rgb(from var(--border) r g b / 1);
   border-radius: 6px;
   padding: .55rem .7rem;
   font-family: var(--font-mono);
@@ -443,17 +443,17 @@ html[data-theme="light"] #dashAddPanel {
 #dc-card-secscore .dc-sec-sevs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem; }
 #dc-card-secscore .dc-sec-sev {
   display: flex; flex-direction: column; align-items: center; padding: .3rem .2rem;
-  border-radius: 8px; border: 1px solid var(--border); background: rgba(99,130,190,.05);
+  border-radius: 8px; border: 1px solid var(--border); background: rgb(from var(--border) r g b / .05);
 }
 #dc-card-secscore .dc-sec-sev b { font-family: var(--font-mono); font-size: 1rem; line-height: 1.1; color: var(--text-muted); }
 #dc-card-secscore .dc-sec-sev span { font-size: .58rem; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
-#dc-card-secscore .dc-sec-sev.is-on.sev-critical { border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.1); }
+#dc-card-secscore .dc-sec-sev.is-on.sev-critical { border-color: rgb(from var(--accent-err) r g b / .45); background: rgb(from var(--accent-err) r g b / .1); }
 #dc-card-secscore .dc-sec-sev.is-on.sev-critical b { color: var(--accent-err); }
-#dc-card-secscore .dc-sec-sev.is-on.sev-high { border-color: rgba(251,146,60,.45); background: rgba(251,146,60,.1); }
-#dc-card-secscore .dc-sec-sev.is-on.sev-high b { color: rgba(251,146,60,.95); }
-#dc-card-secscore .dc-sec-sev.is-on.sev-medium { border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.1); }
+#dc-card-secscore .dc-sec-sev.is-on.sev-high { border-color: rgb(from var(--accent-warn) r g b / .45); background: rgb(from var(--accent-warn) r g b / .1); }
+#dc-card-secscore .dc-sec-sev.is-on.sev-high b { color: rgb(from var(--accent-warn) r g b / .95); }
+#dc-card-secscore .dc-sec-sev.is-on.sev-medium { border-color: rgb(from var(--accent-warn) r g b / .45); background: rgb(from var(--accent-warn) r g b / .1); }
 #dc-card-secscore .dc-sec-sev.is-on.sev-medium b { color: var(--accent-warn); }
-#dc-card-secscore .dc-sec-sev.is-on.sev-low { border-color: rgba(59,130,246,.4); background: rgba(59,130,246,.08); }
+#dc-card-secscore .dc-sec-sev.is-on.sev-low { border-color: rgb(from var(--accent-rx) r g b / .4); background: rgb(from var(--accent-rx) r g b / .08); }
 #dc-card-secscore .dc-sec-sev.is-on.sev-low b { color: var(--accent-rx); }
 #dc-card-secscore .dc-sec-meta { font-size: .68rem; color: var(--text-muted); }
 #dc-card-secscore .dc-sec-meta.is-bad { color: var(--accent-err); }
@@ -474,24 +474,24 @@ html[data-theme="light"] #dashAddPanel {
 
 /* Logs panel — same styling as #logs on Logs page but height auto */
 #dc-logs {
-  background: rgba(2,5,14,.85);
+  background: rgb(from var(--bg-deep) r g b / .85);
   font-family: var(--font-mono);
   font-size: 11.5px;
   height: 100%;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
-  color: #d5d7de;
+  color: rgb(from var(--text-main) r g b / 1);
   padding: 10px 12px;
   border-radius: 6px;
   line-height: 1.6;
 }
 html[data-theme="light"] #dc-logs {
-  background: rgba(230,235,245,.9);
-  color: #1a2030;
+  background: rgb(from var(--bg-card) r g b / .9);
+  color: rgb(from var(--text-main) r g b / 1);
 }
 #dc-logs::-webkit-scrollbar { width: 4px; }
-#dc-logs::-webkit-scrollbar-thumb { background: rgba(99,130,190,.2); border-radius: 2px; }
+#dc-logs::-webkit-scrollbar-thumb { background: rgb(from var(--border) r g b / .2); border-radius: 2px; }
 
 /* ── Bandwidth dashboard card — vertical utilisation bars ───────────────── */
 .dc-bw-body {
@@ -528,8 +528,8 @@ html[data-theme="light"] #dc-logs {
   overflow: hidden;
 }
 .dc-bw-label .dc-bw-short { display: none; }
-.dc-bw-label-rx { color: var(--accent-rx, #38bdf8); }
-.dc-bw-label-tx { color: var(--accent-tx, #34d399); }
+.dc-bw-label-rx { color: var(--accent-rx); }
+.dc-bw-label-tx { color: var(--accent-tx); }
 .dc-bw-pct {
   font-family: var(--font-mono);
   font-size: .7rem;
@@ -540,7 +540,7 @@ html[data-theme="light"] #dc-logs {
   flex: 1;
   width: 100%;
   min-height: 40px;
-  background: rgba(99,130,190,.12);
+  background: rgb(from var(--border) r g b / .12);
   border-radius: 6px;
   position: relative;
   overflow: hidden;
@@ -555,10 +555,10 @@ html[data-theme="light"] #dc-logs {
   transition: height .8s ease;
 }
 .dc-bw-fill-rx {
-  background: linear-gradient(to top, rgba(56,189,248,.9), rgba(56,189,248,.3));
+  background: linear-gradient(to top, rgb(from var(--accent-rx) r g b / .9), rgb(from var(--accent-rx) r g b / .3));
 }
 .dc-bw-fill-tx {
-  background: linear-gradient(to top, rgba(52,211,153,.9), rgba(52,211,153,.3));
+  background: linear-gradient(to top, rgb(from var(--accent-tx) r g b / .9), rgb(from var(--accent-tx) r g b / .3));
 }
 .dc-bw-rate {
   font-family: var(--font-mono);

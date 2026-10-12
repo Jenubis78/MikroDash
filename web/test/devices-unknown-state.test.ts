@@ -200,10 +200,10 @@ check('the list dims only rows observed to be down', () => {
 // ── the map popovers ────────────────────────────────────────────────────────
 check('a popover dot is grey, green or red', () => {
   const grey = page.dotColour(UNASKED);
-  assert.ok(grey.indexOf('green') === -1 && grey.indexOf('red') === -1,
+  assert.ok(grey.indexOf('--accent-ok') === -1 && grey.indexOf('--accent-err') === -1,
     'dotColour(unasked) = ' + grey);
-  assert.ok(page.dotColour(UP).indexOf('green') !== -1);
-  assert.ok(page.dotColour(DOWN).indexOf('red') !== -1);
+  assert.ok(page.dotColour(UP).indexOf('--accent-ok') !== -1);
+  assert.ok(page.dotColour(DOWN).indexOf('--accent-err') !== -1);
 });
 check('a cluster does not announce unasked routers as offline', () => {
   const html = page.groupPopHtml({ key: 'k', x: 0, y: 0, routers: ALL });

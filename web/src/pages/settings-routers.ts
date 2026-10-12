@@ -103,8 +103,8 @@ export function renderRouterRow(
     + ' data-rtr-id="' + esc(r.id) + '" data-rtr-action="toggle">'
     + (r.disabled ? 'Enable' : 'Disable') + '</button>';
   const tlsBadge = r.tls
-    ? '<span style="font-size:.6rem;padding:.1rem .4rem;border-radius:4px;background:rgba(52,211,153,.1);color:rgba(52,211,153,.9);border:1px solid rgba(52,211,153,.2)">TLS</span>'
-    : '<span style="font-size:.6rem;padding:.1rem .4rem;border-radius:4px;background:rgba(251,191,36,.1);color:rgba(251,191,36,.8);border:1px solid rgba(251,191,36,.2)">Unencrypted</span>';
+    ? '<span style="font-size:.6rem;padding:.1rem .4rem;border-radius:4px;background:rgb(from var(--accent-tx) r g b / .1);color:rgb(from var(--accent-tx) r g b / .9);border:1px solid rgb(from var(--accent-tx) r g b / .2)">TLS</span>'
+    : '<span style="font-size:.6rem;padding:.1rem .4rem;border-radius:4px;background:rgb(from var(--accent-warn) r g b / .1);color:rgb(from var(--accent-warn) r g b / .8);border:1px solid rgb(from var(--accent-warn) r g b / .2)">Unencrypted</span>';
   const certNote = r.tlsInsecure ? ' <span style="font-size:.6rem;color:var(--text-muted)">self-signed</span>' : '';
   const connState = status[r.id];
   const badgeCls = connState === true ? 'rtr-status-badge--on' : connState === false ? 'rtr-status-badge--off' : 'rtr-status-badge--unknown';

@@ -73,7 +73,7 @@ function leaseCell(w: WAN): string {
   const ok = d.status === 'bound';
   return '<div><span class="wl-band ' + (ok ? 'wl-band-6' : 'wl-band-24') + '">' + esc(d.status || '?') + '</span>' +
     (d.expiresAfter ? '<div class="muted-note">expires in ' + esc(d.expiresAfter) + '</div>' : '') +
-    (d.invalid ? '<div class="muted-note" style="color:rgba(248,113,113,.9)">invalid</div>' : '') + '</div>';
+    (d.invalid ? '<div class="muted-note" style="color:rgb(from var(--accent-err) r g b / .9)">invalid</div>' : '') + '</div>';
 }
 
 export function initWanPage(socket: Socket, isVisible: (page: string) => boolean): void {

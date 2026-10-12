@@ -554,3 +554,85 @@ func TestNativeWidgetsAreDrawnFromThePalette(t *testing.T) {
 		}
 	}
 }
+
+// EVERY COLOUR IS THE PALETTE'S.
+//
+// Measured 2026-10-12: with the Nord palette chosen, 3,828 colour values on the
+// app's pages were still the DEFAULT palette's exact blue, green or steel, and
+// 3,631 under the light theme - because 743 colours were written out as
+// literals (rgba(56,189,248,.15)) instead of taken from the palette, and a
+// literal does not change when the palette does. They are relative colours now:
+// rgb(from var(--accent-rx) r g b / .15) is the same colour on the default
+// palette and the palette's own on every other. Eighteen variables were also
+// used but never defined (--accent-red, --bg-page...), so those rules quietly
+// fell back or dropped out.
+//
+// This holds the stylesheets and the markup's style attributes. A literal is
+// allowed only where it IS the palette: the palette definitions themselves, a
+// palette swatch (which shows its own palette whatever is chosen), and the
+// neutrals black and white (a shadow, a scrim, text on a solid accent).
+var colourLiteralRe = regexp.MustCompile(`#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3,4}\b|rgba?\([^()]*\)`)
+
+func colourIsNeutral(lit string) bool {
+	l := strings.ToLower(strings.ReplaceAll(lit, " ", ""))
+	for _, n := range []string{"#000", "#fff", "#000000", "#ffffff", "rgba(0,0,0", "rgb(0,0,0", "rgba(255,255,255", "rgb(255,255,255", "rgba(3,6,12"} {
+		if strings.HasPrefix(l, n) {
+			return true
+		}
+	}
+	return false
+}
+
+func TestEveryColourIsThePalettes(t *testing.T) {
+	root := repoRoot(t)
+	comment := regexp.MustCompile(`(?s)/\*.*?\*/`)
+	rule := regexp.MustCompile(`([^{}]+)\{([^{}]*)\}`)
+	css := readFiles(t, root, "web/public/", func(rel string) bool {
+		return strings.HasSuffix(rel, ".css") && !strings.Contains(rel, "/vendor/") && !strings.HasSuffix(rel, "app-fonts.css")
+	})
+	for rel, src := range css {
+		src = comment.ReplaceAllStringFunc(src, func(c string) string { return strings.Repeat("\n", strings.Count(c, "\n")) })
+		for _, m := range rule.FindAllStringSubmatchIndex(src, -1) {
+			sel := src[m[2]:m[3]]
+			if strings.Contains(sel, "data-palette") || strings.TrimSpace(sel) == ":root" ||
+				strings.HasSuffix(strings.TrimSpace(sel), `html[data-theme="light"]`) {
+				continue // the palettes themselves
+			}
+			body := src[m[4]:m[5]]
+			for _, decl := range strings.Split(body, ";") {
+				prop, val, ok := strings.Cut(decl, ":")
+				if !ok || strings.HasPrefix(strings.TrimSpace(prop), "--") {
+					continue
+				}
+				for _, lit := range colourLiteralRe.FindAllString(val, -1) {
+					if !colourIsNeutral(lit) {
+						t.Errorf("%s:%d: %s: %s is a literal colour - take it from the palette: rgb(from var(--token) r g b / alpha)",
+							rel, strings.Count(src[:m[4]], "\n")+1, strings.TrimSpace(prop), lit)
+					}
+				}
+			}
+		}
+	}
+	markup := readFiles(t, root, "web/src/", func(rel string) bool {
+		return (strings.HasSuffix(rel, ".html") || strings.HasSuffix(rel, ".ts")) && !strings.HasPrefix(rel, "web/src/gen/") &&
+			!isTestSource(rel) && !strings.HasSuffix(rel, "login.html")
+	})
+	tagRe := regexp.MustCompile(`<[a-zA-Z][^<>]*>`)
+	styleRe := regexp.MustCompile(`style=(?:"([^"]*)"|'([^']*)')`)
+	swatch := regexp.MustCompile(`class="[^"]*\bswatch-(?:preview|dot)\b`)
+	for rel, src := range markup {
+		for _, m := range tagRe.FindAllStringIndex(src, -1) {
+			tag := src[m[0]:m[1]]
+			if swatch.MatchString(tag) {
+				continue // a palette swatch shows its own palette
+			}
+			for _, s := range styleRe.FindAllStringSubmatch(tag, -1) {
+				for _, lit := range colourLiteralRe.FindAllString(s[1]+s[2], -1) {
+					if !colourIsNeutral(lit) {
+						t.Errorf("%s:%d: a style attribute carries %s - take it from the palette", rel, strings.Count(src[:m[0]], "\n")+1, lit)
+					}
+				}
+			}
+		}
+	}
+}

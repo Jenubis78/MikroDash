@@ -118,7 +118,7 @@ export function renderAgentCard(d: AgentOverview): void {
     stopTyping();
     shownKey = '';
     text.textContent = GAP + d.error;
-    text.style.color = 'var(--accent-red, #f87171)';
+    text.style.color = 'var(--accent-err)';
     if (cursor) cursor.style.display = 'none';
     writeMeta(null);
     return;

@@ -260,7 +260,7 @@ export function initWireguardPeers(socket: Socket): void {
       '<div class="apps-modal" id="wgConfModal" hidden>' +
         '<div class="apps-modal-card" style="width:min(720px,94vw)">' +
           '<h3 class="card-title" id="wgConfTitle">Client configuration</h3>' +
-          '<p style="font-size:.78rem;color:var(--accent-red,#f87171);margin:.3rem 0 .6rem">' +
+          '<p style="font-size:.78rem;color:var(--accent-err);margin:.3rem 0 .6rem">' +
             'This contains the client\'s private key. Anyone who has it can join your network.' +
           '</p>' +
           '<div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start">' +

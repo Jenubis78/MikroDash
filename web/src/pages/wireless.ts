@@ -52,10 +52,10 @@ export function parseTxRate(raw: string): string {
 }
 
 function sigQuality(dbm: number): string {
-  if (dbm >= -55) return '<span style="color:rgba(52,211,153,.9)">Excellent</span>';
-  if (dbm >= -65) return '<span style="color:rgba(56,189,248,.9)">Good</span>';
-  if (dbm >= -75) return '<span style="color:rgba(251,191,36,.9)">Fair</span>';
-  return '<span style="color:rgba(248,113,113,.9)">Poor</span>';
+  if (dbm >= -55) return '<span style="color:rgb(from var(--accent-tx) r g b / .9)">Excellent</span>';
+  if (dbm >= -65) return '<span style="color:rgb(from var(--accent-rx) r g b / .9)">Good</span>';
+  if (dbm >= -75) return '<span style="color:rgb(from var(--accent-warn) r g b / .9)">Fair</span>';
+  return '<span style="color:rgb(from var(--accent-err) r g b / .9)">Poor</span>';
 }
 
 /** A rate as a NUMBER, for sorting. Zero when it cannot be read, so an

@@ -576,8 +576,8 @@ export function scopeLabel(g: GrantView, look: PrincipalLookups): string {
 export function accessSummary(grants: GrantView[] | undefined, look: PrincipalLookups): string {
   if (!grants || !grants.length) {
     return '<span style="padding:.1rem .5rem;border-radius:20px;font-size:.7rem;'
-      + 'background:rgba(148,163,190,.1);color:var(--text-muted);'
-      + 'border:1px solid rgba(148,163,190,.15)">No access</span>';
+      + 'background:rgb(from var(--text-muted) r g b / .1);color:var(--text-muted);'
+      + 'border:1px solid rgb(from var(--text-muted) r g b / .15)">No access</span>';
   }
   return grants.map((g) =>
     '<div style="font-size:.72rem">' + esc(roleName(g, look))

@@ -151,7 +151,7 @@ export function resultText(d: { ok?: boolean; error?: string }, okText?: string)
 }
 
 export function resultColour(ok: boolean): string {
-  return ok ? 'var(--accent-green, #4ade80)' : 'var(--accent-red, #f87171)';
+  return ok ? 'var(--accent-ok)' : 'var(--accent-err)';
 }
 
 function wire(spec: TestChannelSpec): void {

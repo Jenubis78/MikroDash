@@ -252,12 +252,12 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
       const typeLabel: Record<string, string> = { upstream: 'Upstream', ix: 'IX', private: 'Private' };
       const ptype = p.peerType || 'upstream';
       const typeBadge = '<span style="font-size:.6rem;font-family:var(--font-ui);padding:.1rem .35rem;border-radius:3px;' +
-        'background:' + (typeColors[ptype] || 'rgba(99,130,190,.1)') + ';color:' + (typeText[ptype] || 'var(--text-muted)') + '">' +
+        'background:' + (typeColors[ptype] || 'rgb(from var(--border) r g b / .1)') + ';color:' + (typeText[ptype] || 'var(--text-muted)') + '">' +
         (typeLabel[ptype] || esc(ptype)) + '</span>';
       const nameCell = '<div class="rt-peer-name">' + esc(p.name) + ' ' + typeBadge + '</div>' +
         (p.description ? '<div class="rt-peer-desc">' + esc(p.description) + '</div>' : '');
       const errCell = p.lastError
-        ? '<span title="' + esc(p.lastError) + '" style="font-size:.65rem;color:rgba(251,113,133,.85);cursor:help;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">⚠ ' + esc(p.lastError) + '</span>'
+        ? '<span title="' + esc(p.lastError) + '" style="font-size:.65rem;color:rgb(from var(--accent-err) r g b / .85);cursor:help;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">⚠ ' + esc(p.lastError) + '</span>'
         : '<span style="color:var(--text-muted);font-size:.65rem">-</span>';
       return '<tr>' +
         '<td>' + nameCell + '</td>' +
@@ -355,14 +355,14 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
     }
     routesTbody.innerHTML = routes.map((r) => {
       const activeCell = r.active
-        ? '<span style="color:rgba(52,211,153,.9);font-size:.7rem">&#10003; Active</span>'
+        ? '<span style="color:rgb(from var(--accent-tx) r g b / .9);font-size:.7rem">&#10003; Active</span>'
         : '<span style="color:var(--text-muted);font-size:.7rem">-</span>';
       const typeCell = r.type === 'static'
-        ? '<span style="font-size:.65rem;padding:.1rem .35rem;border-radius:3px;background:rgba(56,189,248,.1);color:rgba(56,189,248,.8)">Static</span>'
-        : '<span style="font-size:.65rem;padding:.1rem .35rem;border-radius:3px;background:rgba(251,191,36,.1);color:rgba(251,191,36,.8)">' +
+        ? '<span style="font-size:.65rem;padding:.1rem .35rem;border-radius:3px;background:rgb(from var(--accent-rx) r g b / .1);color:rgb(from var(--accent-rx) r g b / .8)">Static</span>'
+        : '<span style="font-size:.65rem;padding:.1rem .35rem;border-radius:3px;background:rgb(from var(--accent-warn) r g b / .1);color:rgb(from var(--accent-warn) r g b / .8)">' +
           (r.protocol !== r.type ? esc(r.protocol.toUpperCase()) : 'Dynamic') + '</span>';
       const familyBadge = r.family === 'ipv6'
-        ? '<span style="font-size:.6rem;padding:.1rem .3rem;border-radius:3px;background:rgba(167,139,250,.12);color:rgba(167,139,250,.8);margin-right:.3rem">IPv6</span>'
+        ? '<span style="font-size:.6rem;padding:.1rem .3rem;border-radius:3px;background:rgb(from var(--accent-alt) r g b / .12);color:rgb(from var(--accent-alt) r g b / .8);margin-right:.3rem">IPv6</span>'
         : '';
       // The family picks the RouterOS menu, so a v6 row overrides the table's
       // default resource on itself.
