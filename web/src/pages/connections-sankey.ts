@@ -199,13 +199,25 @@ export function renderSankey(
     });
   });
 
-  // Links first, so the nodes sit on top of them.
+  // Links first, so the nodes sit on top of them. Each ribbon fades from its
+  // host's colour to its service's, so both ends of a flow can be read off the
+  // line and not only off the bars. Gradient ids carry the SVG's own id: the
+  // page and the Dashboard card draw this diagram side by side.
+  const defs = el('defs', {});
   const linkG = el('g', {});
-  links.forEach((lk) => {
-    // Colour in the style: a fill attribute cannot hold a palette colour.
+  const gid = (svg.id || 'sk') + '-lg';
+  links.forEach((lk, i) => {
+    const grad = el('linearGradient', {
+      id: gid + i, gradientUnits: 'userSpaceOnUse',
+      x1: lk.src.x + NODE_W, y1: 0, x2: lk.dst.x, y2: 0,
+    });
+    // Colour in the style: an attribute cannot hold a palette colour.
+    grad.appendChild(el('stop', { offset: 0, style: 'stop-color:' + nodeColour(lk.src, srcNodes.indexOf(lk.src)) }));
+    grad.appendChild(el('stop', { offset: 1, style: 'stop-color:' + catColour(lk.cat) }));
+    defs.appendChild(grad);
     const p = el('path', {
       d: linkPath(lk.src.x + NODE_W, lk.sy, lk.dst.x, lk.dy, lk.sw, lk.dw),
-      style: 'fill:' + catColour(lk.cat), class: 'sk-link',
+      fill: 'url(#' + gid + i + ')', class: 'sk-link',
     });
     const title = document.createElementNS(NS, 'title');
     // The PAIR, not a count: the ribbon's width is an estimate, and quoting a
@@ -214,6 +226,7 @@ export function renderSankey(
     p.appendChild(title);
     linkG.appendChild(p);
   });
+  svg.appendChild(defs);
   svg.appendChild(linkG);
 
   const drawNode = (n: Node, i: number, labelLeft: boolean): void => {
