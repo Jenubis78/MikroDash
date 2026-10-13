@@ -96,7 +96,6 @@
     #navRouterWrap{display:none;align-items:center;gap:.35rem;flex:1;min-width:0;overflow:hidden}
     #navRouterWrap .rtr-status-dot{flex-shrink:0}
     #navRouterSelect{min-width:0}
-    #navRouterSelect option{background:var(--bg-deep);color:var(--text-main)}
     /* Scrolling exists exactly when the user can see what they are scrolling: a
        scrollbar inside the 52px rail is unusable and steals a chunk of it. */
     .nav-items{flex:1;padding:8px 0;overflow:hidden;display:flex;flex-direction:column;overscroll-behavior:contain}
@@ -267,6 +266,12 @@
     /* A select drawn by the browser is a few pixels off the inputs beside it and
        insets its text differently, so it is drawn here: the native arrow goes,
        and a chevron in the muted text colour takes its place. */
+    /* A dropdown takes the colour of the card or page it sits on, not the page's
+       near-black: the field is transparent, and its open list - which the
+       browser draws as a separate surface and cannot see through - is the card
+       colour made opaque. */
+    select.sform-input{background-color:transparent}
+    :where(select) :is(option,optgroup){background-color:rgb(from var(--bg-card) r g b / 1);color:var(--text-main)}
     select.sform-input{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:2rem;
       background-image:linear-gradient(45deg,transparent 50%,var(--text-muted) 50%),linear-gradient(135deg,var(--text-muted) 50%,transparent 50%);
       background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;background-size:5px 5px;background-repeat:no-repeat}
