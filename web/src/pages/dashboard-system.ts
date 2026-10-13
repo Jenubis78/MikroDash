@@ -81,11 +81,6 @@ export function flushSysUpdate(): void {
   const ut = parseUptime(d.uptimeRaw);
   const uptimeDisplay = el('uptimeDisplay');
   if (uptimeDisplay) uptimeDisplay.textContent = 'Uptime: ' + ut;
-  const uptimeChip = el('uptimeChip');
-  if (uptimeChip) {
-    uptimeChip.textContent = ut;
-    uptimeChip.style.display = '';
-  }
 
   // Storage only when the router HAS storage. `totalHdd > 0` and not merely
   // truthy: a router reporting 0 draws two gauges, not three with an empty one.

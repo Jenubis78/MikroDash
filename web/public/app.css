@@ -168,7 +168,6 @@
     #pageTitleIcon svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
     #pageTitle{font-family:var(--font-ui);font-weight:600;font-size:.85rem;color:var(--text-muted);letter-spacing:.01em}
     .topbar-right{margin-left:auto;display:flex;align-items:center;gap:.65rem}
-    #uptimeChip{display:none}
     #routerTag{font-family:var(--font-mono);font-size:.68rem;color:var(--text-muted)}
     /* kbd hint */
     #kbdHint{position:fixed;bottom:.85rem;right:.85rem;z-index:400;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.55rem .8rem;font-family:var(--font-mono);font-size:.66rem;color:var(--text-muted);opacity:0;pointer-events:none;transition:opacity .25s}
@@ -1493,7 +1492,6 @@
       #main{margin-left:0 !important}
       #topbar{padding-left:52px}
       .topbar-right{gap:.45rem}
-      #uptimeChip{display:none !important}
       .topbar-mobile-hide{display:none !important}
       #navRouterWrap{display:flex}
       .iface-grid{--if-w:160px}
@@ -2471,7 +2469,9 @@
     /* ── The Security Scan page (security-scan.ts) ───────────────────────────
        A grid of cards with the score first, so it sits top left. Colours are
        tokens; the severity pills are the one .pill, toned by sevPill in
-       security-scan-cards.ts. */
+       security-scan-cards.ts. High is medium's amber, a step heavier in fill
+       and border, so the two read apart. */
+    .pill.sec-sev-high{background:rgb(from var(--pill) r g b / .12);border-color:rgb(from var(--pill) r g b / .3)}
     
     /* dense: the wide cards fill the gaps a two-row score card leaves. */
     .sec-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-flow:row dense;gap:.75rem}

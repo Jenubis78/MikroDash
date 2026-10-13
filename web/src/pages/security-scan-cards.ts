@@ -33,12 +33,12 @@ export function scoreLabel(r: Report): string {
   return GRADE_WORD[scoreGrade(r.score)] + ' · ' + (issues === 1 ? '1 issue' : issues + ' issues');
 }
 
-/** A severity as a pill, by tone: critical red, high and medium amber, low
- *  blue, anything else muted. */
+/** A severity as a pill, by tone: critical red, high and medium amber (high a
+ *  step heavier, `.pill.sec-sev-high` in app.css), low blue, anything else muted. */
 export function sevPill(sev: string): string {
   const tone = sev === 'critical' ? 'err' : sev === 'high' || sev === 'medium' ? 'warn'
     : sev === 'low' ? 'rx' : 'muted';
-  return pill(sev, tone);
+  return sev === 'high' ? '<span class="pill pill-warn sec-sev-high">high</span>' : pill(sev, tone);
 }
 
 /** The page a finding is fixed on, as an Open link; nothing when it has none. */
