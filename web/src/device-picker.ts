@@ -149,14 +149,17 @@ export function pills(cfg: PickerConfig, st: Selection): { kind: 'site' | 'item'
   return out.concat(ids.map((id) => ({ kind: 'item' as const, id })));
 }
 
+/** A picked device's chip tone, by its state. A wait is the default blue. */
+const DP_TONE: Record<NonNullable<PillInfo['kind']>, string> = { ok: 'chip-ok', warn: 'chip-warn', bad: 'chip-err', wait: '' };
+
 function pillHtml(cfg: PickerConfig, p: { kind: 'site' | 'item'; id: string }, at: number,
   byId: Map<string, PickItem>, siteNames: Record<string, string>, covered: Set<string>): string {
   if (p.kind === 'site') {
     const n = cfg.items().filter((it) => (it.siteIds ?? []).includes(p.id)).length;
     const name = siteNames[p.id] ?? p.id;
-    return `<span class="dp-pill dp-site" title="${esc('Every device in ' + name + ', now and as the site changes')}">`
-      + `<span class="dp-pill-kind">Site</span>${esc(name)}<span class="dp-pill-n">${n}</span>`
-      + `<button type="button" class="dp-x" data-dp-rmsite="${esc(p.id)}" aria-label="${esc('Remove site ' + name)}">&times;</button></span>`;
+    return `<span class="chip is-on chip-alt" title="${esc('Every device in ' + name + ', now and as the site changes')}">`
+      + `<span class="dp-kind">Site</span>${esc(name)}<span class="chip-n">${n}</span>`
+      + `<button type="button" class="chip-x" data-dp-rmsite="${esc(p.id)}" aria-label="${esc('Remove site ' + name)}">&times;</button></span>`;
   }
   const it = byId.get(p.id);
   const name = it ? it.label : p.id;
@@ -164,14 +167,14 @@ function pillHtml(cfg: PickerConfig, p: { kind: 'site' | 'item'; id: string }, a
   const viaSite = covered.has(p.id) && !cfg.fixed?.().includes(p.id);
   const locked = inf.locked || viaSite || !!cfg.fixed?.().includes(p.id);
   const order = cfg.ordered
-    ? (at === 0 ? '<span class="dp-pill-kind dp-canary">Canary</span>' : `<span class="dp-pill-n">#${at + 1}</span>`)
+    ? (at === 0 ? '<span class="dp-kind dp-canary">Canary</span>' : `<span class="chip-n">#${at + 1}</span>`)
     : '';
   const title = [it?.host, inf.title, viaSite ? 'In scope through a site' : ''].filter(Boolean).join(' - ');
-  return `<span class="dp-pill${inf.kind ? ' dp-' + inf.kind : ''}"${title ? ` title="${esc(title)}"` : ''}>`
+  return `<span class="chip is-on${inf.kind && DP_TONE[inf.kind] ? ' ' + DP_TONE[inf.kind] : ''}"${title ? ` title="${esc(title)}"` : ''}>`
     + order + esc(name)
-    + (inf.text ? `<span class="dp-pill-state">${esc(inf.text)}</span>` : '')
+    + (inf.text ? `<span class="dp-state">${esc(inf.text)}</span>` : '')
     + (inf.action ?? '')
-    + (locked ? '' : `<button type="button" class="dp-x" data-dp-rm="${esc(p.id)}" aria-label="${esc('Remove ' + name)}">&times;</button>`)
+    + (locked ? '' : `<button type="button" class="chip-x" data-dp-rm="${esc(p.id)}" aria-label="${esc('Remove ' + name)}">&times;</button>`)
     + '</span>';
 }
 
@@ -185,7 +188,7 @@ export function resultsHtml(cfg: PickerConfig, st: PickerState): string {
   for (const s of r.sites) {
     const n = cfg.items().filter((it) => (it.siteIds ?? []).includes(s.id)).length;
     rows.push(`<div class="dp-opt${i === st.active ? ' is-active' : ''}" role="option" aria-selected="${i === st.active}" data-dp-addsite="${esc(s.id)}">`
-      + `<span class="dp-pill-kind">Site</span><span class="dp-opt-name">${esc(s.name)}</span>`
+      + `<span class="dp-kind">Site</span><span class="dp-opt-name">${esc(s.name)}</span>`
       + `<span class="dp-opt-meta">${n} device${n === 1 ? '' : 's'}${cfg.siteMode === 'shortcut' ? ', added now' : ''}</span></div>`);
     i++;
   }

@@ -335,25 +335,6 @@ html[data-theme="light"] #dashAddPanel {
   flex-wrap: wrap;
   gap: 0.3rem;
 }
-.dash-add-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.28rem;
-  padding: 0.22rem 0.5rem;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: rgb(from var(--border) r g b / .07);
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  cursor: pointer;
-  transition: color 0.12s, background 0.12s, border-color 0.12s;
-}
-.dash-add-chip:hover {
-  color: var(--accent-rx);
-  background: rgb(from var(--accent-rx) r g b / .1);
-  border-color: rgb(from var(--accent-rx) r g b / .25);
-}
 .dash-add-empty {
   font-family: var(--font-mono);
   font-size: 0.72rem;

@@ -1107,9 +1107,8 @@
        stay reachable, and this is also where somebody discovers they need to set
        a town. */
     .rtrmap-tray{border-top:1px solid var(--border);padding:.5rem .6rem;display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+    .rtrmap-tray .chip .rtl-dot{flex-shrink:0}
     .rtrmap-tray .rmt-label{font-size:.68rem;color:var(--text-muted);margin-right:.2rem}
-    .rtrmap-tray .rmt-pill{display:inline-flex;align-items:center;gap:.3rem;padding:.15rem .45rem;border:1px solid var(--border);border-radius:999px;font-size:.7rem;cursor:pointer}
-    .rtrmap-tray .rmt-pill:hover{background:rgb(from var(--accent-rx) r g b / .1)}
 
     /* ── City/town picker, shared by the router modal and the site form ────── */
     .cpick{position:relative}
@@ -1239,17 +1238,9 @@
     /* Site chips and headings (#144). The strip wraps: 15 sites do not fit on
        one line of a 330px popover, and a horizontal scroller hides the chips
        that do not fit behind a gesture nobody looks for. */
+    .rtr-dd-chips .chip{overflow:hidden;text-overflow:ellipsis}
     .rtr-dd-chips{display:flex;flex-wrap:wrap;gap:.25rem;padding:.4rem .5rem;
       border-bottom:1px solid var(--border);max-height:104px;overflow-y:auto}
-    .rtr-dd-chip{display:inline-flex;align-items:center;gap:.28rem;cursor:pointer;
-      background:var(--bg-deep);border:1px solid var(--border);border-radius:999px;
-      color:var(--text-muted);font-family:var(--font-ui);font-size:.64rem;
-      padding:.18rem .48rem;max-width:100%;white-space:nowrap;overflow:hidden;
-      text-overflow:ellipsis;transition:color .15s,border-color .15s,background .15s}
-    .rtr-dd-chip:hover{color:var(--text-main);border-color:rgb(from var(--accent-tx) r g b / .4)}
-    .rtr-dd-chip.on{background:rgb(from var(--accent-tx) r g b / .15);border-color:rgb(from var(--accent-tx) r g b / .5);
-      color:var(--text-main)}
-    .rtr-dd-chip-n{font-family:var(--font-mono);font-size:.58rem;opacity:.7}
     /* STICKY, so the site a row belongs to stays readable while a long list
        scrolls past. `.rtr-dd-list` is the scroll container. */
     .rtr-dd-head{position:sticky;top:0;z-index:1;display:flex;align-items:center;
@@ -1281,6 +1272,34 @@
     /* Muted is the palette's own muted text, whose alpha is part of the colour. */
     .pill-muted{color:var(--text-muted);background:rgb(from var(--border) r g b / .07);border-color:var(--border)}
     .pill-dot::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+    /* ── CHIPS: one clickable chip ──────────────────────────────────────────
+       A filter, a toggle, a picked item: anything clicked to turn on or off. The
+       label pill's 4px corner, a step larger and in the UI face so it reads as
+       a control, with one behaviour: off is an outline in muted text, hover
+       brightens it, and .is-on fills it with the tone's tint. The tone is
+       blue unless a palette role says otherwise (.chip-ok, .chip-err...), and a
+       toned chip shows its colour even when off - the Logs levels read by it.
+       .chip-n is a count inside, .chip-x a remove button. internal/verify
+       holds every chip to this. */
+    .chip{--chip:var(--accent-rx);display:inline-flex;align-items:center;gap:.3rem;max-width:100%;vertical-align:middle;
+      font-family:var(--font-ui);font-size:.7rem;font-weight:400;line-height:1.4;
+      padding:.2rem .55rem;border-radius:4px;border:1px solid var(--border);background:transparent;
+      color:var(--text-muted);cursor:pointer;white-space:nowrap;user-select:none;
+      transition:color .15s,border-color .15s,background .15s}
+    .chip:hover{color:var(--text-main);border-color:rgb(from var(--chip) r g b / .45)}
+    .chip-rx{--chip:var(--accent-rx)}
+    .chip-ok{--chip:var(--accent-ok)}
+    .chip-warn{--chip:var(--accent-warn)}
+    .chip-err{--chip:var(--accent-err)}
+    .chip-alt{--chip:var(--accent-alt)}
+    .chip-muted{--chip:var(--text-muted)}
+    .chip:is(.chip-rx,.chip-ok,.chip-warn,.chip-err,.chip-alt){color:rgb(from var(--chip) r g b / .9)}
+    .chip.is-on{color:rgb(from var(--chip) r g b / .95);background:rgb(from var(--chip) r g b / .12);border-color:rgb(from var(--chip) r g b / .5)}
+    .chip-muted.is-on{color:var(--text-main);background:rgb(from var(--border) r g b / .12);border-color:var(--border)}
+    .chip-n{font-family:var(--font-mono);font-size:.64rem;opacity:.7}
+    .chip-x{border:0;background:none;color:inherit;opacity:.65;cursor:pointer;font-size:.9rem;line-height:1;
+      width:1.1rem;height:1.1rem;border-radius:50%;padding:0;margin-right:-.3rem}
+    .chip-x:hover,.chip-x:focus-visible{opacity:1;background:rgb(from var(--chip) r g b / .18)}
     /* ── TABLES: one density ────────────────────────────────────────────────
        Every table, Tabler's .table or a page's own, has one cell padding, one
        row height and one header. A row is --tbl-row-h tall whatever it holds -
@@ -1410,17 +1429,6 @@
     /* dhcp */
 
     /* logs */
-    .log-count-badge{font-family:var(--font-mono);font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:12px;cursor:pointer;border:1px solid transparent;transition:opacity .15s,transform .1s;user-select:none;white-space:nowrap}
-    .log-count-badge:hover{opacity:.8;transform:scale(1.04)}
-    .log-count-badge.active{box-shadow:0 0 0 2px currentColor}
-    .log-count-error  {background:rgb(from var(--accent-err) r g b / .25);color:var(--accent-err);border-color:rgb(from var(--accent-err) r g b / .4)}
-    .log-count-warning{background:rgb(from var(--accent-warn) r g b / .22);color:var(--accent-warn);border-color:rgb(from var(--accent-warn) r g b / .38)}
-    .log-count-info   {background:rgb(from var(--accent-rx) r g b / .2);color:var(--accent-rx);border-color:rgb(from var(--accent-rx) r g b / .35)}
-    .log-count-debug  {background:rgb(from var(--text-muted) r g b / .18);color:rgb(from var(--text-muted) r g b / .85);border-color:rgb(from var(--text-muted) r g b / .32)}
-    html[data-theme="light"] .log-count-error  {background:rgb(from var(--accent-err) r g b / .12);color:var(--accent-err);border-color:rgb(from var(--accent-err) r g b / .3)}
-    html[data-theme="light"] .log-count-warning{background:rgb(from var(--accent-warn) r g b / .12);color:var(--accent-warn);border-color:rgb(from var(--accent-warn) r g b / .3)}
-    html[data-theme="light"] .log-count-info   {background:rgb(from var(--accent-rx) r g b / .12);color:var(--accent-rx);border-color:rgb(from var(--accent-rx) r g b / .28)}
-    html[data-theme="light"] .log-count-debug  {background:rgb(from var(--border) r g b / .12);color:rgb(from var(--border) r g b / 1);border-color:rgb(from var(--border) r g b / .28)}
     #logs{background:rgb(from var(--bg-deep) r g b / .85);font-family:var(--font-mono);font-size:11.5px;height:calc(100vh - 160px);overflow-y:auto;white-space:pre-wrap;word-break:break-all;color:rgb(from var(--text-main) r g b / 1);padding:10px 12px;border-radius:6px;line-height:1.6}
     html[data-theme="light"] #logs{background:rgb(from var(--bg-card) r g b / .9);color:rgb(from var(--text-main) r g b / 1)}
     #logs::-webkit-scrollbar{width:4px} #logs::-webkit-scrollbar-thumb{background:rgb(from var(--border) r g b / .2);border-radius:2px}
@@ -1915,10 +1923,6 @@
     /* A linked site, shown as a removable chip: a site is a STANDING RULE and
        the router rows above it are what that rule currently means, so the two
        are listed separately rather than mixed. */
-    .cp-sites{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0 .2rem}
-    .cp-site{display:inline-flex;align-items:center;gap:.35rem;font-size:.68rem;font-family:var(--font-mono);padding:.2rem .3rem .2rem .5rem;border-radius:4px;background:rgb(from var(--accent-alt) r g b / .1);color:var(--accent-alt);border:1px solid rgb(from var(--accent-alt) r g b / .25)}
-    .cp-site-x{background:none;border:none;color:inherit;cursor:pointer;padding:0 .15rem;line-height:1;opacity:.65}
-    .cp-site-x:hover{opacity:1}
     /* Delete removes accounts from routers, so it is coloured like the other
        destructive actions rather than like Edit. */
     /* ── A NOTE THAT BELONGS TO THE FIELD ABOVE IT ────────────────────────
@@ -2576,8 +2580,6 @@
 
     /* Findings. */
     .sec-filters{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.6rem}
-    .sec-chip{font-size:.72rem;padding:.2rem .65rem;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer}
-    .sec-chip.active{border-color:var(--accent-rx);color:var(--accent-rx);background:rgb(from var(--accent-rx) r g b / .08)}
     .sec-table td{vertical-align:top}
     .sec-finding-title{color:var(--text-main);font-weight:600;font-size:.8rem}
     .sec-finding-detail{font-family:var(--font-mono);font-size:.7rem;color:var(--accent-warn);margin-top:.1rem}
@@ -2619,11 +2621,6 @@
     .apps-seg button{background:transparent;border:0;color:var(--text-muted);font-size:.76rem;padding:.42rem .8rem;cursor:pointer}
     .apps-seg button.active{background:rgb(from var(--accent-rx) r g b / .14);color:var(--accent-rx)}
     .apps-cats{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.9rem}
-    .apps-chip{font-size:.72rem;padding:.22rem .7rem;border-radius:999px;border:1px solid var(--border);background:transparent;
-      color:var(--text-muted);cursor:pointer;transition:border-color .2s,color .2s,background .2s}
-    .apps-chip span{opacity:.6;margin-left:.15rem;font-family:var(--font-mono)}
-    .apps-chip:hover{color:var(--text-main)}
-    .apps-chip.active{border-color:var(--accent-rx);color:var(--accent-rx);background:rgb(from var(--accent-rx) r g b / .08)}
 
     .apps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:.8rem}
     .apps-card{position:relative;display:flex;flex-direction:column;gap:.5rem;padding:.95rem;border-radius:10px;border:1px solid var(--border);
@@ -3508,7 +3505,7 @@
   border-radius: 6px; cursor: pointer; font-size: .78rem; }
 .dp-opt:hover, .dp-opt.is-active { background: color-mix(in srgb, var(--accent-rx) 12%, transparent); }
 .dp-opt-name { color: var(--text-main); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; grid-column: 1 / 3; }
-.dp-opt .dp-pill-kind + .dp-opt-name { grid-column: 2; }
+.dp-opt .dp-kind + .dp-opt-name { grid-column: 2; }
 .dp-opt-meta { color: var(--text-muted); font-family: var(--font-mono); font-size: .66rem; text-align: right; white-space: nowrap; }
 .dp-opt-detail { grid-column: 1 / -1; color: var(--text-muted); font-size: .66rem; }
 .dp-none { padding: .45rem .55rem; color: var(--text-muted); font-size: .72rem; }
@@ -3516,22 +3513,11 @@
   background: none; color: var(--accent-rx); font-size: .74rem; cursor: pointer; }
 .dp-all:hover { background: color-mix(in srgb, var(--accent-rx) 10%, transparent); }
 .dp-pills { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
-.dp-pill { display: inline-flex; align-items: center; gap: .35rem; max-width: 100%; padding: .2rem .25rem .2rem .55rem;
-  border-radius: 4px; font-size: .74rem; color: var(--text-main);
-  background: color-mix(in srgb, var(--accent-rx) 10%, transparent); border: 1px solid color-mix(in srgb, var(--accent-rx) 32%, var(--border)); }
-.dp-pill.dp-ok { border-color: color-mix(in srgb, var(--accent-ok) 45%, var(--border)); background: color-mix(in srgb, var(--accent-ok) 9%, transparent); }
-.dp-pill.dp-warn { border-color: color-mix(in srgb, var(--accent-warn) 55%, var(--border)); background: color-mix(in srgb, var(--accent-warn) 11%, transparent); }
-.dp-pill.dp-bad { border-color: color-mix(in srgb, var(--accent-err) 55%, var(--border)); background: color-mix(in srgb, var(--accent-err) 11%, transparent); }
-.dp-pill.dp-site { background: color-mix(in srgb, var(--accent-alt) 11%, transparent); border-color: color-mix(in srgb, var(--accent-alt) 38%, var(--border)); }
-.dp-pill-kind { font-size: .58rem; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); font-weight: 700; }
+/* A picked device is a chip, on, toned by its state; the kind and state words inside it. */
+.dp-pills .chip { cursor: default; }
+.dp-kind { font-size: .58rem; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); font-weight: 700; }
+.dp-state { font-size: .62rem; font-weight: 600; text-transform: lowercase; }
 .dp-canary { color: var(--accent-alt); }
-.dp-pill-n { font-family: var(--font-mono); font-size: .64rem; color: var(--text-muted); }
-.dp-pill-state { font-size: .62rem; font-weight: 600; text-transform: lowercase; color: var(--text-muted); }
-.dp-pill.dp-warn .dp-pill-state { color: var(--accent-warn); }
-.dp-pill.dp-bad .dp-pill-state { color: var(--accent-err); }
-.dp-x { border: 0; background: none; color: var(--text-muted); cursor: pointer; font-size: .9rem; line-height: 1;
-  width: 1.25rem; height: 1.25rem; border-radius: 50%; padding: 0; }
-.dp-x:hover, .dp-x:focus-visible { color: var(--text-main); background: color-mix(in srgb, var(--text-muted) 22%, transparent); }
 .dp-act { border: 1px solid var(--border); background: none; color: var(--accent-rx); font-size: .64rem; border-radius: 6px;
   padding: .05rem .45rem; cursor: pointer; }
 .dp-more, .dp-clear { border: 0; background: none; color: var(--accent-rx); font-size: .72rem; cursor: pointer; padding: .2rem .35rem; }

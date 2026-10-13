@@ -60,7 +60,7 @@ const cfg = (extra) => Object.assign({ items: () => fleet, sites: () => sites },
   assert.deepStrictEqual(list.map((p) => p.kind + ':' + p.id), ['site:home', 'item:r4'],
     'a rule site listed its devices, or hid the one that needs attention');
   const html = P.pickedHtml(c, st);
-  assert.match(html, />Home<span class="dp-pill-n">15</, 'the site pill does not count its devices');
+  assert.match(html, />Home<span class="chip-n">15</, 'the site pill does not count its devices');
   assert.ok(!/data-dp-rm="r4"/.test(html), 'a site-covered device can be removed on its own');
   say('ok  rule sites: one pill with a count; only a device needing attention shows, locked');
 }

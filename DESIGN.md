@@ -393,9 +393,18 @@ where it is limited to.
   - Generated pages pick a pill by **kind** (`state`, `action`, `good`, `warn`, `bad`, `info`),
     never by colour.
   - **Not label pills, on purpose:** the count pill (`.card-badge`, below), the Wi-Fi SSID pill
-    (`.wn-ssid-pill`, a step larger because it is the network's name), and clickable chips (filters,
-    picked devices), which are controls. `internal/verify` (`TestEveryLabelIsTheOnePill`) records
-    each in a ledger; any other class named like a pill fails, and so does Tabler's `.badge`.
+    (`.wn-ssid-pill`, a step larger because it is the network's name), and the clickable chip
+    (below), which is a control. `internal/verify` (`TestEveryLabelIsTheOnePill`) records each
+    other component in a ledger; any other class named like a pill or a chip fails, and so does
+    Tabler's `.badge`.
+- **Chips: one chip.** Anything clicked to turn on or off - a filter, a toolbar toggle, a site in the
+  router dropdown, a picked device - is `.chip`.
+  - Off it is an outline in muted text; hover brightens it; `.is-on` fills it with its tone's tint.
+    The on state is always `.is-on`, never `.active` or `.on`.
+  - Blue unless a palette role is named: `chip-rx`, `chip-ok`, `chip-warn`, `chip-err`, `chip-alt`,
+    `chip-muted`. A toned chip shows its colour even off, which is how the Logs levels read.
+  - The UI face at .7rem with 4px corners: the label pill's shape, a step larger, so it reads as a
+    control. `.chip-n` is a count inside it, `.chip-x` a remove button on a picked chip.
 - **Tables**: use `renderSortHeader` / `sortRows`.
   - **One density.** Every table, Tabler's `.table` or a page's own class, takes its cell padding
     (`--tbl-pad-y` / `--tbl-pad-x`), row height (`--tbl-row-h`, about 34px) and header (.66rem UI,

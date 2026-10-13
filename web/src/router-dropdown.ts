@@ -303,12 +303,12 @@ export function dropdownHtml(
  */
 export function chipsHtml(chips: readonly SiteChip[], selected: string): string {
   if (chips.length < 2) return '';
-  let html = '<button type="button" class="rtr-dd-chip' + (selected ? '' : ' on')
+  let html = '<button type="button" class="chip' + (selected ? '' : ' is-on')
     + '" data-site="">All</button>';
   for (const c of chips) {
-    html += '<button type="button" class="rtr-dd-chip' + (c.id === selected ? ' on' : '')
+    html += '<button type="button" class="chip' + (c.id === selected ? ' is-on' : '')
       + '" data-site="' + esc(c.id) + '">' + esc(c.name)
-      + '<span class="rtr-dd-chip-n">' + c.count + '</span></button>';
+      + '<span class="chip-n">' + c.count + '</span></button>';
   }
   return html;
 }

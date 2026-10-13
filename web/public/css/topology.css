@@ -17,13 +17,6 @@
 @media(max-width:700px){.topo-stats{grid-template-columns:repeat(2,1fr)}}
 
 /* ── Toolbar extras (reuses .rt-toolbar and .sform-input.sform-sm) ───────── */
-.topo-chip{font-family:var(--font-ui);font-size:.7rem;color:var(--text-muted);
-  background:var(--bg-card);border:1px solid var(--border);border-radius:6px;
-  padding:.26rem .6rem;cursor:pointer;transition:color .15s,border-color .15s,background .15s;
-  white-space:nowrap}
-.topo-chip:hover{color:var(--accent-rx);border-color:var(--accent-rx)}
-.topo-chip.is-on{color:var(--accent-rx);border-color:var(--accent-rx);
-  background:color-mix(in srgb,var(--accent-rx) 12%,transparent)}
 .topo-tools{margin-left:auto;display:flex;gap:.3rem;flex-shrink:0}
 
 /* ── Stage ───────────────────────────────────────────────────────────────── */

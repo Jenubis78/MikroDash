@@ -189,15 +189,15 @@ const LIVE = FLEET.filter((r) => !r.disabled);
   const two: Chip[] = [{ id: 'ber', name: 'Berlin DC', count: 4 },
     { id: 'fra', name: 'Frankfurt', count: 2 }];
   const strip = chipsHtml(two, 'fra');
-  assert.strictEqual((strip.match(/rtr-dd-chip on/g) || []).length, 1,
+  assert.strictEqual((strip.match(/chip is-on/g) || []).length, 1,
     'exactly one chip is selected');
-  assert.ok(/class="rtr-dd-chip on" data-site="fra"/.test(strip),
+  assert.ok(/class="chip is-on" data-site="fra"/.test(strip),
     'the selected chip is the one that was chosen');
   assert.strictEqual([...strip.matchAll(/data-site="/g)].length, 3, 'All plus the two sites');
   assert.ok(strip.indexOf('data-site=""') < strip.indexOf('data-site="ber"'),
     'All is the first chip');
 
-  assert.ok(/class="rtr-dd-chip on" data-site=""/.test(chipsHtml(two, '')),
+  assert.ok(/class="chip is-on" data-site=""/.test(chipsHtml(two, '')),
     'with no site chosen it is All that is marked, not nothing');
 }
 

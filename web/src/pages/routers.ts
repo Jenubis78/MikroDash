@@ -549,7 +549,7 @@ export function renderTray(unlocated: RouterStatsRow[]): void {
   tray.hidden = false;
   tray.innerHTML = '<span class="rmt-label">No location ('
     + unlocated.length + '):</span>'
-    + unlocated.map((r) => '<span class="rmt-pill" data-device="' + esc(r.id) + '" title="'
+    + unlocated.map((r) => '<span class="chip" data-device="' + esc(r.id) + '" title="'
         + esc(r.host) + '"><span class="rtl-dot" style="background:'
         + (r.online ? 'var(--accent-ok)' : 'var(--accent-err)')
         + '"></span>' + esc(r.label) + '</span>').join('')

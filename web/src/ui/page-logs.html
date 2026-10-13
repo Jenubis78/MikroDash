@@ -4,10 +4,10 @@
         <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <h3 class="card-title">Router Logs</h3>
-            <span class="log-count-badge log-count-error" id="logCountError" title="Filter errors" data-sev="error">0 errors</span>
-            <span class="log-count-badge log-count-warning" id="logCountWarning" title="Filter warnings" data-sev="warning">0 warnings</span>
-            <span class="log-count-badge log-count-info" id="logCountInfo" title="Filter info" data-sev="info">0 info</span>
-            <span class="log-count-badge log-count-debug" id="logCountDebug" title="Filter debug" data-sev="debug">0 debug</span>
+            <span class="chip chip-err" id="logCountError" title="Filter errors" data-sev="error">0 errors</span>
+            <span class="chip chip-warn" id="logCountWarning" title="Filter warnings" data-sev="warning">0 warnings</span>
+            <span class="chip chip-rx" id="logCountInfo" title="Filter info" data-sev="info">0 info</span>
+            <span class="chip chip-muted" id="logCountDebug" title="Filter debug" data-sev="debug">0 debug</span>
           </div>
           <!-- flex-NOwrap, and the reason is worth keeping. These four controls
                need 415px and this group was being given 414 - one pixel short,

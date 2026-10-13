@@ -17,35 +17,35 @@
                watching want different pointer behaviour on the same canvas: in
                View a drag pans, in Edit a drag on an object moves it. -->
           <span class="topo-tools" role="group" aria-label="Mode">
-            <button class="topo-chip is-on" id="wmModeView" type="button">View</button>
-            <button class="topo-chip" id="wmModeEdit" type="button">Edit</button>
+            <button class="chip is-on" id="wmModeView" type="button">View</button>
+            <button class="chip" id="wmModeEdit" type="button">Edit</button>
           </span>
 
           <!-- Where a client is drawn. See the header of pages/wifi-map.ts for
                why neither of these is a position. -->
           <span class="topo-tools" id="wmClientModes" role="group" aria-label="Client placement">
-            <button class="topo-chip is-on" id="wmClientOrbit" type="button"
+            <button class="chip is-on" id="wmClientOrbit" type="button"
                     title="Clients ring their access point at a fixed radius">Orbit</button>
-            <button class="topo-chip" id="wmClientRing" type="button"
+            <button class="chip" id="wmClientRing" type="button"
                     title="Radius estimates the distance from the signal. Needs a scale.">Signal ring</button>
           </span>
 
           <!-- What each client's label says. One line per field, and which ones
                are worth the ink depends on the site. -->
           <span class="topo-tools" id="wmLabelFields" role="group" aria-label="Client labels">
-            <button class="topo-chip is-on" id="wmLblName" type="button"
+            <button class="chip is-on" id="wmLblName" type="button"
                     title="The DHCP host name, or reverse DNS where there is no lease">Name</button>
-            <button class="topo-chip" id="wmLblComment" type="button"
+            <button class="chip" id="wmLblComment" type="button"
                     title="The comment on the DHCP lease">Comment</button>
-            <button class="topo-chip" id="wmLblIp" type="button" title="The address">IP</button>
-            <button class="topo-chip" id="wmLblMac" type="button" title="The hardware address">MAC</button>
-            <button class="topo-chip" id="wmLblSignal" type="button" title="The signal, in dBm">Signal</button>
+            <button class="chip" id="wmLblIp" type="button" title="The address">IP</button>
+            <button class="chip" id="wmLblMac" type="button" title="The hardware address">MAC</button>
+            <button class="chip" id="wmLblSignal" type="button" title="The signal, in dBm">Signal</button>
           </span>
 
           <!-- Zoomed out to fit a site, a 9px label is under two pixels tall.
                With this on, the names, the access points and the clients keep
                their size on screen while the plan zooms under them. -->
-          <button class="topo-chip is-on" id="wmFixedSize" type="button"
+          <button class="chip is-on" id="wmFixedSize" type="button"
                   title="Keep names, access points and clients the same size on screen at any zoom">Fixed size</button>
 
           <select class="sform-input sform-sm" id="wmFloor" style="width:auto" aria-label="Floor" title="Which storey to draw">

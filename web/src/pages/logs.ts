@@ -141,7 +141,7 @@ export function initLogsPage(socket: Socket, isVisible: (page: string) => boolea
   logSeverity?.addEventListener('change', () => {
     logLevel = logSeverity.value;
     Object.keys(logCountEls).forEach((s) => {
-      logCountEls[s]?.classList.toggle('active', s === logLevel);
+      logCountEls[s]?.classList.toggle('is-on', s === logLevel);
     });
     flushLogs();
   });
@@ -173,7 +173,7 @@ export function initLogsPage(socket: Socket, isVisible: (page: string) => boolea
         if (logSeverity) logSeverity.value = sev;
       }
       Object.keys(logCountEls).forEach((s) => {
-        logCountEls[s]?.classList.toggle('active', s === logLevel);
+        logCountEls[s]?.classList.toggle('is-on', s === logLevel);
       });
       flushLogs();
     });

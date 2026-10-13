@@ -89,7 +89,7 @@ export function initSecurityScanPage(socket: Socket, isVisible: (page: string) =
     setHTML('secFindingsRows', sorted.length ? sorted.map(findingRow).join('')
       : '<tr><td colspan="5" class="empty-state">' + (filter === 'all' ? 'No issues found' : 'No ' + esc(filter) + ' issues') + '</td></tr>');
     document.querySelectorAll('#secFilters [data-filter]').forEach((b) =>
-      b.classList.toggle('active', b.getAttribute('data-filter') === filter));
+      b.classList.toggle('is-on', b.getAttribute('data-filter') === filter));
   }
 
   function draw(): void {

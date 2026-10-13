@@ -177,7 +177,7 @@ export function createGridEditor(
       for (const c of hidden) {
         const chip = document.createElement('button');
         chip.type = 'button';
-        chip.className = 'dash-add-chip';
+        chip.className = 'chip';
         chip.innerHTML = '<span>+</span>' + (CARD_LABELS[c.id] || c.id);
         chip.addEventListener('click', () => addCard(c.id));
         chips.appendChild(chip);

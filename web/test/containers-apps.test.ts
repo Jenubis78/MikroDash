@@ -116,7 +116,7 @@ assert.ok(grid().includes('librespeed') && !grid().includes('pihole'), 'the sear
 type(n.appsQ, '');
 click({ '[data-cat]': { 'data-cat': 'monitoring' } });
 assert.ok(grid().includes('uptime-kuma') && !grid().includes('librespeed'), 'a category chip does not filter');
-assert.ok(/apps-chip active" data-cat="monitoring"/.test(String(n.appsCats.innerHTML)), 'the chosen chip is not lit');
+assert.ok(/class="chip is-on" data-cat="monitoring"/.test(String(n.appsCats.innerHTML)), 'the chosen chip is not lit');
 click({ '[data-cat]': { 'data-cat': '' } });
 click({ '[data-show]': { 'data-show': 'running' } });
 assert.ok(grid().includes('librespeed') && !grid().includes('pihole') && !grid().includes('uptime-kuma'), 'Running shows others');

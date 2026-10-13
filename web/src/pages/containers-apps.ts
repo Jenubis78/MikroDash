@@ -119,10 +119,10 @@ export function initContainersApps(socket: Socket): void {
     }
     const cats = el('appsCats');
     if (cats) {
-      cats.innerHTML = ok ? '<button type="button" class="apps-chip' + (view.cat === '' ? ' active' : '') + '" data-cat="">All <span>' +
+      cats.innerHTML = ok ? '<button type="button" class="chip' + (view.cat === '' ? ' is-on' : '') + '" data-cat="">All <span class="chip-n">' +
         store.apps.length + '</span></button>' + categories(store.apps).map(([c, n]) =>
-        '<button type="button" class="apps-chip' + (view.cat === c ? ' active' : '') + '" data-cat="' + esc(c) + '">' +
-        esc(categoryLabel(c)) + ' <span>' + n + '</span></button>').join('') : '';
+        '<button type="button" class="chip' + (view.cat === c ? ' is-on' : '') + '" data-cat="' + esc(c) + '">' +
+        esc(categoryLabel(c)) + ' <span class="chip-n">' + n + '</span></button>').join('') : '';
     }
     const grid = el('appsGrid');
     if (grid) {
