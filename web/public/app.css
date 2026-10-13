@@ -258,13 +258,11 @@
        it is mono; the label above it is the UI font. */
     .sform-input{width:100%;box-sizing:border-box;height:var(--ctl-h);background:var(--bg-field);border:1px solid var(--border-field);border-radius:6px;padding:0 .7rem;font-family:var(--font-mono);font-size:.76rem;line-height:1.2;color:var(--text-main);outline:none;transition:border-color .15s}
     .sform-input:focus{border-color:rgb(from var(--accent-rx) r g b / .45);box-shadow:0 0 0 3px rgb(from var(--accent-rx) r g b / .1)}
-    /* A field shows focus with its own border, not the app-wide ring: Chromium
-       counts a clicked select as keyboard focus, so the ring and a blue border
-       framed every dropdown clicked. A select's border brightens instead -
-       still visible for the keyboard, not blue - and a text field takes the
-       login screen's soft blue border and glow while it is typed in. */
+    /* A field shows focus as the login screen's do - a soft blue border and
+       glow - not with the app-wide ring: Chromium counts a clicked select as
+       keyboard focus, so the ring stacked a hard 2px frame on every dropdown
+       clicked. */
     .sform-input:focus-visible{outline:none !important}
-    select.sform-input:focus{border-color:rgb(from var(--text-muted) r g b / .8);box-shadow:none}
     /* The browser's own placeholder grey (#757575) carries no blue, so it read as
        beige on this palette and ignored every other one. */
     .sform-input::placeholder{color:var(--text-muted);opacity:1}
@@ -303,7 +301,7 @@
     .brand-status{font-size:.74rem;min-height:1.1rem;margin-top:.7rem;color:var(--text-muted)}
     .brand-status.is-ok{color:rgb(from var(--accent-tx) r g b / .9)}
     .brand-status.is-error{color:rgb(from var(--accent-err) r g b / .9)}
-    .stoggle{display:flex;align-items:center;justify-content:space-between;padding:.55rem .8rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-deep);cursor:pointer;user-select:none;gap:.5rem}
+    .stoggle{display:flex;align-items:center;justify-content:space-between;padding:.55rem .8rem;border-radius:6px;border:1px solid var(--border-field);background:var(--bg-field);cursor:pointer;user-select:none;gap:.5rem}
     .stoggle-label{font-size:.8rem;color:var(--text-main);font-weight:500}
     .stoggle-switch{position:relative;width:34px;height:18px;flex-shrink:0}
     .stoggle-switch input{opacity:0;width:0;height:0;position:absolute}
@@ -3680,9 +3678,9 @@ select.sform-input.sform-sm { padding-right: 1.8rem; background-position: right 
   box-sizing: border-box;
   height: var(--ctl-h);
   padding: 0 .7rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-field);
   border-radius: 6px;
-  background: var(--bg-deep);
+  background: var(--bg-field);
   cursor: pointer;
   user-select: none;
   transition: border-color .15s;
@@ -3701,9 +3699,9 @@ select.sform-input.sform-sm { padding-right: 1.8rem; background-position: right 
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: .3rem .6rem;
   padding: .5rem .7rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-field);
   border-radius: 6px;
-  background: var(--bg-deep);
+  background: var(--bg-field);
 }
 .ff-multi > label {
   display: flex;
@@ -3717,8 +3715,8 @@ select.sform-input.sform-sm { padding-right: 1.8rem; background-position: right 
    grants, a role's pages): the input box's surface, grown to its content. */
 .ff-box {
   padding: .6rem;
-  background: var(--bg-deep);
-  border: 1px solid var(--border);
+  background: var(--bg-field);
+  border: 1px solid var(--border-field);
   border-radius: 6px;
   font-size: .78rem;
 }
@@ -3776,7 +3774,7 @@ textarea.sform-input.ff-code { white-space: pre; font-size: .74rem; }
 :where(input[type=checkbox], input[type=radio]) {
   appearance: none; -webkit-appearance: none;
   width: .9rem; height: .9rem; margin: 0; flex-shrink: 0; vertical-align: middle; cursor: pointer;
-  background: var(--bg-deep);
+  background: var(--bg-field);
   border: 1px solid color-mix(in srgb, var(--text-muted) 70%, transparent);
   border-radius: 4px;
   display: inline-grid; place-content: center;

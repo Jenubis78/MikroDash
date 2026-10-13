@@ -39,8 +39,8 @@ var focusSuppressions = map[string]string{
 	"#terminalInput:focus,#terminalInput:focus-visible": ".term-live:focus-within .term-prompt",
 	// A field's own border is its indicator, as on the login screen: Chromium
 	// counts a clicked select as keyboard focus, so the ring framed every
-	// dropdown clicked. Replaced by the focus border - a soft blue with a glow
-	// on a text field, the muted text colour at 80% on a select.
+	// dropdown clicked. Replaced by the login screen's focus: a soft blue
+	// border with a glow.
 	".sform-input:focus-visible": ".sform-input:focus{border-color:",
 }
 

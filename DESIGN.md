@@ -467,10 +467,9 @@ rows below it, a select a few pixels off its neighbours, and placeholders in the
 - **Every field is filled like the login screen's.** `--bg-field` is a tint, not a colour, so it lifts
   whatever card or page it sits on by the same small step. A select's open list is the card colour
   made opaque, since the browser cannot see through it.
-- **Focus is the field's own border, not the app-wide ring.** A text field takes a soft
-  `--accent-rx` border and glow while it is typed in; a select's border brightens to the muted text
-  colour, because Chromium counts a clicked select as keyboard focus and a blue frame would stay on
-  every dropdown clicked.
+- **Focus is the field's own border, not the app-wide ring.** Every field, select included, takes the
+  login screen's soft `--accent-rx` border and glow. The ring is off because Chromium counts a
+  clicked select as keyboard focus, and it stacked a hard 2px frame on every dropdown clicked.
 - **A select is drawn by the stylesheet**, with a thin outlined chevron (`--select-chevron`, one per
   theme), so it matches the inputs beside it.
 - **A toggle is a field like any other**: an uppercase label above, and an `.ff-toggle` box of the
