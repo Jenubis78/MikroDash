@@ -42,7 +42,7 @@ import {
   type XYPoint,
 } from './dashboard-traffic-buffer';
 import type { TrafficHistory, TrafficPoint, TrafficSample } from '../gen/payloads';
-import { paletteColour, onPaletteChange } from '../palette';
+import { paletteColour, onPaletteChange, monoFont } from '../palette';
 
 /** How far the right edge sits behind the anchor, so the newest point is not clipped. */
 
@@ -92,7 +92,7 @@ export const trafficTickPlugin = {
     if (!x || x.min == null || x.max == null) return;
     const ctx = c.ctx, ca = c.chartArea, w = ca.right - ca.left;
     ctx.save();
-    ctx.font = "10px 'JetBrains Mono',monospace";
+    ctx.font = "10px " + monoFont();
     ctx.textBaseline = 'top';
     const labelW = ctx.measureText(fmtTime(x.min)).width;
     const n = Math.min(7, Math.max(1, Math.floor(w / (labelW + 20))));
@@ -187,8 +187,8 @@ export function chartConfig(nowMs: number): unknown {
         legend: { display: false },
         tooltip: {
           borderWidth: 1,
-          titleFont: { family: "'JetBrains Mono',monospace", size: 11 },
-          bodyFont: { family: "'JetBrains Mono',monospace", size: 11 },
+          titleFont: { family: monoFont(), size: 11 },
+          bodyFont: { family: monoFont(), size: 11 },
           callbacks: {
             title: (items: { parsed: { x: number } }[]) => fmtTime(items[0]!.parsed.x),
             label: (c: { dataset: { label: string }; parsed: { y: number } }) =>
@@ -209,7 +209,7 @@ export function chartConfig(nowMs: number): unknown {
           beginAtZero: true,
           grid: {},
           ticks: {
-            font: { family: "'JetBrains Mono',monospace", size: 10 },
+            font: { family: monoFont(), size: 10 },
             callback: (v: number) => fmtMbps(v),
           },
         },

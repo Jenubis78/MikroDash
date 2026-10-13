@@ -19,7 +19,7 @@ import type { BandwidthDevice, TrafficPoint } from '../gen/payloads';
 import {
   sharedClock, sharedPoints, paintTrafficChart, DASHBOARD_ALPHAS, type TrafficPaint,
 } from './dashboard-traffic';
-import { onPaletteChange } from '../palette';
+import { onPaletteChange, monoFont } from '../palette';
 
 /** Only what this page touches on a Chart.js instance. */
 interface BwChart {
@@ -173,8 +173,8 @@ export function bwChartConfig(nowMs: number, windowSecs: number, rightBufferMs: 
         legend: { display: false },
         tooltip: {
           borderWidth: 1,
-          titleFont: { family: "'JetBrains Mono',monospace", size: 10 },
-          bodyFont: { family: "'JetBrains Mono',monospace", size: 10 },
+          titleFont: { family: monoFont(), size: 10 },
+          bodyFont: { family: monoFont(), size: 10 },
           callbacks: {
             title: (items: { parsed: { x: number } }[]) => fmtTime(items[0]!.parsed.x),
             label: (c: { dataset: { label: string }; parsed: { y: number } }) =>
@@ -191,7 +191,7 @@ export function bwChartConfig(nowMs: number, windowSecs: number, rightBufferMs: 
           beginAtZero: true,
           grid: {},
           ticks: {
-            font: { family: "'JetBrains Mono',monospace", size: 9 },
+            font: { family: monoFont(), size: 9 },
             callback: (v: number) => fmtMbps(v),
             maxTicksLimit: 4,
           },

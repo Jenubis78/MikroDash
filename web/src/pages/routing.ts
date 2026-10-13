@@ -15,7 +15,7 @@
 // it is the identical file rather than a second copy.
 
 import { esc, el, resRow, sparkPoints, pill } from '../dom';
-import { paletteColour, paletteCss, onPaletteChange, type PaletteToken, type PillTone } from '../palette';
+import { paletteColour, paletteCss, onPaletteChange, type PaletteToken, type PillTone, monoFont } from '../palette';
 import { mountAdds, mountRows } from '../resource';
 import type { Socket } from '../socket';
 import type { RoutingPayload, Peer, Route, RouteCounts, PeerSummary } from '../gen/payloads';
@@ -207,7 +207,7 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = "bold 26px 'JetBrains Mono',ui-monospace,monospace";
+            ctx.font = "bold 26px " + monoFont();
             ctx.fillStyle = color;
             ctx.fillText(String(donutTotal || '-'), cx, cy);
             ctx.restore();

@@ -8,7 +8,7 @@
 
 /* ── Stat strip ──────────────────────────────────────────────────────────── */
 .topo-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:.85rem}
-.topo-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;
+.topo-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
   padding:.6rem .9rem;display:flex;flex-direction:column;gap:.15rem;min-width:0}
 .topo-stat-num{font-family:var(--font-mono);font-size:1.15rem;font-weight:600;color:var(--text-main);
   line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -37,6 +37,13 @@ export function paletteCss(token: PaletteToken, alpha = 1): string {
   return 'rgb(from var(' + token + ') r g b / ' + alpha + ')';
 }
 
+/** The monospace family, as app.css declares it in --font-mono, for a canvas or
+ *  a Chart.js font, which cannot read a CSS variable. */
+export function monoFont(): string {
+  if (typeof document === 'undefined' || typeof getComputedStyle === 'undefined') return 'monospace';
+  return getComputedStyle(document.documentElement).getPropertyValue('--font-mono').trim() || 'monospace';
+}
+
 const cache = new Map<string, string>();
 let probe: HTMLElement | null = null;
 

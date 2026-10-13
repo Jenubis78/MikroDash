@@ -79,12 +79,12 @@ typography:
     fontSize: 0.64rem
     fontWeight: 400
 rounded:
-  xs: 3px
+  bar: 2px
   sm: 4px
-  badge: 5px
   md: 6px
   lg: 10px
   xl: 12px
+  dot: 50%
   full: 999px
 spacing:
   xs: 0.25rem
@@ -109,7 +109,7 @@ components:
     backgroundColor: "rgba(99,130,190,.12)"
     textColor: "rgba(148,163,190,.7)"
     typography: "{typography.data-sm}"
-    rounded: "{rounded.badge}"
+    rounded: "{rounded.sm}"
   count-badge-active-blue:
     backgroundColor: "rgba(56,189,248,.15)"
     textColor: "rgba(56,189,248,.9)"
@@ -315,18 +315,26 @@ uses a border, a faint fill (`rgba(99,130,190,.04)`) or a tab bar.
 
 ## Shapes
 
-Corners are gently rounded, and the radius grows with the size of the element:
+Corners are gently rounded, and the radius grows with the size of the element. There are seven,
+by role, and `TestCornersAreOnTheScale` fails on any other value:
 
 | Element | Radius |
 |---|---|
-| Keyboard keys | 3px |
-| Label pills (every one), chips | 4px |
-| Count pills, small chips | 5px |
-| Buttons, inputs, selects, tab tops | 6px |
-| Cards, the stale overlay | 10px |
+| Thin bars: progress, meters, tracks, scrollbar thumbs | 2px |
+| Small things: keys, checkboxes, label pills, chips, count pills, swatches | 4px |
+| Controls (buttons, inputs, selects, tab tops), and a box inside a card | 6px |
+| Cards, a page's stat cards, floating panels and dropdowns, the stale overlay | 10px |
 | Modals | 12px |
-| Status dots | 50% |
-| Rare fully rounded tags | 999px |
+| Status dots, round icons | 50% |
+| A capsule, such as a toggle's track | 999px |
+
+A box sitting inside a card takes 6px, not the card's 10px, so the inner corner never looks rounder
+than the one around it.
+
+**Fonts come from three tokens:** `--font-ui`, `--font-mono` and `--font-brand` (the wordmark). A
+stylesheet uses `var()`; a canvas or a chart, which cannot read a CSS variable, uses `monoFont()` from
+`web/src/palette.ts`. A family is named only in a `@font-face` and in the Branding catalogue.
+`TestFontsAreTheTokens` holds it.
 
 **Icons are inline SVG line icons:**
 

@@ -123,7 +123,7 @@ export function initAiAgentPage(socket: Socket, isVisible: (page: string) => boo
     body.style.fontSize = '.8rem';
     body.style.lineHeight = '1.5';
     body.style.padding = '.55rem .75rem';
-    body.style.borderRadius = '.5rem';
+    body.style.borderRadius = '6px';
     body.style.border = '1px solid var(--border)';
     if (role === 'you') body.style.background = paletteCss('--accent-rx', 0.08);
     if (role === 'error') body.style.borderColor = 'var(--accent-err)';

@@ -20,7 +20,7 @@
       --font-mono:  'JetBrains Mono', ui-monospace, monospace;
       --font-ui:    'Oxanium', sans-serif;
       --font-btn:   'Inter', var(--font-ui);
-      --radius:     10px;
+      --font-brand: 'Orbitron', sans-serif;
     }
 
     /* Syne is a display face and ships only 400/600/800, so a 700 button fell up
@@ -71,12 +71,12 @@
     .login-brand img {
       width: 36px;
       height: 36px;
-      border-radius: 8px;
+      border-radius: 6px;
       opacity: .92;
     }
     .login-brand-name {
       /* The wordmark's own face, as in the top bar; a branded font replaces it. */
-      font-family: 'Orbitron', sans-serif;
+      font-family: var(--font-brand);
       font-size: 1.35rem;
       font-weight: 700;
       color: var(--text-main);
@@ -94,7 +94,7 @@
       width: 100%;
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: 10px;
       padding: 2rem;
       backdrop-filter: blur(16px);
       box-shadow: 0 8px 40px rgba(0,0,0,.35);
@@ -182,7 +182,7 @@
       cursor: pointer; transition: border-color .15s, background .15s;
     }
     .btn-sso:hover { border-color: var(--accent-rx); background: rgba(99,130,190,.07); }
-    .btn-sso img { width: 18px; height: 18px; border-radius: 3px; flex: 0 0 auto; }
+    .btn-sso img { width: 18px; height: 18px; border-radius: 4px; flex: 0 0 auto; }
 
     .login-error {
       display: none;

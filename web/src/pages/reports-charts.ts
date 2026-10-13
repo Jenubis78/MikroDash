@@ -23,7 +23,7 @@ import { el, fmtMbps, fmtDataMB } from '../dom';
 import { chartLabel } from './reports';
 import type { PingRow } from './reports-ping';
 import { peakNoun, type TrafficRow, type BandwidthRow, type IfaceSummary } from './reports-traffic';
-import { paletteColour, onPaletteChange } from '../palette';
+import { paletteColour, onPaletteChange, monoFont } from '../palette';
 
 // Chart.js is loaded by the shell from /vendor, so it is a global here rather
 // than an import. Typed loosely on purpose: the port does not own the library's
@@ -31,7 +31,7 @@ import { paletteColour, onPaletteChange } from '../palette';
 interface ChartLike { destroy(): void }
 declare const Chart: undefined | (new (canvas: HTMLCanvasElement, cfg: unknown) => ChartLike);
 
-const MONO = { size: 10, family: 'JetBrains Mono,monospace' };
+const MONO = { size: 10, family: monoFont() };
 // ── COLOURS ARE READ WHEN A CHART IS BUILT ──────────────────────────────────
 //
 // Chart.js cannot read a CSS variable, so each colour is the palette's resolved

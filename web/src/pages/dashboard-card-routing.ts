@@ -24,7 +24,7 @@
 
 import { el } from '../dom';
 import type { RouteCounts, RoutingPayload } from '../gen/payloads';
-import { paletteColour, onPaletteChange, type PaletteToken } from '../palette';
+import { paletteColour, onPaletteChange, type PaletteToken, monoFont } from '../palette';
 
 interface ChartLike {
   data: { labels: string[]; datasets: { data: number[]; backgroundColor: string[] }[] };
@@ -86,7 +86,7 @@ export function drawDonutCentre(chart: {
   const cx = (chart.chartArea.left + chart.chartArea.right) / 2;
   const cy = (chart.chartArea.top + chart.chartArea.bottom) / 2;
   ctx.save();
-  ctx.font = "bold 26px 'JetBrains Mono',ui-monospace,monospace";
+  ctx.font = "bold 26px " + monoFont();
   ctx.fillStyle = paletteColour('--text-main', 0.9);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';

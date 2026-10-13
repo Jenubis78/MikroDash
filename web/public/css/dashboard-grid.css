@@ -129,7 +129,7 @@
   z-index: 20;
   align-items: center;
   justify-content: center;
-  border-radius: 9px 9px 0 0;
+  border-radius: 10px 10px 0 0;
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
@@ -205,7 +205,7 @@
   line-height: 1;
   padding: 0;
   transition: background 0.12s, color 0.12s;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 .dashboard--editing .dash-remove-btn {
   display: flex;
@@ -231,7 +231,7 @@
   position: absolute;
   background: rgb(from var(--accent-rx) r g b / .1);
   border: 1.5px dashed rgb(from var(--accent-rx) r g b / .5);
-  border-radius: 8px;
+  border-radius: 10px;
   pointer-events: none;
   z-index: 5;
   display: none;
@@ -253,7 +253,7 @@
   align-items: center;
   justify-content: center;
   color: rgb(from var(--text-muted) r g b / .55);
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -307,7 +307,7 @@
   z-index: 600;
   background: rgb(from var(--bg-card) r g b / .97);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0.65rem 0.75rem 0.55rem;
   min-width: 190px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
@@ -340,7 +340,7 @@ html[data-theme="light"] #dashAddPanel {
   align-items: center;
   gap: 0.28rem;
   padding: 0.22rem 0.5rem;
-  border-radius: 5px;
+  border-radius: 4px;
   border: 1px solid var(--border);
   background: rgb(from var(--border) r g b / .07);
   color: var(--text-muted);
@@ -445,7 +445,7 @@ html[data-theme="light"] #dashAddPanel {
 #dc-card-secscore .dc-sec-sevs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem; }
 #dc-card-secscore .dc-sec-sev {
   display: flex; flex-direction: column; align-items: center; padding: .3rem .2rem;
-  border-radius: 8px; border: 1px solid var(--border); background: rgb(from var(--border) r g b / .05);
+  border-radius: 6px; border: 1px solid var(--border); background: rgb(from var(--border) r g b / .05);
 }
 #dc-card-secscore .dc-sec-sev b { font-family: var(--font-mono); font-size: 1rem; line-height: 1.1; color: var(--text-muted); }
 #dc-card-secscore .dc-sec-sev span { font-size: .58rem; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
@@ -459,7 +459,7 @@ html[data-theme="light"] #dashAddPanel {
 #dc-card-secscore .dc-sec-sev.is-on.sev-low b { color: var(--accent-rx); }
 #dc-card-secscore .dc-sec-meta { font-size: .68rem; color: var(--text-muted); }
 #dc-card-secscore .dc-sec-meta.is-bad { color: var(--accent-err); }
-#dc-card-secscore .dc-sec-progress { height: 3px; border-radius: 3px; background: var(--border); overflow: hidden; display: none; }
+#dc-card-secscore .dc-sec-progress { height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; display: none; }
 #dc-card-secscore .dc-sec-progress.is-on { display: block; }
 #dc-card-secscore .dc-sec-progress-bar { height: 100%; width: 0; background: var(--accent-rx); transition: width .3s; }
 #dc-card-secscore .dc-sec-open { font-size: .72rem; align-self: flex-start; margin-left: 0; }

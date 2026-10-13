@@ -36,7 +36,7 @@ import { fmtTime } from '../timefmt';
 import { trafficTickPlugin } from './dashboard-traffic';
 import { axisWindow, easeBuffer, smoothMax, smoothOffset, KEEPALIVE_SLACK_MS } from './dashboard-traffic-buffer';
 import type { FirewallPayload, FirewallRule } from '../gen/payloads';
-import { paletteColour, onPaletteChange } from '../palette';
+import { paletteColour, onPaletteChange, monoFont } from '../palette';
 
 declare const Chart: undefined | (new (canvas: HTMLCanvasElement, cfg: unknown) => ChartLike);
 
@@ -243,8 +243,6 @@ onPaletteChange(() => {
   chart.update('none');
 });
 
-const mono = "'JetBrains Mono',monospace";
-
 function makeChart(): void {
   const canvas = el<HTMLCanvasElement>('fwsChart');
   if (!canvas || typeof Chart === 'undefined') return;
@@ -275,7 +273,7 @@ function makeChart(): void {
         legend: { display: false },
         tooltip: {
           borderWidth: 1,
-          titleFont: { family: mono, size: 11 }, bodyFont: { family: mono, size: 11 },
+          titleFont: { family: monoFont(), size: 11 }, bodyFont: { family: monoFont(), size: 11 },
           callbacks: {
             title: (items: Array<{ parsed: { x: number } }>): string =>
               items[0] ? fmtTime(items[0].parsed.x) : '',
@@ -297,14 +295,14 @@ function makeChart(): void {
         y: {
           beginAtZero: true, position: 'left',
           grid: {},
-          ticks: { font: { family: mono, size: 10 },
+          ticks: { font: { family: monoFont(), size: 10 },
             callback: (v: number): string => fmtBps(v) },
         },
         y1: {
           beginAtZero: true, position: 'right', grid: { drawOnChartArea: false },
           // Whole packets only. The eased top of the axis is a fraction, and
           // was labelled "11.011011011011012 p/s".
-          ticks: { font: { family: mono, size: 10 }, precision: 0,
+          ticks: { font: { family: monoFont(), size: 10 }, precision: 0,
             callback: (v: number): string => (Number.isInteger(v) ? v + ' p/s' : '') },
         },
       },

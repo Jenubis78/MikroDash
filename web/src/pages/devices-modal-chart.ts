@@ -24,7 +24,7 @@ import {
   rightBufferFor, smoothMax, smoothOffset, windowedPoints, type XYPoint,
 } from './dashboard-traffic-buffer';
 import { trafficTickPlugin, paintTrafficChart, type TrafficPaint } from './dashboard-traffic';
-import { onPaletteChange } from '../palette';
+import { onPaletteChange, monoFont } from '../palette';
 
 /** The chart's window: the first frame's ring, five minutes. */
 export const WAN_WINDOW_SECS = 300;
@@ -76,8 +76,8 @@ function config(nowMs: number): unknown {
         legend: { display: false },
         tooltip: {
           borderWidth: 1,
-          titleFont: { family: "'JetBrains Mono',monospace", size: 11 },
-          bodyFont: { family: "'JetBrains Mono',monospace", size: 11 },
+          titleFont: { family: monoFont(), size: 11 },
+          bodyFont: { family: monoFont(), size: 11 },
           callbacks: {
             title: (items: { parsed: { x: number } }[]) => fmtTime(items[0]!.parsed.x),
             label: (c: { dataset: { label: string }; parsed: { y: number } }) =>
@@ -97,7 +97,7 @@ function config(nowMs: number): unknown {
           beginAtZero: true,
           grid: {},
           ticks: {
-            font: { family: "'JetBrains Mono',monospace", size: 10 },
+            font: { family: monoFont(), size: 10 },
             callback: (v: number) => fmtMbps(v),
           },
         },
