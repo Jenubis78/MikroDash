@@ -3626,7 +3626,11 @@
    built in TypeScript uses fieldHtml() in web/src/form.ts, which emits exactly
    this markup. internal/verify and web/test hold the markup to it, and
    tools/form-geometry.js measures it in a real browser. DESIGN.md has the rules. */
-:root { --ctl-h: 2.2rem; --ctl-h-sm: 1.9rem; --ctl-h-xs: 1.3rem; }
+/* The sizes are v0.8.72's, measured in a browser on 2026-10-13: 32px was the
+   field every form used, 28px the "+ Add" button in every page header. The
+   contract first set 35px and 30px, which made forms and headers taller to
+   match their buttons rather than the other way round. */
+:root { --ctl-h: 2rem; --ctl-h-sm: 1.75rem; --ctl-h-xs: 1.3rem; }
 /* THE COMPACT CONTROL, for a page's toolbar: a search box, a filter select.
    One deliberate smaller size, rather than each toolbar shrinking its own
    controls (the routers toolbar did, by hand, to match the select beside it). */

@@ -65,8 +65,11 @@
   for (const f of fields) {
     for (const part of [f, ...f.querySelectorAll('.sform-label, .sform-input, .ff-help, .ff-toggle')]) {
       const st = part.getAttribute('style');
-      // `display:` is how a field is shown and hidden; nothing else may be inline.
-      if (st && !/^\s*(display:\s*[a-z]*;?\s*)?$/.test(st)) issues.push(`${name(part)} carries style="${st}"`);
+      // `display:` is how a field is shown and hidden; nothing else may be inline,
+      // except a select's min-width, which web/src/select-width.ts sets from its
+      // widest option (a page-drawn select is otherwise sized by the one shown).
+      const rest = part.matches('select') ? (st || '').replace(/min-width:\s*[\d.]+px;?/, '') : st;
+      if (rest && !/^\s*(display:\s*[a-z]*;?\s*)?$/.test(rest)) issues.push(`${name(part)} carries style="${st}"`);
     }
     // A location search's suggestion list is absolutely positioned: no row.
     const kids = [...f.children].filter((k) => !k.classList.contains('cpick-list'));
