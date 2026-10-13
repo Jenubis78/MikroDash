@@ -104,3 +104,6 @@ testdata/.seam.cjs
 web/test-out/
 .idea/
 .idea/
+
+# Design notes are kept locally, not published.
+DESIGN.md

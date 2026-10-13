@@ -6,6 +6,7 @@ import { overlayOnStatus, overlayOnSwitch, selectOptionsHtml, wireRouterDropdown
 import { initUpgrade } from './pages/upgrade';
 import { Socket, type AllEvents } from './socket';
 import { initAppearance, wireAppearance } from './appearance';
+import { initSelectWidths } from './select-width';
 import { initNav, navAutoExpand } from './nav';
 import { initKeyboard } from './keyboard';
 import { initCaps, applyPageVisibility, settingsAllowed, refreshCaps, mayManagePrincipals } from './caps';
@@ -432,6 +433,7 @@ async function main(): Promise<void> {
   // read from localStorage and applied to <html>. Everything after this renders
   // once, in the right colours, instead of flashing the defaults first.
   initAppearance();
+  initSelectWidths();
   // The install's own name and icon in the wordmark, sidebar, tab title and
   // favicon (issue #131). Fetched, so the markup's MikroDash shows until it lands.
   void loadBranding();

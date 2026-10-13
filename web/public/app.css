@@ -279,6 +279,29 @@
        as a separate surface and cannot see through - is the card colour made
        opaque. */
     :where(select) :is(option,optgroup){background-color:rgb(from var(--bg-card) r g b / 1);color:var(--text-main)}
+    /* Its scrollbar too: Tabler gives every element a transparent track, and
+       the open list is a separate window with nothing behind it, so the track
+       drew as a white bar down the list's right side. Both parts are opaque,
+       in the list's own colour. */
+    select{scrollbar-color:color-mix(in srgb,var(--text-muted) 45%,rgb(from var(--bg-card) r g b / 1)) rgb(from var(--bg-card) r g b / 1)}
+    /* Where the browser lets the page draw the open list (appearance:
+       base-select; Chromium 135 and later), it is drawn here: the card colour,
+       a rounded panel, and a translucent accent tint on the option under the
+       pointer and on the chosen one, in place of the system's solid light-blue
+       highlight. Other browsers keep their native list. The chevron stays the
+       background image, so the browser's picker icon and checkmark go. */
+    @supports (appearance: base-select){
+      select.sform-input:not([multiple]):not([size]),
+      select.sform-input:not([multiple]):not([size])::picker(select){appearance:base-select}
+      select.sform-input:not([multiple]):not([size]){field-sizing:fixed;align-items:center}
+      select.sform-input::picker-icon{display:none}
+      select.sform-input::picker(select){margin-top:4px;padding:.25rem;border:1px solid var(--border-field);border-radius:6px;background:rgb(from var(--bg-card) r g b / 1);box-shadow:0 10px 28px rgb(from var(--bg-deep) r g b / .6)}
+      select.sform-input option{padding:.35rem .6rem;border-radius:4px;font-family:var(--font-mono);font-size:.76rem;color:var(--text-main);background:transparent;cursor:pointer}
+      select.sform-input option::checkmark{display:none}
+      select.sform-input option:hover,select.sform-input option:focus-visible{background:rgb(from var(--accent-rx) r g b / .12);outline:none !important}
+      select.sform-input option:checked{background:rgb(from var(--accent-rx) r g b / .2);color:var(--accent-rx)}
+      select.sform-input option:disabled{color:var(--text-muted);cursor:default}
+    }
     select.sform-input{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:2rem;
       background-image:var(--select-chevron);background-position:right .7rem center;background-size:14px 14px;background-repeat:no-repeat}
     select[multiple].sform-input,select[size].sform-input{height:auto;background-image:none;padding:.3rem .5rem}

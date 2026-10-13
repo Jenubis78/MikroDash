@@ -42,6 +42,9 @@ var focusSuppressions = map[string]string{
 	// dropdown clicked. Replaced by the login screen's focus: a soft blue
 	// border with a glow.
 	".sform-input:focus-visible": ".sform-input:focus{border-color:",
+	// An option in a page-drawn dropdown list. A ring inside a list row is a
+	// box around the text; the row takes the accent tint the pointer gives it.
+	"select.sform-inputoption:hover,select.sform-inputoption:focus-visible": "background:rgb(from var(--accent-rx) r g b / .12);outline:none",
 }
 
 // outlineOff finds a declaration block that takes the ring away with enough
