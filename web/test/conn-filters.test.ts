@@ -108,7 +108,7 @@ fs.rmSync(ENTRY, { force: true });
 const IDS = ['connMapList', 'connMapSub', 'connPortList', 'connMapBadge', 'connFilterLabel',
   'connSrcFilter', 'worldMap', 'worldMapWrap', 'mapTooltip', 'sankeySvg', 'sankeyEmpty',
   'connTotal', 'mapZoomIn', 'mapZoomOut', 'mapZoomReset', 'mapFullscreenBtn', 'mapFsOverlay',
-  'mapFsClose', 'connTabs', 'connListSearch', 'connListPager', 'connListPager2', 'connPanelMap', 'connPanelList',
+  'mapFsClose', 'connTabs', 'connListSearch', 'connListPager', 'connPanelMap', 'connPanelList',
   'connListHead', 'connListBody', 'connListStatus'];
 
 /** Mount the page and hand the caller its handlers and its document. */

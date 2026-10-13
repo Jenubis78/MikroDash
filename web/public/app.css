@@ -232,7 +232,6 @@
     .conn-rx{color:var(--accent-rx)}
 
     .conn-pager{display:flex;align-items:center;gap:.4rem}
-    .conn-pager-end{justify-content:flex-end;margin-top:.4rem}
 
     .bw-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);background:var(--bg-card)}
     .bw-table{width:100%;border-collapse:collapse;table-layout:fixed}

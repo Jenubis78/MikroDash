@@ -19,9 +19,13 @@ import { SVC_TONE } from '../dom';
 const NS = 'http://www.w3.org/2000/svg';
 
 /** A destination's colour is its service category's pill tone (SVC_TONE), so a
- *  service reads the same colour in the list and in the diagram. */
+ *  service reads the same colour in the list and in the diagram. Uncategorised
+ *  is the exception: it is most of the traffic, and the muted pill tone, a faint
+ *  grey made for text, turned most of the diagram grey. It is the palette's
+ *  border hue at full strength, the blue-grey it was before the tones. */
 function catColour(cat: string | null | undefined): string {
-  return paletteCss(TONE_TOKEN[SVC_TONE[cat || 'other'] || 'muted']);
+  const tone = SVC_TONE[cat || 'other'] || 'muted';
+  return tone === 'muted' ? paletteCss('--border') : paletteCss(TONE_TOKEN[tone]);
 }
 
 /** Source nodes cycle a palette: they are hosts, with no category to colour by.

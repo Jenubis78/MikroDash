@@ -459,10 +459,8 @@ export function initConnectionsPage(socket: Socket, isVisible: (page: string) =>
         '<tr><td colspan="' + CONN_COLS.length + '" class="tbl-empty">No connections match.</td></tr>';
     }
     const pager = pagerHTML(pg.rows.length, matched.length, pg.page, pg.pages);
-    for (const id of ['connListPager', 'connListPager2']) {
-      const p = el(id);
-      if (p) p.innerHTML = pager;
-    }
+    const pagerEl = el('connListPager');
+    if (pagerEl) pagerEl.innerHTML = pager;
     if (status) {
       const filtered = matched.length !== listed.rows.length;
       status.textContent = listed.total.toLocaleString() + ' connections' +
@@ -485,18 +483,16 @@ export function initConnectionsPage(socket: Socket, isVisible: (page: string) =>
     listPage = 0;
     drawList();
   });
-  for (const id of ['connListPager', 'connListPager2']) {
-    el(id)?.addEventListener('click', (e) => {
-      const b = (e.target as HTMLElement).closest('[data-conn-page]');
-      if (!b || (b as HTMLButtonElement).disabled) return;
-      listPage = Number(b.getAttribute('data-conn-page')) || 0;
-      drawList();
-      // A new page starts at its first row: the list scrolls inside a card of
-      // fixed height, and the next page kept the old one's scroll position.
-      const scroll = el('connListScroll');
-      if (scroll) scroll.scrollTop = 0;
-    });
-  }
+  el('connListPager')?.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest('[data-conn-page]');
+    if (!b || (b as HTMLButtonElement).disabled) return;
+    listPage = Number(b.getAttribute('data-conn-page')) || 0;
+    drawList();
+    // A new page starts at its first row: the list scrolls inside a card of
+    // fixed height, and the next page kept the old one's scroll position.
+    const scroll = el('connListScroll');
+    if (scroll) scroll.scrollTop = 0;
+  });
   // A reconnect is a new connection on the server, which has not heard which
   // tab is open.
   document.addEventListener('socket:reconnect', () => {
