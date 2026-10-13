@@ -466,9 +466,11 @@ export function sparkPoints(data: number[], w: number, h: number, pad: number, f
   }).join(' ');
 }
 
-/** The one label pill (app.css PILLS). `text` is escaped. */
-export function pill(text: string, tone: PillTone): string {
-  return '<span class="pill pill-' + tone + '">' + esc(text) + '</span>';
+/** The one label pill (app.css PILLS). `text` is escaped. `small` is the dense
+ *  size, for a card that holds several pills in a narrow column. */
+export function pill(text: string, tone: PillTone, small = false): string {
+  return '<span class="pill ' + (small ? 'pill-sm ' : '') + 'pill-' + tone + '"' +
+    (small ? ' title="' + esc(text) + '"' : '') + '>' + esc(text) + '</span>';
 }
 
 /** The tone of each ASN service category, shared by the pill and the
@@ -478,10 +480,11 @@ export const SVC_TONE: Record<string, PillTone> = {
   messaging: 'tx', video: 'warn', dns: 'tx', other: 'muted',
 };
 
-/** The service pill beside an organisation. `cat` is the ASN category, or `other`. */
-export function svcBadge(org: string, cat: string | null): string {
+/** The service pill beside an organisation. `cat` is the ASN category, or `other`.
+ *  `small` for the dense Top Countries cards. */
+export function svcBadge(org: string, cat: string | null, small = false): string {
   if (!org) return '';
-  return pill(org, SVC_TONE[cat || 'other'] || 'muted');
+  return pill(org, SVC_TONE[cat || 'other'] || 'muted', small);
 }
 
 /** A protocol as a coloured pill: TCP blue, UDP green, ICMP (and icmpv6) amber,

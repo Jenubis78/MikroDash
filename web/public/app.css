@@ -1271,6 +1271,10 @@
     .pill-pink{--pill:var(--accent-pink)}
     /* Muted is the palette's own muted text, whose alpha is part of the colour. */
     .pill-muted{color:var(--text-muted);background:rgb(from var(--border) r g b / .07);border-color:var(--border)}
+    /* The dense size: the pre-palette service pill's, for a card holding several
+       in a narrow column. A long name ends in an ellipsis rather than widening
+       the card; the full name is the title. */
+    .pill-sm{display:inline-block;font-size:.58rem;padding:0 .35rem;line-height:1.5;max-width:100%;overflow:hidden;text-overflow:ellipsis}
     .pill-dot::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
     /* ── CHIPS: one clickable chip ──────────────────────────────────────────
        A filter, a toggle, a picked item: anything clicked to turn on or off. The
@@ -1479,7 +1483,7 @@
 
     /* ── Org sub-rows in country list ──────────────────────────────────────── */
     .svc-sub-rows{display:flex;flex-wrap:wrap;gap:.25rem .4rem;margin-top:.22rem}
-    .svc-sub-row{display:inline-flex;align-items:center;gap:.28rem;font-family:var(--font-mono);font-size:.59rem;white-space:nowrap}
+    .svc-sub-row{display:inline-flex;align-items:center;gap:.28rem;min-width:0;max-width:100%;font-family:var(--font-mono);font-size:.59rem;white-space:nowrap}
     .svc-sub-count{color:var(--text-muted)}
     /* ── IP tooltip ─────────────────────────────────────────────────────────── */
     .ip-tip{position:fixed;left:0;top:0;pointer-events:none;z-index:9999;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.28rem .55rem;font-family:var(--font-mono);font-size:.67rem;color:var(--text-main);white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.35);display:none}
@@ -1554,12 +1558,18 @@
     .map-country.pulse{animation:mapPulse .7s ease-out forwards}
     .map-country.active{fill:rgb(from var(--accent-rx) r g b / .35);stroke:rgb(from var(--accent-rx) r g b / .65);stroke-width:.6}
     .map-country.hot{fill:rgb(from var(--accent-rx) r g b / .75);stroke:var(--accent-rx);stroke-width:.8;filter:drop-shadow(0 0 3px rgb(from var(--accent-rx) r g b / .5))}
-    .conn-map-row{display:flex;align-items:center;gap:.5rem;padding:.35rem .5rem;border-radius:4px;background:rgb(from var(--border) r g b / .05);border:1px solid var(--border);font-family:var(--font-mono);font-size:.68rem;cursor:pointer;transition:background .15s}
+    .conn-map-row{display:flex;align-items:stretch;gap:.5rem;padding:.35rem .5rem;border-radius:4px;background:rgb(from var(--border) r g b / .05);border:1px solid var(--border);font-family:var(--font-mono);font-size:.68rem;cursor:pointer;transition:background .15s}
     .conn-map-row:hover,.conn-map-row.selected{background:rgb(from var(--accent-rx) r g b / .1);border-color:rgb(from var(--accent-rx) r g b / .3)}
-    .conn-map-flag{font-size:.9rem;flex-shrink:0}
+    .conn-map-flag{font-size:.9rem;flex-shrink:0;align-self:flex-start}
+    /* A card's country and sparkline sit at its top and the Rx/Tx bar at its
+       bottom, whatever height its row of the grid gives it; the pills between. */
+    .conn-map-body{flex:1;min-width:0;display:flex;flex-direction:column}
+    .conn-map-head{display:flex;align-items:center;justify-content:space-between;gap:.4rem}
+    .conn-map-body>.conn-proto-bar{margin-top:auto}
+    .conn-map-body>.svc-sub-rows{margin-bottom:.3rem}
     .conn-map-label{flex:1;color:var(--text-main);font-weight:600;min-width:0}
     .conn-map-label-sub{font-size:.58rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .conn-map-count{color:var(--accent-rx);font-weight:700;flex-shrink:0}
+    .conn-map-count{color:var(--accent-rx);font-weight:700;flex-shrink:0;align-self:center}
     .conn-proto-bar{display:flex;height:3px;border-radius:2px;overflow:hidden;margin-top:.25rem;gap:1px}
     .conn-proto-tcp{background:var(--accent-rx)}
     .conn-proto-udp{background:var(--accent-tx)}

@@ -53,7 +53,7 @@ export function renderTopCountries(countries: ConnCountry[]): void {
     const othPct = 100 - tcpPct - udpPct;
     return '<div class="conn-map-row">' +
       '<span class="conn-map-flag">' + flag + '</span>' +
-      '<div style="flex:1;min-width:0">' +
+      '<div class="conn-map-body">' +
         '<div class="conn-map-label">' + dcEsc(DC_CC_NAMES[e.cc] || e.cc) + '</div>' +
         '<div class="conn-proto-bar">' +
           '<div class="conn-proto-tcp" style="flex:' + tcpPct + '"></div>' +

@@ -134,11 +134,11 @@ func TestBothGeoDatabasesAreCreditedInTheNotices(t *testing.T) {
 
 // ── THE SERVICE CATEGORY LEDGER ────────────────────────────────────────────
 //
-// A category is named in two places: `internal/asn/categories.go` produces
-// it, and `SVC_TONE` in web/src/dom.ts gives it the pill tone that both the
-// service pill and the Connections diagram draw with. It was three copies
-// (an app.css rule per category and the diagram's own map as well) until the
-// pills became one pill; nothing made those agree either.
+// A category is named in three places: `internal/asn/categories.go` produces
+// it, `SVC_TONE` in web/src/dom.ts gives it the service pill's tone, and
+// `CAT_COLOUR` in web/src/pages/connections-sankey.ts its colour in the
+// Connections diagram, which keeps hues no single pill tone has (cloud orange,
+// dns teal). All three must name the same categories.
 //
 // Both directions matter, and each has already gone wrong once:
 //
@@ -194,6 +194,28 @@ func TestEveryServiceCategoryHasAColourAndEveryColourHasACategory(t *testing.T) 
 				"internal/asn/categories.go is given; it is unreachable", cat)
 		}
 	}
+
+	// The diagram's own map, both ways.
+	cblock := reCatColourBlock.FindStringSubmatch(read("web/src/pages/connections-sankey.ts"))
+	if cblock == nil {
+		t.Fatalf("web/src/pages/connections-sankey.ts no longer declares CAT_COLOUR; the parse broke")
+	}
+	coloured := map[string]bool{}
+	for _, m := range reCatColour.FindAllStringSubmatch(cblock[1], -1) {
+		coloured[m[1]] = true
+	}
+	for cat := range cats {
+		if !coloured[cat] {
+			t.Errorf("internal/asn can return the category %q, which CAT_COLOUR in "+
+				"connections-sankey.ts has no colour for; its diagram node falls back to blue-grey", cat)
+		}
+	}
+	for cat := range coloured {
+		if !cats[cat] {
+			t.Errorf("CAT_COLOUR gives %q a colour, which no autonomous system in "+
+				"internal/asn/categories.go is given; it is unreachable", cat)
+		}
+	}
 }
 
 var (
@@ -203,4 +225,8 @@ var (
 	reSvcToneBlock = regexp.MustCompile(`(?s)export const SVC_TONE[^=]*= \{(.*?)\};`)
 	// `cdn: 'rx',`
 	reSvcTone = regexp.MustCompile(`([a-z]+): '[a-z]+'`)
+	// `const CAT_COLOUR: Record<string, string> = { ... };`
+	reCatColourBlock = regexp.MustCompile(`(?s)const CAT_COLOUR[^=]*= \{(.*?)\};`)
+	// `cdn: paletteCss('--accent-rx'),`
+	reCatColour = regexp.MustCompile(`(?m)^\s*([a-z]+):`)
 )

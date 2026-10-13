@@ -186,7 +186,7 @@ func TestEveryLabelIsTheOnePill(t *testing.T) {
 	})
 	classAttr := regexp.MustCompile(`class="([^"]*)"`)
 	spanStyle := regexp.MustCompile(`<span\b[^<>]*\sstyle="([^"]*)"`)
-	tones := map[string]bool{"pill": true, "pill-dot": true, "chip": true, "chip-n": true, "chip-x": true}
+	tones := map[string]bool{"pill": true, "pill-dot": true, "pill-sm": true, "chip": true, "chip-n": true, "chip-x": true}
 	for _, tone := range pillTones {
 		tones["pill-"+tone] = true
 	}

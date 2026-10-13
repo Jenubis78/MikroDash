@@ -69,15 +69,15 @@ export function countryRowHTML(e: ConnCountry, spark: string, selected: boolean)
   const othPct = 100 - tcpPct - udpPct;
   return '<div class="conn-map-row' + (selected ? ' selected' : '') + '" data-cc="' + e.cc + '">' +
     '<span class="conn-map-flag">' + iso2Flag(e.cc) + '</span>' +
-    '<div style="flex:1;min-width:0">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:.4rem">' +
-        '<div class="conn-map-label" style="min-width:0">' + esc(CC_NAMES[e.cc] || e.cc) +
+    '<div class="conn-map-body">' +
+      '<div class="conn-map-head">' +
+        '<div class="conn-map-label">' + esc(CC_NAMES[e.cc] || e.cc) +
           (e.city ? ' <span class="conn-map-label-sub">' + esc(e.city) + '</span>' : '') + '</div>' +
         (spark ? '<div style="flex-shrink:0">' + spark + '</div>' : '') +
       '</div>' +
       (e.orgs && e.orgs.length
         ? '<div class="svc-sub-rows">' + e.orgs.map((o) =>
-          '<span class="svc-sub-row">' + svcBadge(o.org, o.cat) +
+          '<span class="svc-sub-row">' + svcBadge(o.org, o.cat, true) +
           '<span class="svc-sub-count">' + o.count + '</span></span>').join('') + '</div>'
         : '') +
       '<div class="conn-proto-bar">' +
@@ -124,9 +124,9 @@ export function countryRowEl(cc: string): HTMLElement {
   row.dataset.cc = cc;
   row.innerHTML =
     '<span class="conn-map-flag"></span>' +
-    '<div style="flex:1;min-width:0">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:.4rem">' +
-        '<div class="conn-map-label" style="min-width:0"></div>' +
+    '<div class="conn-map-body">' +
+      '<div class="conn-map-head">' +
+        '<div class="conn-map-label"></div>' +
         '<div class="conn-map-spark" style="flex-shrink:0"></div>' +
       '</div>' +
       '<div class="svc-sub-rows"></div>' +
@@ -165,7 +165,7 @@ export function syncCountryRow(
   }
 
   const orgsHtml = (e.orgs && e.orgs.length)
-    ? e.orgs.map((o) => '<span class="svc-sub-row">' + svcBadge(o.org, o.cat) +
+    ? e.orgs.map((o) => '<span class="svc-sub-row">' + svcBadge(o.org, o.cat, true) +
       '<span class="svc-sub-count">' + o.count + '</span></span>').join('')
     : '';
   const og = q('.svc-sub-rows');

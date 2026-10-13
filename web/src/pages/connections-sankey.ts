@@ -13,26 +13,41 @@
 // than quoting a count.
 
 import type { ConnDestEntry, ConnSource } from '../gen/payloads';
-import { paletteCss, TONE_TOKEN, type PaletteToken } from '../palette';
-import { SVC_TONE } from '../dom';
+import { paletteCss } from '../palette';
 
 const NS = 'http://www.w3.org/2000/svg';
 
-/** A destination's colour is its service category's pill tone (SVC_TONE), so a
- *  service reads the same colour in the list and in the diagram. Uncategorised
- *  is the exception: it is most of the traffic, and the muted pill tone, a faint
- *  grey made for text, turned most of the diagram grey. It is the palette's
- *  border hue at full strength, the blue-grey it was before the tones. */
+/** A destination's colour is its service category's, as it was drawn before
+ *  the palette: cloud orange and dns teal, which no single palette token is, are
+ *  mixed from two. Uncategorised - most of the traffic - is the palette's border
+ *  hue at full strength, a blue-grey; the muted pill tone, a faint grey made for
+ *  text, turned most of the diagram grey. */
+const mix = (a: string, pct: number, b: string): string =>
+  'color-mix(in srgb,var(' + a + ') ' + pct + '%,var(' + b + '))';
+const CAT_COLOUR: Record<string, string> = {
+  cdn: paletteCss('--accent-rx'),
+  cloud: mix('--accent-warn', 55, '--accent-err'),
+  social: paletteCss('--accent-alt'),
+  streaming: paletteCss('--accent-pink'),
+  messaging: paletteCss('--accent-tx'),
+  video: paletteCss('--accent-warn'),
+  dns: mix('--accent-tx', 60, '--accent-rx'),
+  other: paletteCss('--border'),
+};
 function catColour(cat: string | null | undefined): string {
-  const tone = SVC_TONE[cat || 'other'] || 'muted';
-  return tone === 'muted' ? paletteCss('--border') : paletteCss(TONE_TOKEN[tone]);
+  return CAT_COLOUR[cat || 'other'] || CAT_COLOUR['other']!;
 }
 
-/** Source nodes cycle a palette: they are hosts, with no category to colour by.
- *  Where two neighbours share a token, the alpha tells them apart. */
-const SRC_COLOURS: Array<[PaletteToken, number]> = [
-  ['--accent-rx', 1], ['--accent-alt', 0.75], ['--accent-alt', 1],
-  ['--accent-rx', 0.75], ['--accent-rx', 0.55], ['--accent-tx', 1],
+/** Source nodes cycle six distinct colours: they are hosts, with no category to
+ *  colour by. Sky, indigo, purple, cyan, light blue and mint, as before the
+ *  palette, each made from palette tokens so a theme recolours them. */
+const SRC_COLOURS: string[] = [
+  paletteCss('--accent-rx'),
+  mix('--accent-alt', 60, '--accent-rx'),
+  paletteCss('--accent-alt'),
+  mix('--accent-rx', 65, '--text-main'),
+  mix('--accent-rx', 45, '--text-main'),
+  mix('--accent-tx', 70, '--text-main'),
 ];
 
 /** A source bar: a `topSources` row - or, under a client filter, one the page
@@ -99,8 +114,7 @@ function short(label: string): string {
 
 function nodeColour(node: Node, idx: number): string {
   if (node.side === 'dst') return catColour(node.cat);
-  const [tok, alpha] = SRC_COLOURS[idx % SRC_COLOURS.length]!;
-  return paletteCss(tok, alpha);
+  return SRC_COLOURS[idx % SRC_COLOURS.length]!;
 }
 
 /**

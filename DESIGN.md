@@ -384,6 +384,9 @@ where it is limited to.
     (amber), `pill-err` (red), `pill-rx` (blue, also "informative"), `pill-alt` (purple), `pill-pink`
     and `pill-muted` (neutral). `PillTone` in `web/src/palette.ts` is the same list.
   - `pill-dot` adds a status dot.
+  - `pill-sm` is the one dense size (.58rem, no vertical padding), for a card that holds several pills
+    in a narrow column, such as Top Countries. A long name ends in an ellipsis instead of widening
+    the card. `pill(text, tone, true)`.
   - One shape: mono .64rem, 4px corners. A pill carries no inline style; placement (a margin, a gap)
     is the container's.
   - One map per vocabulary, shared by everything that colours it: `actionTone` (firewall actions,
