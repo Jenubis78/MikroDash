@@ -402,7 +402,9 @@ html[data-theme="light"] #dashAddPanel {
   overflow-y: auto;
   background: #000;
   color: var(--accent-rx);
-  border: 1px solid rgb(from var(--border) r g b / 1);
+  /* An edge barely lighter than the black, as #1c2733 was: the palette's
+     border mixed into black. --border at full alpha drew a bright frame. */
+  border: 1px solid color-mix(in srgb, var(--border) 20%, #000);
   border-radius: 6px;
   padding: .55rem .7rem;
   font-family: var(--font-mono);
