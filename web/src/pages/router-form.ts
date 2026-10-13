@@ -447,7 +447,7 @@ export function seedGeoPicker(
 export function testResultMessage(
   ok: boolean, boardName: string | undefined, error: string | undefined,
 ): string {
-  if (ok) return '\u2713 Connected' + (boardName ? ' \u2014 ' + boardName : '');
+  if (ok) return '\u2713 Connected' + (boardName ? ' - ' + boardName : '');
   return '\u2717 ' + (error || 'Connection failed');
 }
 
