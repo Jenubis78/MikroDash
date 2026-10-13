@@ -37,6 +37,11 @@ var focusSuppressions = map[string]string{
 	// caret in the prompt's colour, plus the prompt lifting to full strength
 	// while focus is there - both theme tokens, so both work in every palette.
 	"#terminalInput:focus,#terminalInput:focus-visible": ".term-live:focus-within .term-prompt",
+	// A field's own border is its indicator, as on the login screen: Chromium
+	// counts a clicked select as keyboard focus, so the ring framed every
+	// dropdown clicked. Replaced by the focus border - a soft blue with a glow
+	// on a text field, the muted text colour at 80% on a select.
+	".sform-input:focus-visible": ".sform-input:focus{border-color:",
 }
 
 // outlineOff finds a declaration block that takes the ring away with enough
