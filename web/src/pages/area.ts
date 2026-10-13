@@ -197,9 +197,12 @@ const STATE_WARN = new Set(['searching', 'requesting', 'rebinding', 'renewing', 
   'incomplete']);
 const STATE_BAD = new Set(['error', 'down', 'expired', 'timeout', 'failed']);
 
-/** A flag pill: "yes" in the kind's colour, "no" neutral. RouterOS says yes and
- *  no; the payload carries true and false. */
-const flag = (tone: PillTone) => (v: string): string => (v === 'true' ? pill('yes', tone) : v === 'false' ? pill('no', 'muted') : esc(v));
+/** A flag pill: "yes" in the kind's colour, "no" neutral. The payload carries a
+ *  flag as true and false, and an enum that is mostly a flag (authoritative,
+ *  add-default-route) as yes and no; either is the flag, and any other value
+ *  of such an enum stays text. */
+const flag = (tone: PillTone) => (v: string): string => (v === 'true' || v === 'yes' ? pill('yes', tone)
+  : v === 'false' || v === 'no' ? pill('no', 'muted') : esc(v));
 
 const PILLS: Record<PillKind, (v: string) => string> = {
   state: (v) => {

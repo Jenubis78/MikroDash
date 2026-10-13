@@ -364,7 +364,7 @@ export function initRoutingPage(socket: Socket, isVisible: (page: string) => boo
     }
     routesTbody.innerHTML = routes.map((r) => {
       const activeCell = r.active
-        ? '<span style="color:rgb(from var(--accent-tx) r g b / .9);font-size:.7rem">&#10003; Active</span>'
+        ? pill('active', 'ok')
         : '<span style="color:var(--text-muted);font-size:.7rem">-</span>';
       const typeCell = r.type === 'static'
         ? pill('Static', 'rx')

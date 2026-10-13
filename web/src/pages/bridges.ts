@@ -41,7 +41,7 @@ const COLS_H: SortCol[] = [
 
 function onOff(v: boolean, label: string): string {
   return v ? pill(label, 'ok')
-    : '<span style="color:var(--text-muted)">off</span>';
+    : pill('off', 'muted');
 }
 
 function rate(b: Bridge): string {
@@ -122,7 +122,7 @@ export function initBridgesPage(socket: Socket, isVisible: (page: string) => boo
     if (pTable) {
       pTable.innerHTML = ports.length ? ports.map((p) => {
         const state = p.disabled ? pill('disabled', 'warn')
-          : p.inactive ? '<span style="color:var(--text-muted)">inactive</span>'
+          : p.inactive ? pill('inactive', 'warn')
           : pill('active', 'ok');
         return '<tr' + resRow(p.id, p.interface) + '>' +
           '<td>' + esc(p.interface) + (p.dynamic ? ' ' + pill('dyn', 'rx') : '') + '</td>' +
@@ -166,7 +166,7 @@ export function initBridgesPage(socket: Socket, isVisible: (page: string) => boo
     const hTable = el('bridgesHostTable');
     if (hTable) {
       hTable.innerHTML = hosts.length ? hosts.map((h) => {
-        const type = h.local ? '<span style="color:var(--text-muted)">local</span>'
+        const type = h.local ? pill('local', 'muted')
           : h.external ? pill('external', 'alt')
           : h.dynamic ? pill('learned', 'rx')
           : pill('static', 'muted');

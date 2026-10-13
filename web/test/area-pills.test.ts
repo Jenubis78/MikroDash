@@ -90,6 +90,17 @@ const vrrp = send('vrrp', [
 const v = cells('vrrp', vrrp)[0];
 assert.strictEqual(v.running, '<span class="pill pill-ok">yes</span>');
 assert.strictEqual(v.invalid, '<span class="pill pill-err">yes</span>');
+// RouterOS reports some flags as a yes/no enum: the same pill, and any other
+// value of the enum stays text.
+const srv = send('dhcp-servers', [
+  { id: '*1', identity: 's1', values: { name: 's1', authoritative: 'yes' } },
+  { id: '*2', identity: 's2', values: { name: 's2', authoritative: 'no' } },
+  { id: '*3', identity: 's3', values: { name: 's3', authoritative: 'after-2sec-delay' } },
+]);
+const sv = cells('dhcp-servers', srv);
+assert.strictEqual(sv[0].authoritative, '<span class="pill pill-rx">yes</span>');
+assert.strictEqual(sv[1].authoritative, '<span class="pill pill-muted">no</span>');
+assert.strictEqual(sv[2].authoritative, 'after-2sec-delay', 'an enum value that is not yes or no became a pill');
 say('ok  a flag reads yes or no, in its kind\'s colour only when true');
 
 // ── ACTIONS: THE FIREWALL PAGE'S BADGE ──────────────────────────────────────

@@ -85,7 +85,7 @@ export const AREAS: readonly Area[] = [
     key: "certificates", title: "Certificates", navGroup: "security", tier: "advanced",
     icon: "<path d=\"M14 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5\"/><path d=\"M7 9h8\"/><path d=\"M7 13h4\"/><circle cx=\"18\" cy=\"15\" r=\"3\"/><path d=\"M16.5 17.6L16 22l2-1 2 1-.5-4.4\"/>",
     tables: [
-      { resource: "certificate", title: "Certificate", columns: ["name", "commonName", "privateKey", "trusted", "invalidAfter", "expiresAfter"], ordered: false, pills: {} },
+      { resource: "certificate", title: "Certificate", columns: ["name", "commonName", "privateKey", "trusted", "invalidAfter", "expiresAfter"], ordered: false, pills: { "privateKey": "info", "trusted": "good" } },
     ],
     panels: [],
   },
@@ -126,8 +126,8 @@ export const AREAS: readonly Area[] = [
     key: "logging", title: "Logging", navGroup: "system", tier: "advanced",
     icon: "<path d=\"M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z\"/><path d=\"M4 7h4M4 12h4M4 17h4\"/><path d=\"M11 8h5\"/><path d=\"M11 12h5\"/>",
     tables: [
-      { resource: "logRule", title: "Rules", columns: ["topics", "action", "prefix", "disabled", "isDefault", "comment"], ordered: false, pills: { "disabled": "warn" } },
-      { resource: "logAction", title: "Actions", columns: ["name", "target", "memoryLines", "remote", "isDefault"], ordered: false, pills: {} },
+      { resource: "logRule", title: "Rules", columns: ["topics", "action", "prefix", "disabled", "isDefault", "comment"], ordered: false, pills: { "disabled": "warn", "isDefault": "info" } },
+      { resource: "logAction", title: "Actions", columns: ["name", "target", "memoryLines", "remote", "isDefault"], ordered: false, pills: { "isDefault": "info" } },
     ],
     panels: [],
   },
@@ -152,7 +152,7 @@ export const AREAS: readonly Area[] = [
     key: "routing-tables", title: "Routing Tables", navGroup: "ipsvc", tier: "advanced",
     icon: "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 9h18\"/><path d=\"M3 14.5h18\"/><path d=\"M9 4v16\"/>",
     tables: [
-      { resource: "routingTable", title: "Routing Table", columns: ["name", "fib", "disabled", "dynamic", "invalid", "comment"], ordered: false, pills: { "disabled": "warn", "dynamic": "info", "invalid": "bad" } },
+      { resource: "routingTable", title: "Routing Table", columns: ["name", "fib", "disabled", "dynamic", "invalid", "comment"], ordered: false, pills: { "fib": "info", "disabled": "warn", "dynamic": "info", "invalid": "bad" } },
     ],
     panels: [],
   },
@@ -198,7 +198,7 @@ export const AREAS: readonly Area[] = [
     icon: "<path d=\"M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z\"/><path d=\"M9 12l2 2 4-4\"/>",
     tables: [
       { resource: "ovpnServer", title: "Servers", columns: ["name", "port", "protocol", "certificate", "auth", "cipher", "inactive", "disabled", "comment"], ordered: false, pills: { "inactive": "warn", "disabled": "warn" } },
-      { resource: "ovpnClient", title: "Clients", columns: ["name", "connectTo", "port", "protocol", "user", "addDefaultRoute", "running", "disabled", "comment"], ordered: false, pills: { "running": "good", "disabled": "warn" } },
+      { resource: "ovpnClient", title: "Clients", columns: ["name", "connectTo", "port", "protocol", "user", "addDefaultRoute", "running", "disabled", "comment"], ordered: false, pills: { "addDefaultRoute": "info", "running": "good", "disabled": "warn" } },
     ],
     panels: [],
   },
@@ -214,7 +214,7 @@ export const AREAS: readonly Area[] = [
     key: "pppoe-clients", title: "PPPoE Clients", navGroup: "tunnels", tier: "advanced",
     icon: "<path d=\"M4 12h5\"/><path d=\"M15 12h5\"/><rect x=\"9\" y=\"8\" width=\"6\" height=\"8\" rx=\"1.5\"/><path d=\"M17 9l3 3-3 3\"/>",
     tables: [
-      { resource: "pppoeClient", title: "PPPoE Client", columns: ["name", "interface", "user", "serviceName", "addDefaultRoute", "running", "invalid", "disabled", "comment"], ordered: false, pills: { "running": "good", "invalid": "bad", "disabled": "warn" } },
+      { resource: "pppoeClient", title: "PPPoE Client", columns: ["name", "interface", "user", "serviceName", "addDefaultRoute", "running", "invalid", "disabled", "comment"], ordered: false, pills: { "addDefaultRoute": "info", "running": "good", "invalid": "bad", "disabled": "warn" } },
     ],
     panels: [],
   },
@@ -222,7 +222,7 @@ export const AREAS: readonly Area[] = [
     key: "dhcp-clients", title: "DHCP Clients", navGroup: "ipsvc", tier: "advanced",
     icon: "<rect x=\"3\" y=\"15\" width=\"18\" height=\"6\" rx=\"1.5\"/><path d=\"M12 3v9\"/><path d=\"M8 8l4 4 4-4\"/><path d=\"M7 18h2\"/>",
     tables: [
-      { resource: "dhcpClient", title: "DHCP Client", columns: ["interface", "status", "address", "gateway", "addDefaultRoute", "expiresAfter", "disabled", "comment"], ordered: false, pills: { "status": "state", "disabled": "warn" } },
+      { resource: "dhcpClient", title: "DHCP Client", columns: ["interface", "status", "address", "gateway", "addDefaultRoute", "expiresAfter", "disabled", "comment"], ordered: false, pills: { "status": "state", "addDefaultRoute": "info", "disabled": "warn" } },
     ],
     panels: [],
   },
@@ -230,7 +230,7 @@ export const AREAS: readonly Area[] = [
     key: "dhcp-servers", title: "DHCP Servers", navGroup: "ipsvc", tier: "standard",
     icon: "<rect x=\"3\" y=\"3\" width=\"18\" height=\"6\" rx=\"1.5\"/><path d=\"M12 9v5\"/><path d=\"M5 20v-3h14v3\"/><path d=\"M12 14v3\"/><path d=\"M7 6h2\"/>",
     tables: [
-      { resource: "dhcpServer", title: "Servers", columns: ["name", "interface", "addressPool", "leaseTime", "authoritative", "invalid", "disabled", "comment"], ordered: false, pills: { "invalid": "bad", "disabled": "warn" } },
+      { resource: "dhcpServer", title: "Servers", columns: ["name", "interface", "addressPool", "leaseTime", "authoritative", "invalid", "disabled", "comment"], ordered: false, pills: { "authoritative": "info", "invalid": "bad", "disabled": "warn" } },
       { resource: "dhcpNetwork", title: "Networks", columns: ["address", "gateway", "dnsServer", "domain", "comment"], ordered: false, pills: {} },
     ],
     panels: [],

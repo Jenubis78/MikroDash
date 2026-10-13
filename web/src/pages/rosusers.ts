@@ -184,7 +184,7 @@ export function initRosUsersPage(socket: Socket, isVisible: (page: string) => bo
 
     userTb.innerHTML = rows.length ? rows.map((u) => {
       const status = u.disabled ? pill('disabled', 'warn')
-        : u.expired ? '<span style="color:var(--text-muted)">expired</span>'
+        : u.expired ? pill('expired', 'muted')
         : pill('enabled', 'ok');
       return '<tr' + (u.protected ? '' : resRow(u.id, u.name, 'rosUser')) + '>' +
         '<td>' + esc(u.name) + (u.comment ? '<div class="muted-note">' + esc(u.comment) + '</div>' : '') + '</td>' +

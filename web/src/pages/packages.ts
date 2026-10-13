@@ -36,9 +36,9 @@ function stateCell(p: Package): string {
       esc(p.scheduledAction || 'scheduled') + ' pending</span>';
   }
   if (p.state === 'installed') return pill('installed', 'ok');
-  if (p.state === 'disabled') return '<span style="color:var(--text-muted)">disabled</span>';
+  if (p.state === 'disabled') return pill('disabled', 'warn');
   if (p.state === 'available') return pill('available', 'rx');
-  return '<span style="color:var(--text-muted)">unknown</span>';
+  return pill('unknown', 'muted');
 }
 
 export function initPackagesPage(socket: Socket, isVisible: (page: string) => boolean): void {

@@ -268,7 +268,7 @@ export function initCapsmanPage(socket: Socket, isVisible: (page: string) => boo
   }
 
   function yesNo(v: boolean): string {
-    return v ? 'Yes' : '<span class="muted-note">No</span>';
+    return v ? pill('yes', 'rx') : pill('no', 'muted');
   }
 
   /** Rows for a tab, from the one payload the collector already sends. */
