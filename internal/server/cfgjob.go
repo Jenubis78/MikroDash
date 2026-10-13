@@ -452,7 +452,7 @@ func (s *Server) cfgRunOne(r *cfgRun, t *cfgTargetRun) cfgdeploy.Outcome {
 				Override: t.in.Override, Expect: t.in.Expect, Approved: t.in.Hash, Acked: acked})
 		} else {
 			out = cfgdeploy.RunAdditions(env, cfgdeploy.Additions{
-				Plan:   cfgdeploy.Plan{Template: tpl, Values: vals, Live: live},
+				Plan:   cfgdeploy.Plan{Template: tpl, Values: vals, Live: live, Shipped: isCanned(r.tplID)},
 				Expect: t.in.Expect, Approved: t.in.Hash, Acked: acked})
 		}
 		return nil

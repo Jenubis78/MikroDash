@@ -38,6 +38,11 @@ const (
 	// may not touch — so those move from refuse to acknowledge — but it is
 	// still parsed by the same dialect, so scripting constructs never pass.
 	Full = "full"
+	// Shipped is Additions for a canned template, deployed by its canned id. Its
+	// body is the release's, pinned in canned_test.go's ledger, so a script or
+	// scheduler entry in it, and every field that is code, was read in review:
+	// those are acknowledged rather than refused. A clone is the operator's text, judged as Additions again.
+	Shipped = "shipped"
 )
 
 // Worst is the most serious level among findings, "" when there are none.
@@ -64,22 +69,23 @@ func Worst(fs []Finding) string {
 var refusedMenus = []struct {
 	prefix, why string
 	fullAck     bool // a whole export legitimately carries it: acknowledge instead
+	shippedAck  bool // a canned template may carry it: acknowledge instead
 }{
-	{"/system/script", "a script is code that runs with the router's rights", true},
-	{"/system/scheduler", "a scheduler entry runs code on a timer", true},
+	{"/system/script", "a script is code that runs with the router's rights", true, true},
+	{"/system/scheduler", "a scheduler entry runs code on a timer", true, true},
 	// A full export carries /certificate SETTINGS (never a certificate: they
 	// are not exported), a swap file under /disk, and container configuration
 	// such as the registry. Measured on the lab CHR's own export (2026-09-21):
 	// refusing them made a real router's export undeployable, so a full
 	// replacement acknowledges them. An addition still may not touch them.
-	{"/certificate", "certificates carry private keys", true},
-	{"/file", "files are not configuration", false},
-	{"/disk", "disks and swap files are storage, not network configuration", true},
-	{"/container", "a container runs an image — code", true},
-	{"/tool/netwatch", "netwatch entries run scripts on up and down", true},
-	{"/user/ssh-keys", "SSH keys are credentials", false},
-	{"/user/group", "user groups decide who may do what", true},
-	{"/user/aaa", "RADIUS login decides whether anyone can sign in", true},
+	{"/certificate", "certificates carry private keys", true, false},
+	{"/file", "files are not configuration", false, false},
+	{"/disk", "disks and swap files are storage, not network configuration", true, false},
+	{"/container", "a container runs an image — code", true, false},
+	{"/tool/netwatch", "netwatch entries run scripts on up and down", true, false},
+	{"/user/ssh-keys", "SSH keys are credentials", false, false},
+	{"/user/group", "user groups decide who may do what", true, false},
+	{"/user/aaa", "RADIUS login decides whether anyone can sign in", true, false},
 }
 
 // userMenu is `/user` itself — the accounts, MikroDash's among them.
@@ -176,6 +182,10 @@ func Analyze(t *Template, profile string) []Finding {
 	add := func(l Line, level, code, f string, a ...any) {
 		out = append(out, Finding{Level: level, Code: code, Line: l.Num, Message: fmt.Sprintf(f, a...)})
 	}
+	shipped := profile == Shipped
+	if shipped {
+		profile = Additions
+	}
 	for _, l := range t.Lines {
 		menu := l.Path()
 
@@ -184,7 +194,7 @@ func Analyze(t *Template, profile string) []Finding {
 		for _, rm := range refusedMenus {
 			if menu == rm.prefix || strings.HasPrefix(menu, rm.prefix+"/") {
 				level := Refuse
-				if profile == Full && rm.fullAck {
+				if (profile == Full && rm.fullAck) || (shipped && rm.shippedAck) {
 					level = Ack
 				}
 				add(l, level, "menu", "%s: %s", menu, rm.why)
@@ -210,7 +220,7 @@ func Analyze(t *Template, profile string) []Finding {
 		// TestEverySecretFieldWarnsWhenWrittenLiterally walks the registry, and
 		// found it.
 		res := menuIndex[menu]
-		checkFields(l, res, profile, add)
+		checkFields(l, res, profile, shipped, add)
 		if refused {
 			continue
 		}
@@ -246,7 +256,7 @@ func Analyze(t *Template, profile string) []Finding {
 
 // checkFields flags the fields of a registry menu that are code, or credentials
 // written as literals.
-func checkFields(l Line, res *resource.Resource, profile string,
+func checkFields(l Line, res *resource.Resource, profile string, shipped bool,
 	add func(Line, string, string, string, ...any)) {
 	if res == nil {
 		return
@@ -259,7 +269,7 @@ func checkFields(l Line, res *resource.Resource, profile string,
 		}
 		if f.Code {
 			level := Refuse
-			if profile == Full {
+			if profile == Full || shipped {
 				level = Ack
 			}
 			add(l, level, "code-field", "%s %s=: this field is code that the router runs", menu, a.Name)

@@ -38,7 +38,7 @@ func TestEveryCannedTemplateIsDeployable(t *testing.T) {
 		if err := CheckDeclared(tp, c.Variables); err != nil {
 			t.Errorf("%s: %v", c.ID, err)
 		}
-		for _, f := range Analyze(tp, Additions) {
+		for _, f := range Analyze(tp, Shipped) {
 			if f.Level == Refuse {
 				t.Errorf("%s line %d is refused: %s", c.ID, f.Line, f.Message)
 			}
@@ -99,7 +99,7 @@ func TestEveryCannedTemplateDeploysOnItsDefaults(t *testing.T) {
 			t.Errorf("%s does not fill on its defaults: %v", c.ID, err)
 			continue
 		}
-		for _, f := range Analyze(filled, Additions) {
+		for _, f := range Analyze(filled, Shipped) {
 			if f.Level == Refuse {
 				t.Errorf("%s on its defaults, line %d is refused: %s", c.ID, f.Line, f.Message)
 			}
@@ -216,6 +216,41 @@ func TestLockClassCannedTemplatesKeepMikroDashIn(t *testing.T) {
 	}
 }
 
+// A canned template may carry a script and its scheduler, which the release
+// reviewed: deployed by its canned id they need an acknowledgement. The same
+// text as an operator's own template, a clone, is refused as before.
+func TestOnlyAShippedTemplateMayCarryAScript(t *testing.T) {
+	c, ok := CannedByID("ip-blocklist")
+	if !ok {
+		t.Fatal("ip-blocklist is not shipped")
+	}
+	tp, err := Parse(c.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	count := func(profile, level string) int {
+		n := 0
+		for _, f := range Analyze(tp, profile) {
+			if f.Code == "menu" && f.Level == level {
+				n++
+			}
+		}
+		return n
+	}
+	// Two scheduler lines and two script lines: a remove and an add in each.
+	if got := count(Shipped, Ack); got != 4 {
+		t.Errorf("shipped: %d script and scheduler lines acknowledged, want 4", got)
+	}
+	for _, f := range Analyze(tp, Shipped) {
+		if f.Level == Refuse {
+			t.Errorf("shipped: line %d is refused: %s", f.Line, f.Message)
+		}
+	}
+	if got := count(Additions, Refuse); got != 4 {
+		t.Errorf("CONTROL, as a clone: %d script and scheduler lines refused, want 4", got)
+	}
+}
+
 // ── THE LEDGER ───────────────────────────────────────────────────────────────
 //
 // Each body's fingerprint, so a change to a shipped template is a change to
@@ -231,6 +266,7 @@ var cannedLedger = map[string]string{
 	"guest-network":           "72800c2714bd9c64@v1",
 	"home-firewall":           "39803d7b9336e6e6@v1",
 	"iot-isolation":           "96f4838dcb3a85b7@v1",
+	"ip-blocklist":            "b295deeffcbd9799@v1",
 	"ipv6-firewall":           "806602513075a7f2@v1",
 	"management-lockdown":     "2bb77a14fc3ccf96@v1",
 	"office-firewall":         "c768340c1d8d1cf1@v1",

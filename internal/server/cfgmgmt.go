@@ -279,6 +279,10 @@ func cannedViews() []cannedView {
 	return out
 }
 
+// isCanned reports whether a template id names a canned template, whose
+// body is the release's and is judged by cfgtpl.Shipped. A clone has its own id.
+func isCanned(id string) bool { return strings.HasPrefix(id, cfgtpl.CannedPrefix) }
+
 // cannedRow is a shipped template in the shape a stored one has, so reading,
 // previewing and cloning treat the two alike. Its revision is its version.
 func cannedRow(id string) (*db.CfgTemplate, bool) {
@@ -313,7 +317,11 @@ func (s *Server) cfgGet(w http.ResponseWriter, r *http.Request, _ *Session) {
 		// The lockout checks too, judged as the Library card is: with no
 		// router chosen, MikroDash's way in is unknown. The card's "may cut
 		// MikroDash off" and these lines are the same verdict.
-		v.Findings = append(v.Findings, cfgtpl.Analyze(pt, profileFor(t.Kind))...)
+		profile := profileFor(t.Kind)
+		if isCanned(t.ID) {
+			profile = cfgtpl.Shipped
+		}
+		v.Findings = append(v.Findings, cfgtpl.Analyze(pt, profile)...)
 		v.Findings = append(v.Findings, cfgtpl.AnalyzeLive(pt, cfgtpl.LiveContext{})...)
 	}
 	writeJSON(w, map[string]any{"ok": true, "template": v})
@@ -422,7 +430,7 @@ func (s *Server) cfgCreate(w http.ResponseWriter, r *http.Request, sess *Session
 // cfgShipped answers a change aimed at a canned template: a release owns it,
 // and a clone is how to change it.
 func cfgShipped(w http.ResponseWriter, id string) bool {
-	if strings.HasPrefix(id, cfgtpl.CannedPrefix) {
+	if isCanned(id) {
 		writeJSONErr(w, http.StatusForbidden, "a canned template ships with MikroDash; clone it to change it")
 		return true
 	}

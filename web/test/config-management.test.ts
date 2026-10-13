@@ -184,6 +184,13 @@ assert.strictEqual(deploy.readyToStart(['r1'], { r1: ok }, new Set(['r1|lockout-
 assert.strictEqual(deploy.readyToStart(['r1'], { r1: { routerId: 'r1', hash: 'h', findings: [{ level: 'refuse', code: 'x', message: 'no' }] } },
   new Set()), 'A check refuses this template on a router');
 assert.strictEqual(deploy.findingKey(ack), 'lockout-firewall@13', 'the key must be the one cfgdeploy.FindingKey writes');
+// Two findings with one key (source= and policy= on one script line) are one
+// OK box carrying both messages: two boxes on one key cleared each other.
+const twin = (m) => ({ level: 'ack', code: 'code-field', line: 20, message: m });
+const card = deploy.previewCard('R', { routerId: 'r1', hash: 'h', findings: [twin('source='), twin('policy='), ack] }, new Set());
+assert.strictEqual((card.match(/data-key="code-field@20"/g) || []).length, 1, 'one OK box per finding key');
+assert.ok(card.includes('source=') && card.includes('policy='), 'both messages of a shared key are shown');
+assert.strictEqual((card.match(/data-dep-ack=/g) || []).length, 2, 'CONTROL: a finding with its own key keeps its own box');
 // The canary marking moved to the shared picker's ordered mode (2026-10-02);
 // web/test/device-picker.test.ts checks it there.
 // A secret is entered as one, and a label stays text.

@@ -286,7 +286,8 @@ func (s *Server) cfgPreview(w http.ResponseWriter, r *http.Request, sess *Sessio
 		writeJSON(w, map[string]any{"ok": true, "kind": t.Kind, "target": target, "reset": prep})
 		return
 	}
-	prep, err := cfgdeploy.Prepare(sn.Exec, cfgdeploy.Plan{Template: pt, Values: vals, Live: live})
+	prep, err := cfgdeploy.Prepare(sn.Exec, cfgdeploy.Plan{Template: pt, Values: vals, Live: live,
+		Shipped: isCanned(t.ID)})
 	if err != nil {
 		cfgRefuse(w, &cfgInputError{Msg: safe.Message(err.Error())})
 		return

@@ -142,7 +142,8 @@ func (s *Server) ztpProvision(id string) {
 		finish(db.ZTPFailed, "the router's identity could not be read")
 		return
 	}
-	prep, err := cfgdeploy.Prepare(sn.Exec, cfgdeploy.Plan{Template: bound, Values: vals, Live: live})
+	prep, err := cfgdeploy.Prepare(sn.Exec, cfgdeploy.Plan{Template: bound, Values: vals, Live: live,
+		Shipped: isCanned(*d.TemplateID)})
 	drop()
 	if err != nil {
 		finish(db.ZTPFailed, safe.Message(err.Error()))

@@ -91,12 +91,27 @@ export function previewCard(label: string, p: RouterPreview, acked: Set<string>)
   }
   const findings = p.findings ?? [];
   const refused = findings.some((f) => f.level === 'refuse');
+  // One OK per key: an acknowledgement is of a code on a line, so two findings
+  // sharing both (source= and policy= on one script line) are one tick. Two
+  // boxes on one key fought: unticking either cleared the other's.
+  const msgs = new Map<string, string[]>();
+  for (const f of findings) {
+    if (f.level !== 'ack') continue;
+    const k = findingKey(f);
+    if (msgs.has(k)) msgs.get(k)!.push(f.message);
+    else msgs.set(k, [f.message]);
+  }
   const checks = findings.map((f) => {
     if (f.level !== 'ack') return findingRow(f);
-    const key = p.routerId + '|' + findingKey(f);
+    const k = findingKey(f);
+    const all = msgs.get(k);
+    if (!all) return '';
+    msgs.delete(k);
+    const key = p.routerId + '|' + k;
     return '<li class="cfg-finding cfg-lvl-ack"><label class="cfg-ack"><input type="checkbox" data-dep-ack="' +
-      esc(p.routerId) + '" data-key="' + esc(findingKey(f)) + '"' + (acked.has(key) ? ' checked' : '') + '> OK</label>' +
-      '<span class="cfg-meta">line ' + (f.line ?? 0) + '</span><span class="cfg-finding-msg">' + esc(f.message) + '</span></li>';
+      esc(p.routerId) + '" data-key="' + esc(k) + '"' + (acked.has(key) ? ' checked' : '') + '> OK</label>' +
+      '<span class="cfg-meta">line ' + (f.line ?? 0) + '</span><span class="cfg-finding-msg">' +
+      all.map(esc).join('<br>') + '</span></li>';
   }).join('');
   const t = p.target;
   return '<div class="cfg-prev' + (refused ? ' is-bad' : '') + '"><div class="cfg-prev-head"><strong>' + esc(label) + '</strong>' +

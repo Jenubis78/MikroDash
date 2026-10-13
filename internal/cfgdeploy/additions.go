@@ -21,6 +21,10 @@ type Plan struct {
 	// variables included (cfgtpl.Bind).
 	Values map[string]string
 	Live   cfgtpl.LiveContext
+	// Shipped is true for a canned template deployed by its canned id: it is
+	// judged by cfgtpl.Shipped, which acknowledges the scripts the release
+	// reviewed rather than refusing them.
+	Shipped bool
 }
 
 // Prepared is a plan resolved against one router, as the preview shows it.
@@ -57,7 +61,11 @@ func Prepare(do Do, p Plan) (Prepared, error) {
 	if err != nil {
 		return Prepared{}, err
 	}
-	findings := findingsFor(resolved, filled, cfgtpl.Additions, p.Live)
+	profile := cfgtpl.Additions
+	if p.Shipped {
+		profile = cfgtpl.Shipped
+	}
+	findings := findingsFor(resolved, filled, profile, p.Live)
 	if ensured == nil {
 		ensured = []cfgtpl.EnsureResult{}
 	}
