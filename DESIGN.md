@@ -206,6 +206,7 @@ A hard-coded colour drops out of all of that, so components never use one.
 |---|---|---|
 | Page background | `--bg-deep` | Night `#07090f` |
 | Card, modal | `--bg-card` | Translucent ink `rgba(13,18,30,.85)` |
+| Input field | `--bg-field` | A shade, not a colour: black at 20% (3.5% in light) |
 | Divider, outline | `--border` | Faint steel `rgba(99,130,190,.13)` |
 | Primary text | `--text-main` | Pale steel `rgba(200,215,240,.9)` |
 | Labels, metadata | `--text-muted` | Dim steel `rgba(148,163,190,.55)` |
@@ -460,9 +461,13 @@ rows below it, a select a few pixels off its neighbours, and placeholders in the
 **The controls.**
 
 - **One box for everything**: a text input, a number, a select and a locked display value are all
-  `.sform-input`, `--ctl-h` tall, `--bg-deep`, with a 1px border that turns `--accent-rx` on focus.
+  `.sform-input`, `--ctl-h` tall, `--bg-field`, with a 1px border that turns `--accent-rx` on focus.
 - **Values are mono** (they are router data); labels are the UI font, uppercase and muted.
 - **Placeholders are `--text-muted`.** A placeholder shows the default; it is never the browser's grey.
+- **A field is a shallow well in its surface.** `--bg-field` shades whatever is behind it, so a field
+  on a card is the card a little darker and one on the page is the page a little darker; the border
+  carries the edge. A select's open list is the card colour made opaque, since the browser cannot
+  see through it.
 - **A select is drawn by the stylesheet**, chevron included, so it matches the inputs beside it.
 - **A toggle is a field like any other**: an uppercase label above, and an `.ff-toggle` box of the
   same height as an input, reading Off or On beside the switch. The Settings page's `.stoggle`
