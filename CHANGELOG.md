@@ -42,7 +42,6 @@ All notable changes to MikroDash will be documented in this file.
   wireguard updated.
 - New gates hold the shared controls, buttons, tables, pills, chips, corners, fonts and palette
   colours.
-- `DESIGN.md` is no longer in the repository.
 
 ## [0.8.72] - Import devices from CSV, one MikroDash login, and a complete Firewall rule dialog
 
