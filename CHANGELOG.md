@@ -2,6 +2,48 @@
 
 All notable changes to MikroDash will be documented in this file.
 
+## [0.8.73] - A threat IP blocklist template, one look for every control, and true ping times
+
+### New
+
+- **Threat IP blocklist template** in Config Management (Security): the
+  [mikrotik_blocklist](https://gitlab.com/multiduplikator-group/mikrotik_blocklist) list, set up as
+  its README does, with the large list by default. It adds the update script, a 3-hour schedule and
+  two RAW drop rules. The script and schedule each need an OK at deploy; built-in templates are the
+  only ones allowed to add them.
+- **The NetWatch dialog has every setting**: probe thresholds, timings, HTTP(S) and DNS options.
+  Leaving a box blank uses RouterOS's default.
+
+### Changed
+
+- **One look for every control.** Text boxes, dropdowns, toggles, buttons, tables, pills and chips are
+  each one shared style across every page and dialog, in one height (28px).
+- **Colours follow your palette everywhere**, including charts, gauges and maps. The light theme has
+  darker red, green and amber for contrast.
+- Dropdowns open as a card-coloured list with a soft highlight, and fields take the login screen's
+  look.
+- Corners come in a few sizes by role; state columns that were plain text are now pills.
+- NetWatch is under Tools in the menu, as in WinBox.
+- Settings -> AI Agent: the Agent Overview settings sit under the system prompt.
+- The Dashboard ping card shows whole milliseconds.
+
+### Fixed
+
+- Ping times over one unit were misread: `1s` showed as 1 ms and `1ms438us` as 1, so Min and Max
+  could be wrong.
+- The My Account dialog's footer showed outside the dialog.
+- The AI Agent's proposal box always showed the far-router login fields.
+- Some colours never followed the chosen palette: count pills and Devices status dots kept the
+  default colours, and a few warnings were drawn green.
+
+### Internal
+
+- Security: Go 1.27.2 and `golang.org/x/net` v0.61.0 for GO-2026-6617; sqlite, maxminddb and
+  wireguard updated.
+- New gates hold the shared controls, buttons, tables, pills, chips, corners, fonts and palette
+  colours.
+- `DESIGN.md` is no longer in the repository.
+
 ## [0.8.72] - Import devices from CSV, one MikroDash login, and a complete Firewall rule dialog
 
 ### New
