@@ -34,15 +34,26 @@ func Thin[T any](rows []T) []T {
 	// for it to see.
 	if len(rows) > ChartPoints {
 		// ceil, in integers: the live side is `Math.ceil(rows.length / CHART_POINTS)`.
-		step = (len(rows) + ChartPoints - 1) / ChartPoints
+		// Divide, then round up on a remainder: `(n + d - 1) / d` reads to CodeQL
+		// as an allocation size that can overflow.
+		step = ceilDiv(len(rows), ChartPoints)
 	}
-	out := make([]T, 0, (len(rows)+step-1)/step)
+	out := make([]T, 0, ceilDiv(len(rows), step))
 	for i, r := range rows {
 		if i%step == 0 {
 			out = append(out, r)
 		}
 	}
 	return out
+}
+
+// ceilDiv is n/d rounded up, for a non-negative n and a positive d.
+func ceilDiv(n, d int) int {
+	q := n / d
+	if n%d != 0 {
+		q++
+	}
+	return q
 }
 
 // CapRows caps the PDF table and says so IN THE TABLE.
@@ -67,7 +78,7 @@ func CapRows(rows []map[string]any, columns []string) ([]map[string]any, bool) {
 	for i, c := range columns {
 		if i == 0 {
 			note[c] = "… showing the first " + groupDigits(MaxPDFRows) + " of " +
-				groupDigits(len(rows)) + " rows — narrow the range or aggregate for the rest"
+				groupDigits(len(rows)) + " rows - narrow the range or aggregate for the rest"
 		} else {
 			note[c] = ""
 		}

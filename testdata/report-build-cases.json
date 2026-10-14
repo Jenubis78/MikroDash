@@ -1213,7 +1213,7 @@
    "truncated": true,
    "length": 5001,
    "last": {
-    "Timestamp": "… showing the first 5,000 of 5,001 rows — narrow the range or aggregate for the rest",
+    "Timestamp": "… showing the first 5,000 of 5,001 rows - narrow the range or aggregate for the rest",
     "Target": "",
     "RTT (ms)": "",
     "Loss (%)": ""
@@ -1237,7 +1237,7 @@
    "truncated": true,
    "length": 5001,
    "last": {
-    "Timestamp": "… showing the first 5,000 of 43,200 rows — narrow the range or aggregate for the rest",
+    "Timestamp": "… showing the first 5,000 of 43,200 rows - narrow the range or aggregate for the rest",
     "Target": "",
     "RTT (ms)": "",
     "Loss (%)": ""
@@ -1258,7 +1258,7 @@
    "truncated": true,
    "length": 5001,
    "last": {
-    "Only": "… showing the first 5,000 of 5,005 rows — narrow the range or aggregate for the rest"
+    "Only": "… showing the first 5,000 of 5,005 rows - narrow the range or aggregate for the rest"
    },
    "first": {
     "Only": "Only-0-0"
