@@ -136,6 +136,19 @@ var streamableMenus = map[string]string{
 	// lane and poll. See the fast/slow ledger in internal/verify.
 	"/interface/detect-internet/state/print": "wan",
 
+	// ── THE REST OF THE LIVE TABLES (2026-10-15) ───────────────────────────
+	//
+	// Every live menu a collector subscribes to, once the shared-stream merge
+	// and the `.id` rule (internal/collect/scheduled.go) made a second reader
+	// and a narrow proplist safe. Each probed on CHR Test (7.24.5) with
+	// `cmd/streamcost -probe`; a table that was empty there was given rows
+	// first, because an empty table cannot tell a working stream from a dead one.
+
+	// Four collectors join against `arp`'s index, so a client's IP follows it
+	// within one interval instead of up to thirty seconds behind.
+	// Probed 2026-10-15: streams, 5 rows in 4s, first row 3ms.
+	"/ip/arp/print": "arp",
+
 	// ── METADATA DOES NOT STREAM, AND SEVEN LINES LEFT (2026-09-15) ─────────
 	//
 	// `/interface/wifi/print`, `/interface/vlan/print`,
