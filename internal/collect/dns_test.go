@@ -10,30 +10,49 @@ package collect
 // how the port was told to follow. They now pin the fixed behaviour.
 
 import (
+	"errors"
 	"mikrodash/internal/hub"
 	"reflect"
+	"strings"
 	"testing"
 
+	"mikrodash/internal/resource"
 	"mikrodash/internal/routeros"
 )
 
 // scriptedReader answers from whatever rows it currently holds, so a test can
 // change the router's answer between ticks.
 type scriptedReader struct {
-	settings routeros.Reply
-	static   []routeros.Reply
-	reads    int
+	settings   routeros.Reply
+	static     []routeros.Reply
+	forwarders []routeros.Reply
+	adlists    []routeros.Reply
+	// absent menus answer as a router without the package does.
+	absent map[string]bool
+	reads  int
+	asked  map[string]int
 }
 
 func (s *scriptedReader) Connected() bool { return true }
 
 func (s *scriptedReader) Do(cmd routeros.Cmd) ([]routeros.Reply, error) {
 	s.reads++
+	if s.asked == nil {
+		s.asked = map[string]int{}
+	}
+	s.asked[cmd.Path]++
+	if s.absent[cmd.Path] {
+		return nil, errors.New("no such command prefix")
+	}
 	switch cmd.Path {
 	case "/ip/dns/print":
 		return []routeros.Reply{s.settings}, nil
 	case "/ip/dns/static/print":
 		return s.static, nil
+	case "/ip/dns/forwarders/print":
+		return s.forwarders, nil
+	case "/ip/dns/adlist/print":
+		return s.adlists, nil
 	}
 	return nil, nil
 }
@@ -187,5 +206,122 @@ func TestBuildDNSTakesNoClockOfItsOwn(t *testing.T) {
 	// DeepEqual: DNSSettings holds a []string, so it is not comparable with ==.
 	if !reflect.DeepEqual(a.Settings, b.Settings) {
 		t.Error("the same rows produced two different settings")
+	}
+}
+
+// TestDNSStaticReadCarriesEveryFormField. The table, the edit form and the fleet
+// copy all start from this read, and a property it leaves out is one a copy
+// drops: the fleet copy of a FWD entry lost its address list and its
+// match-subdomain this way.
+func TestDNSStaticReadCarriesEveryFormField(t *testing.T) {
+	for _, c := range []struct {
+		cmd routeros.Cmd
+		res *resource.Resource
+	}{{dnsStaticCmd, resource.DNSStatic}, {dnsForwardersCmd, resource.DNSForwarder},
+		{dnsAdlistCmd, resource.DNSAdlist}} {
+		props := map[string]bool{}
+		for _, a := range c.cmd.Args {
+			for _, p := range strings.Split(strings.TrimPrefix(a, "=.proplist="), ",") {
+				props[p] = true
+			}
+		}
+		if !props[".id"] {
+			t.Errorf("%s does not ask for .id, so no row can be opened", c.cmd.Path)
+		}
+		for _, f := range c.res.Fields {
+			if !f.Unread() && !props[f.ROS] {
+				t.Errorf("%s does not ask for %s, which the %s form has", c.cmd.Path, f.ROS, c.res.Key)
+			}
+		}
+	}
+}
+
+func TestStaticEntriesCarryTheAddressList(t *testing.T) {
+	got := ParseStaticEntries([]routeros.Reply{
+		{".id": "*1", "name": "example.com", "type": "FWD", "forward-to": "corp",
+			"address-list": "to_vpn", "match-subdomain": "true"},
+		{".id": "*2", "name": "pc.lan", "type": "A", "address": "198.51.100.5", "dynamic": "true"},
+	})
+	if len(got) != 2 {
+		t.Fatalf("%d entries, want 2", len(got))
+	}
+	if e := got[0]; e.AddressList != "to_vpn" || !e.MatchSubdomain || e.Address != "corp" || e.Dynamic {
+		t.Errorf("FWD entry = %+v", e)
+	}
+	if e := got[1]; !e.Dynamic || e.AddressList != "" || e.MatchSubdomain {
+		t.Errorf("dynamic entry = %+v", e)
+	}
+}
+
+func TestForwardersCountTheEntriesNamingThem(t *testing.T) {
+	static := ParseStaticEntries([]routeros.Reply{
+		{".id": "*1", "name": "a.example", "type": "FWD", "forward-to": "corp"},
+		{".id": "*2", "name": "b.example", "type": "FWD", "forward-to": "corp"},
+		{".id": "*3", "name": "c.example", "type": "FWD", "forward-to": "198.51.100.53"},
+		{".id": "*4", "name": "corp", "type": "A", "address": "198.51.100.9"},
+	})
+	got := ParseForwarders([]routeros.Reply{
+		{".id": "*A", "name": "corp", "dns-servers": "198.51.100.53,198.51.100.54", "comment": "office"},
+		{".id": "*B", "name": "doh", "doh-servers": "https://dns.example/dns-query",
+			"verify-doh-cert": "false", "disabled": "true"},
+	}, static)
+	if len(got) != 2 {
+		t.Fatalf("%d forwarders, want 2", len(got))
+	}
+	corp, doh := got[0], got[1]
+	if corp.UsedBy != 2 || len(corp.DNSServers) != 2 || !corp.VerifyDohCert || corp.Comment != "office" {
+		t.Errorf("corp = %+v; an A record named like a forwarder is not a use of it", corp)
+	}
+	if doh.UsedBy != 0 || doh.VerifyDohCert || !doh.Disabled || len(doh.DoHServers) != 1 {
+		t.Errorf("doh = %+v", doh)
+	}
+}
+
+func TestAdlistsCarryTheirSourceAndCounts(t *testing.T) {
+	got := ParseAdlists([]routeros.Reply{
+		{".id": "*1", "url": "https://example.com/hosts.txt", "name-count": "1200", "match-count": "7"},
+		{".id": "*2", "file": "hosts.txt", "ssl-verify": "false", "comment": "local"},
+	})
+	if len(got) != 2 {
+		t.Fatalf("%d adlists, want 2", len(got))
+	}
+	if a := got[0]; a.NameCount == nil || *a.NameCount != 1200 || !a.SSLVerify {
+		t.Errorf("url adlist = %+v", a)
+	}
+	if a := got[1]; a.File != "hosts.txt" || a.SSLVerify || a.MatchCount != nil || a.Comment != "local" {
+		t.Errorf("file adlist = %+v", a)
+	}
+}
+
+// TestARouterWithoutForwardersIsAskedOnce. Forwarders and adlists are newer than
+// the rest of the resolver; a router that lacks them says so once, the page
+// hides their cards, and the slow lane stops asking.
+func TestARouterWithoutForwardersIsAskedOnce(t *testing.T) {
+	r := &scriptedReader{settings: baseSettings(), static: []routeros.Reply{baseRow()},
+		absent: map[string]bool{"/ip/dns/forwarders/print": true, "/ip/dns/adlist/print": true}}
+	d := NewDNS(r, hub.Relay{}, 10000)
+	d.Tick()
+	d.RefreshNow()
+	p := d.Last()
+	if p.ForwardersAvailable || p.AdlistsAvailable {
+		t.Errorf("forwardersAvailable=%v adlistsAvailable=%v on a router without either",
+			p.ForwardersAvailable, p.AdlistsAvailable)
+	}
+	if p.Forwarders == nil || p.Adlists == nil {
+		t.Error("an absent menu sent a null list")
+	}
+	if n := r.asked["/ip/dns/forwarders/print"]; n != 1 {
+		t.Errorf("the absent forwarders menu was asked %d times", n)
+	}
+	if n := r.asked["/ip/dns/static/print"]; n != 2 {
+		t.Errorf("the static table was read %d times, want 2", n)
+	}
+
+	r2 := &scriptedReader{settings: baseSettings(),
+		forwarders: []routeros.Reply{{".id": "*A", "name": "corp", "dns-servers": "198.51.100.53"}}}
+	d2 := NewDNS(r2, hub.Relay{}, 10000)
+	d2.Tick()
+	if p := d2.Last(); !p.ForwardersAvailable || len(p.Forwarders) != 1 || !p.AdlistsAvailable {
+		t.Errorf("a router with forwarders: %+v", p)
 	}
 }

@@ -130,6 +130,10 @@ func (s *Server) dnsFleetAdd(w http.ResponseWriter, r *http.Request) {
 		// turns it into what the validator works in — the same function the
 		// socket's write path uses, so the two cannot drift.
 		Values map[string]any `json:"values"`
+		// ByValue is set when the comparison lines this record up by its value
+		// as well, because a router holds two of its name and type (round-robin
+		// A records): another value under the name is then not this record.
+		ByValue bool `json:"byValue"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64*1024)).Decode(&body); err != nil {
 		writeJSON400OK(w)
@@ -139,12 +143,21 @@ func (s *Server) dnsFleetAdd(w http.ResponseWriter, r *http.Request) {
 	// this path has no guard chain, so it may only ever write the one resource
 	// that declares no guard.
 	res := resource.DNSStatic
+	// A DHCP server's entry is that server's to add. Copied, it would become a
+	// static record that outlives the lease it was made for.
+	if body.Values["dynamic"] == true {
+		writeJSON(w, map[string]any{"ok": false, "code": "dynamic-entry"})
+		return
+	}
 	validated, errs := res.Validate(flattenValues(body.Values), false)
 	if len(errs) > 0 {
 		writeJSON(w, map[string]any{"ok": false, "code": "invalid", "errors": errs})
 		return
 	}
 	name := validated.Values["name"]
+	if name == "" {
+		name = validated.Values[res.IdentityFallback]
+	}
 
 	// A write that cannot be recorded is refused (#97), as it is on the socket.
 	if s.auditDB == nil {
@@ -158,7 +171,7 @@ func (s *Server) dnsFleetAdd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results := fleetEach(r.Context(), targets, func(ctx context.Context, t fleetTarget) dnsFleetAddResult {
-		return s.dnsFleetAddOne(ctx, r, sess, res, validated, name, t.ID)
+		return s.dnsFleetAddOne(ctx, r, sess, res, validated, name, body.ByValue, t.ID)
 	})
 	for _, t := range over {
 		results = append(results, dnsFleetAddResult{ID: t.ID, Code: "not-attempted"})
@@ -172,7 +185,7 @@ func (s *Server) dnsFleetAdd(w http.ResponseWriter, r *http.Request) {
 // in its own session's write queue, and serially a fleet of sixteen would hold
 // the request for the sum of their round trips.
 func (s *Server) dnsFleetAddOne(ctx context.Context, r *http.Request, sess *Session,
-	res *resource.Resource, validated resource.Validated, name, routerID string) dnsFleetAddResult {
+	res *resource.Resource, validated resource.Validated, name string, byValue bool, routerID string) dnsFleetAddResult {
 
 	sn, drop, ok := s.fleetSession(ctx, routerID, dnsFleetHold)
 	if !ok {
@@ -190,7 +203,15 @@ func (s *Server) dnsFleetAddOne(ctx context.Context, r *http.Request, sess *Sess
 		}
 	}
 	werr := sn.InWriteQueue(func() error {
-		rows, rerr := sn.Exec(collect.DNSStaticCmd())
+		// FILTERED ON THE ROUTER. The whole table is 1,265 rows on the
+		// operator's routers, and Sync all read it once per missing record.
+		read := collect.DNSStaticCmd()
+		if q := validated.Values["name"]; q != "" {
+			read.Args = append(append([]string{}, read.Args...), "?name="+q)
+		} else {
+			read.Args = append(append([]string{}, read.Args...), "?regexp="+validated.Values["regexp"])
+		}
+		rows, rerr := sn.Exec(read)
 		if rerr != nil {
 			out.Code = "read-failed"
 			return nil
@@ -198,12 +219,10 @@ func (s *Server) dnsFleetAddOne(ctx context.Context, r *http.Request, sess *Sess
 		// ALREADY THERE IS NOT AN ERROR, and saying so is the point of this
 		// endpoint: "synchronise" pressed twice must not produce two records, and
 		// a router that already agrees is the answer the operator wanted.
-		for _, row := range rows {
-			if row["name"] == name && row["type"] == validated.Values["type"] {
-				out.OK = true
-				out.Code = "already-present"
-				return nil
-			}
+		if dnsAlreadyPresent(rows, dnsRecordOf(res, validated.Values), byValue) {
+			out.OK = true
+			out.Code = "already-present"
+			return nil
 		}
 		if _, aerr := sn.Exec(routeros.Cmd{
 			Path: res.Menu + "/add", Args: res.BuildArgs(validated)}); aerr != nil {
@@ -223,6 +242,35 @@ func (s *Server) dnsFleetAddOne(ctx context.Context, r *http.Request, sess *Sess
 		out.Code = writeFailCode(werr)
 	}
 	return out
+}
+
+// dnsRecordOf is the record a set of form values describes, in the projection
+// the comparison shows, so a router's rows and the record being copied are
+// read the same way.
+func dnsRecordOf(res *resource.Resource, values map[string]string) collect.DNSStaticEntry {
+	row := routeros.Reply{}
+	for _, f := range res.Fields {
+		if v, ok := values[f.Name]; ok {
+			row[f.ROS] = v
+		}
+	}
+	if e := collect.ParseStaticEntries([]routeros.Reply{row}); len(e) == 1 {
+		return e[0]
+	}
+	return collect.DNSStaticEntry{}
+}
+
+// dnsAlreadyPresent is whether a router's rows hold the record. Name and regexp
+// both, because a regexp entry has no name: comparing names alone found every
+// regexp record already present on a router holding any.
+func dnsAlreadyPresent(rows []routeros.Reply, want collect.DNSStaticEntry, byValue bool) bool {
+	for _, e := range collect.ParseStaticEntries(rows) {
+		if e.Name == want.Name && e.Regexp == want.Regexp && e.Type == want.Type &&
+			(!byValue || e.Address == want.Address) {
+			return true
+		}
+	}
+	return false
 }
 
 // dnsFleetEntries projects one router's rows for the comparison.

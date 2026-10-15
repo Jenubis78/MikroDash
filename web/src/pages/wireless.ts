@@ -126,8 +126,11 @@ const rankOf = (table: Record<string, number>, v: string): number =>
 
 // Comparators are written ASCENDING and reversed for descending, so the button
 // bar and the column headers cannot disagree about ordering.
+/** The operator's label first, then what the device calls itself. */
+const clientTitle = (c: WirelessClient): string => c.comment || c.name || c.mac || '';
+
 const WL_CMP: Record<CmpKey, (a: WirelessClient, b: WirelessClient) => number> = {
-  name: (a, b) => String(a.name || a.mac || '').localeCompare(String(b.name || b.mac || '')),
+  name: (a, b) => clientTitle(a).localeCompare(clientTitle(b)),
   signal: (a, b) => (a.signal || 0) - (b.signal || 0),
   txRate: (a, b) => parseTxRateNum(a.txRate) - parseTxRateNum(b.txRate),
   uptime: (a, b) => uptimeToSecs(a.uptime) - uptimeToSecs(b.uptime),
@@ -245,10 +248,12 @@ export function initWirelessPage(socket: Socket, isVisible: (page: string) => bo
     const ipStr = c.ip
       ? '<div style="font-size:.62rem;color:var(--accent-rx)">' + esc(c.ip) + '</div>' : '';
     const macStr = '<div style="font-size:.6rem;color:var(--text-muted)">' + esc(c.mac) + '</div>';
+    const hostStr = c.comment && c.name && c.name !== c.comment
+      ? '<div style="font-size:.62rem;color:var(--text-muted)">' + esc(c.name) + '</div>' : '';
     return '<tr>' +
       '<td>' +
-        '<div style="font-weight:600;font-size:.78rem">' + esc(c.name || c.mac) + '</div>' +
-        ipStr + macStr +
+        '<div style="font-weight:600;font-size:.78rem">' + esc(clientTitle(c)) + '</div>' +
+        hostStr + ipStr + macStr +
       '</td>' +
       '<td class="wl-col-iface" style="color:var(--text-muted)">' +
         esc(c.iface || '-') + '</td>' +

@@ -158,6 +158,18 @@
       "page": "dhcp"
     },
     {
+      "name": "list_dnsAdlist",
+      "access": "read",
+      "resource": "dnsAdlist",
+      "page": "dns"
+    },
+    {
+      "name": "list_dnsForwarder",
+      "access": "read",
+      "resource": "dnsForwarder",
+      "page": "dns"
+    },
+    {
       "name": "list_dnsSettings",
       "access": "read",
       "resource": "dnsSettings",

@@ -525,7 +525,6 @@ func (w *Wireless) Last() *WirelessPayload {
 	return w.last
 }
 
-// leaseName resolves a client MAC to its DHCP name.
 // ipOf is the client's address, which only ARP knows.
 func (w *Wireless) ipOf(mac string) string {
 	if w.arp == nil {
@@ -637,9 +636,11 @@ func (w *Wireless) lease(mac string) *Lease {
 	return LeaseForMAC(p, mac)
 }
 
+// leaseName is the host name the device sent, never the lease's Name: that one
+// is the comment when there is a comment, and the comment travels separately.
 func (w *Wireless) leaseName(mac string) string {
 	if l := w.lease(mac); l != nil {
-		return firstNonEmptyStr(l.Name, l.HostName)
+		return strings.TrimSpace(l.HostName)
 	}
 	return ""
 }

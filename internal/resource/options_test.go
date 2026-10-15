@@ -362,7 +362,11 @@ func TestPortedFieldsMatchTheirLiveDeclarations(t *testing.T) {
 	// every property its menu accepts, and is held instead to the ROUTER's own
 	// recording, in both directions (TestFirewallFormsMatchTheRouter). The
 	// Node declarations were the weaker reference: a subset, by design.
-	for _, res := range []*Resource{DNSStatic, Bridge, BridgePort, Vlan, Route, Route6, DHCPLease, WgPeer,
+	//
+	// NOR dnsStatic, since 2026-10-13: the Node declaration required forward-to
+	// and had no address-list or regexp, and the form is held instead to the
+	// manual's property list, both ways (TestDNSFormsCoverTheManual).
+	for _, res := range []*Resource{Bridge, BridgePort, Vlan, Route, Route6, DHCPLease, WgPeer,
 		WifiNet, WlNet, WlSecProfile,
 		CapsProvisioningRes, CapsConfig, CapsSecurity, CapsChannel, CapsDatapath} {
 		t.Run(res.Key, func(t *testing.T) {
@@ -562,7 +566,11 @@ func TestPortedResourcesKeepTheirPickers(t *testing.T) {
 	// every property its menu accepts, and is held instead to the ROUTER's own
 	// recording, in both directions (TestFirewallFormsMatchTheRouter). The
 	// Node declarations were the weaker reference: a subset, by design.
-	for _, res := range []*Resource{DNSStatic, Bridge, BridgePort, Vlan, Route, Route6, DHCPLease, WgPeer,
+	//
+	// NOR dnsStatic, since 2026-10-13: the Node declaration required forward-to
+	// and had no address-list or regexp, and the form is held instead to the
+	// manual's property list, both ways (TestDNSFormsCoverTheManual).
+	for _, res := range []*Resource{Bridge, BridgePort, Vlan, Route, Route6, DHCPLease, WgPeer,
 		WifiNet, WlNet, WlSecProfile,
 		CapsProvisioningRes, CapsConfig, CapsSecurity, CapsChannel, CapsDatapath} {
 		t.Run(res.Key, func(t *testing.T) {

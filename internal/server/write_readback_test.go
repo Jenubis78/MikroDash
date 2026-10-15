@@ -137,6 +137,35 @@ func TestAnEditReadsOnlyItsRow(t *testing.T) {
 	}
 }
 
+// A regexp entry has no name, so its regexp identifies it: the edit below
+// finds its row by it, and both writes are audited under it.
+func TestARegexpEntryIsIdentifiedByItsRegexp(t *testing.T) {
+	before := routeros.Reply{".id": "*1", "regexp": `^ads\.`, "type": "A", "address": "192.0.2.10"}
+	after := routeros.Reply{".id": "*1", "regexp": `^ads\.`, "type": "A", "address": "192.0.2.12"}
+	made := routeros.Reply{".id": "*2", "regexp": `^cdn[0-9]\.`, "type": "A", "address": "192.0.2.13"}
+	cn, me, _ := readbackConnRet(t, "*2", answer(before), answer(after), answer(made))
+	cn.resSave(json.RawMessage(`{"resource":"dnsStatic","id":"*1","expectedIdentity":"^ads\\.",` +
+		`"values":{"regexp":"^ads\\.","type":"A","address":"192.0.2.12"}}`))
+	if got := sentEvents(me); got["res:error"] != "" {
+		t.Fatalf("the edit of a regexp entry sent %v", got)
+	}
+	cn.resSave(json.RawMessage(`{"resource":"dnsStatic","values":{"regexp":"^cdn[0-9]\\.","type":"A","address":"192.0.2.13"}}`))
+	if got := sentEvents(me); got["res:error"] != "" {
+		t.Fatalf("the create of a regexp entry sent %v", got)
+	}
+	names := map[string]bool{}
+	for _, r := range moveAuditRows(t, cn.srv.auditDB) {
+		if r.TargetName == nil || *r.TargetName == "" {
+			t.Errorf("%s is audited without a name", r.Action)
+			continue
+		}
+		names[*r.TargetName] = true
+	}
+	if !names[`^ads\.`] || !names[`^cdn[0-9]\.`] {
+		t.Errorf("the audit names %v, want both regexps", names)
+	}
+}
+
 func TestACreateThatLeavesNoRowIsAnUnknownOutcome(t *testing.T) {
 	// The add named *2, and a print of *2 finds nothing.
 	cn, me := readbackConn(t, answer())
@@ -210,10 +239,10 @@ func TestAnUndoIsRateLimitedLikeAnyWrite(t *testing.T) {
 }
 
 func TestAnUndoOfARowThatBecameReadOnlyIsRefused(t *testing.T) {
-	// Between the edit and the undo the record became a regexp entry, which
-	// dnsStatic's ReadOnlyWhen refuses to write.
+	// Between the edit and the undo the record came to belong to a DHCP
+	// server's add-dns-entries, which dnsStatic's ReadOnlyWhen refuses to write.
 	cn, me := editThenUndoConn(t, routeros.Reply{".id": "*1", "name": "probe.lan", "type": "A",
-		"address": "192.0.2.12", "regexp": ".*"})
+		"address": "192.0.2.12", "dynamic": "true"})
 
 	cn.resUndo(json.RawMessage(`{"resource":"dnsStatic"}`))
 	got := sentEvents(me)

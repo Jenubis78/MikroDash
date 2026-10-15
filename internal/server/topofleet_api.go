@@ -148,13 +148,21 @@ func (s *Server) topoPeerOne(ctx context.Context, t fleetTarget, now int64) topo
 	return peer
 }
 
-// macsOf is the deduplicated addresses of one `/interface/print` answer.
+// macsOf is the deduplicated addresses of one `/interface/print` answer that
+// belong to this router alone.
+//
+// TWO KINDS DO NOT. The loopback reports 00:00:00:00:00:00 on every RouterOS 7
+// router (both of the operator's, 7.24.2), and a VRRP interface carries the
+// group's virtual MAC, 00:00:5E:00:01:xx or 00:00:5E:00:02:xx, which its peer
+// holds as well. Either one made every peer look like the router on screen,
+// and the fleet merge added nothing and said nothing.
 func macsOf(rows []routeros.Reply) []string {
 	out := []string{}
 	seen := map[string]bool{}
 	for _, row := range rows {
 		mac := strings.ToUpper(strings.TrimSpace(row["mac-address"]))
-		if mac == "" || seen[mac] {
+		if mac == "" || seen[mac] || mac == "00:00:00:00:00:00" ||
+			strings.HasPrefix(mac, "00:00:5E:00:01:") || strings.HasPrefix(mac, "00:00:5E:00:02:") {
 			continue
 		}
 		seen[mac] = true

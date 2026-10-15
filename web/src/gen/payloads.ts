@@ -640,6 +640,7 @@ export interface DNSSettings {
   queryTotalTimeout: string;
   mdnsRepeatIfaces: string[];
   vrf: string;
+  addressListExtraTime: string;
 }
 
 export interface DNSStaticEntry {
@@ -651,6 +652,31 @@ export interface DNSStaticEntry {
   ttl: string;
   disabled: boolean;
   comment: string;
+  addressList: string;
+  matchSubdomain: boolean;
+  dynamic: boolean;
+}
+
+export interface DNSForwarderEntry {
+  id: string;
+  name: string;
+  dnsServers: string[];
+  dohServers: string[];
+  verifyDohCert: boolean;
+  comment: string;
+  disabled: boolean;
+  usedBy: number;
+}
+
+export interface DNSAdlistEntry {
+  id: string;
+  url: string;
+  file: string;
+  sslVerify: boolean;
+  comment: string;
+  disabled: boolean;
+  nameCount: number | null;
+  matchCount: number | null;
 }
 
 export interface DNSPayload {
@@ -659,6 +685,10 @@ export interface DNSPayload {
   settings: DNSSettings;
   staticEntries: DNSStaticEntry[];
   available: boolean;
+  forwarders: DNSForwarderEntry[];
+  forwardersAvailable: boolean;
+  adlists: DNSAdlistEntry[];
+  adlistsAvailable: boolean;
 }
 
 export interface FilesContentPayload {
