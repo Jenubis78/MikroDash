@@ -161,9 +161,13 @@ var streamableMenus = map[string]string{
 
 	// An ORDERED table (the first match decides), which streams in the router's
 	// order since roscache keeps each round's arrival order. The rates and byte
-	// counters are the page. `/queue/tree` is read beside it and still polls.
-	// Probed 2026-10-15 on CHR Test with a temporary queue: 6 rows in 6s, first row 6ms.
+	// counters are the page. Probed 2026-10-15 on CHR Test with a temporary
+	// queue: 6 rows in 6s, first row 6ms.
 	"/queue/simple/print": "queues",
+	// The tree beside it, a subscription of its own (`tableSpec.also`) so its
+	// rates are measured against its own rounds. Probed 2026-10-15 on CHR Test
+	// with a temporary tree queue: streams, 4 rows in 4s, first row 3ms.
+	"/queue/tree/print": "queues",
 
 	// The firewall streams the ONE table the page has open: it moves its
 	// subscription with the tab (`SetActiveTable`), so these eight lines cost
@@ -193,10 +197,6 @@ var streamableMenus = map[string]string{
 	//	    the legacy wireless stack. No router this project tests against
 	//	    runs it (the hAP AC2 runs the wifi package), so neither can be
 	//	    probed; a line would be a claim nobody measured.
-	//	/queue/tree
-	//	    read inside `queues`' derive beside the subscribed simple queues,
-	//	    through the generic table collector. Streaming it needs a second
-	//	    subscription in table.go. It probed fine on CHR Test.
 	//	/ip/ipsec/active-peers, /ip/ipsec/installed-sa
 	//	    read inside `vpn`'s apply on the thirty-second slow lane, and
 	//	    untested: one CHR cannot hold an IPsec session with itself.

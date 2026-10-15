@@ -85,7 +85,8 @@ func subscribedMenusInCollect(t *testing.T) map[string]bool {
 	declConst := regexp.MustCompile(`(?m)^\s*(\w+)\s*=\s*"(/[^"]+)"`)
 	// `cmd: xxxCmd,` is a table collector's tableSpec (internal/collect/table.go),
 	// and `cmd: routeros.Cmd{Path: xxx}` the same with a bare constant.
-	sub := regexp.MustCompile(`menu:\s*(\w+)\.Path|\bcmd:\s*(\w+),|\bcmd:\s*routeros\.Cmd\{Path:\s*(\w+)\}`)
+	// `also: []routeros.Cmd{{Path: xxx}}` is a table collector's second live menu.
+	sub := regexp.MustCompile(`menu:\s*(\w+)\.Path|\bcmd:\s*(\w+),|\bcmd:\s*routeros\.Cmd\{Path:\s*(\w+)\}|\balso:\s*\[\]routeros\.Cmd\{\{Path:\s*(\w+)\}`)
 	// MECHANISM B: a collector that moves its subscription with
 	// `resubscribe(menu.Path, ...)` subscribes to every Cmd it assigns to
 	// `menu` (wireless: the modern or the legacy registration table).
@@ -119,7 +120,7 @@ func subscribedMenusInCollect(t *testing.T) map[string]bool {
 			paths[m[1]] = m[2]
 		}
 		for _, m := range sub.FindAllStringSubmatch(src, -1) {
-			if p, ok := paths[m[1]+m[2]+m[3]]; ok {
+			if p, ok := paths[m[1]+m[2]+m[3]+m[4]]; ok {
 				out[p] = true
 			}
 		}

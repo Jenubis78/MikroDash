@@ -108,9 +108,17 @@ wanted at once; across seven pages on 2026-09-10 no menu had two.
 | a table collector declares | where |
 |---|---|
 | its menu, interval bounds, slow lane, heartbeat and stream key | a `tableSpec`, in its constructor |
-| how rows become a payload, including any secondary menu it reads | `derive` |
+| how rows become a payload, including any configuration menu it reads | `derive` |
+| a second LIVE menu, as a subscription of its own (`queues`: `/queue/tree`) | `tableSpec.also`, delivered to `absorb` |
 | where the payload goes | `send` |
 | what a new connection must learn again | `reset` |
+
+A live menu read inside `derive` would arrive on the first menu's clock and could
+not be streamed. An `also` menu is subscribed beside the main one at the same
+cadence, streams when the router's settings allow, and starts, stops and re-tunes
+with it. Each delivery derives from its own rows only, because a rate is measured
+against the time those rows arrived. A polled reading or a `RefreshNow` reads the
+`also` menus first and sends once, with the main menu.
 
 The core provides everything else, once:
 
@@ -119,7 +127,7 @@ The core provides everything else, once:
 - the emit gate: send when the fingerprint changed or the heartbeat is due;
 - the slow lane, which `RefreshNow` runs at once after a write;
 - `retire`, which stops reading a menu the router does not have, or refuses,
-  until the next connection.
+  until the next connection, and the same for an `also` menu.
 
 A failed read keeps the last payload. The cadence is always the live interval, so
 a re-tune changes how often the router is read and not only the number the page
@@ -515,7 +523,7 @@ the document quietly lying.
 | suspendable when idle (`disableable`) | 23 |
 | dormancy-eligible | 19 |
 | gated by demand (`session.TargetKeys`) | 26 |
-| menus enabled for stream delivery | 21 |
+| menus enabled for stream delivery | 22 |
 | collectors declaring rooms | 23 |
 | `keepAliveFor` entries | 3 |
 | collectors with an extracted derivation | 25 |

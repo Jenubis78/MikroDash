@@ -333,7 +333,7 @@ type DNSInput struct {
 //
 // The derivation layer's rule is that turning rows into a payload must be
 // testable without a collector, a session or a router. `BuildBandwidth(prev, in)`
-// and `BuildQueueRows(rows, prev, now)` already have this shape; this follows
+// and `BuildSimpleRows(rows, prev, now)` already have this shape; this follows
 // them rather than inventing a second one.
 //
 // The SETTINGS are parsed here rather than by the caller, so the payload and the

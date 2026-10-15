@@ -72,7 +72,7 @@ type RatePair struct {
 
 type SimpleQueue struct {
 	ID    string `json:"id"`
-	Order int    `json:"order"` // print order, and it is semantic — see BuildQueueRows
+	Order int    `json:"order"` // print order, and it is semantic - see BuildSimpleRows
 	Name  string `json:"name"`
 	// Target is passed through untouched. The guard parses it; this does not.
 	Target      string     `json:"target"`
@@ -187,6 +187,14 @@ type Queues struct {
 	// mu guards prev, which ForgetRates clears from a write handler.
 	mu   sync.Mutex
 	prev map[string]queueSample
+	// The two tables as their own menus last delivered them. Each is rebuilt only
+	// from its own rows, so its rates are measured against the time they arrived.
+	simple               []SimpleQueue
+	tree                 []TreeQueue
+	simpleRows, treeRows []routeros.Reply
+	// haveSimple: the subscribed menu has delivered, so a tree reading has a
+	// payload to complete. Until then the tree waits for it.
+	haveSimple bool
 	// nil = unprobed, false = this router has no such menu, stop asking.
 	simpleAvail *bool
 	treeAvail   *bool
@@ -197,9 +205,11 @@ func NewQueues(ros Reader, emit Emit, firewall FilterRowSource, pollMs int) *Que
 	q := &Queues{emit: emit, firewall: firewall, prev: map[string]queueSample{}}
 	// The Node signature is clampPoll(raw, def, hi, lo) and the call is
 	// (pollMs, 5000, 60000, 2000). Reordered for this side's (raw, def, lo, hi).
-	// Subscribed to the SIMPLE queue menu, read whole; the tree is read in
-	// `derive`.
-	q.setup(q, ros, pollMs, tableSpec{cmd: routeros.Cmd{Path: queueSimpleCmd}, poll: [3]int{5000, 2000, 60000}})
+	// Subscribed to both menus, read whole: the simple queues drive the
+	// collector, and the tree is a subscription of its own (`absorb`).
+	q.setup(q, ros, pollMs, tableSpec{cmd: routeros.Cmd{Path: queueSimpleCmd}, poll: [3]int{5000, 2000, 60000},
+		also: []routeros.Cmd{{Path: queueTreeCmd}}})
+	q.simple, q.tree = []SimpleQueue{}, []TreeQueue{}
 	return q
 }
 
@@ -414,42 +424,47 @@ func treeRow(r routeros.Reply, i int, prev map[string]queueSample, now time.Time
 	}
 }
 
-// BuildQueueRows builds both tables. Pure and exported so the rate maths is
-// testable without a router.
+// BuildSimpleRows and BuildTreeRows build the two tables. Pure and exported so
+// the rate maths is testable without a router. Each prunes and measures only its
+// own menu's baselines: the two menus arrive separately, and building one must
+// not age the other's.
 //
 // ORDER IS PRESERVED, NOT SORTED. Simple queues are walked in list order and the
 // first match wins, so a queue's position changes what it does. Sorting these
 // alphabetically by default would misrepresent the router.
-func BuildQueueRows(simpleRows, treeRows []routeros.Reply,
-	prev map[string]queueSample, now time.Time) ([]SimpleQueue, []TreeQueue) {
-
-	sRows := withID(simpleRows)
-	tRows := withID(treeRows)
-
-	// Baselines for rows that no longer exist are dropped BEFORE building, so a
-	// recreated queue reusing a RouterOS `*N` id cannot inherit the old counter.
-	live := map[string]bool{}
-	for _, r := range sRows {
-		live[rateKey("s", r)] = true
+func BuildSimpleRows(rows []routeros.Reply, prev map[string]queueSample, now time.Time) []SimpleQueue {
+	rows = withID(rows)
+	prune(prev, "s", rows)
+	out := make([]SimpleQueue, 0, len(rows))
+	for i, r := range rows {
+		out = append(out, simpleRow(r, i, prev, now))
 	}
-	for _, r := range tRows {
-		live[rateKey("t", r)] = true
+	return out
+}
+
+func BuildTreeRows(rows []routeros.Reply, prev map[string]queueSample, now time.Time) []TreeQueue {
+	rows = withID(rows)
+	prune(prev, "t", rows)
+	out := make([]TreeQueue, 0, len(rows))
+	for i, r := range rows {
+		out = append(out, treeRow(r, i, prev, now))
+	}
+	return out
+}
+
+// prune drops one menu's baselines for rows that no longer exist, BEFORE
+// building, so a recreated queue reusing a RouterOS `*N` id cannot inherit the
+// old counter.
+func prune(prev map[string]queueSample, menu string, rows []routeros.Reply) {
+	live := map[string]bool{}
+	for _, r := range rows {
+		live[rateKey(menu, r)] = true
 	}
 	for k := range prev {
-		if !live[k] {
+		if strings.HasPrefix(k, menu+":") && !live[k] {
 			delete(prev, k)
 		}
 	}
-
-	simple := make([]SimpleQueue, 0, len(sRows))
-	for i, r := range sRows {
-		simple = append(simple, simpleRow(r, i, prev, now))
-	}
-	tree := make([]TreeQueue, 0, len(tRows))
-	for i, r := range tRows {
-		tree = append(tree, treeRow(r, i, prev, now))
-	}
-	return simple, tree
 }
 
 func withID(rows []routeros.Reply) []routeros.Reply {
@@ -491,16 +506,6 @@ func ActiveFasttrack(filterRows []routeros.Reply) Fasttrack {
 	return Fasttrack{State: state, Count: len(hits), Scoped: scoped}
 }
 
-// read runs one menu, latching an absent or refused one off and remembering a
-// refusal, which the page words differently from an absent menu.
-func (q *Queues) read(cmd routeros.Cmd, flag **bool) []routeros.Reply {
-	rows, refused := readOptional(q.ros.Do, cmd, flag)
-	if refused {
-		q.denied = true
-	}
-	return rows
-}
-
 func (q *Queues) fasttrack() Fasttrack {
 	// One guard, three cases: the collector is absent for a router where the
 	// operator switched Firewall collection off, it has not started yet, or its
@@ -516,9 +521,10 @@ func (q *Queues) fasttrack() Fasttrack {
 	return ActiveFasttrack(rows)
 }
 
-// derive is both queue kinds, with the FastTrack state the firewall collector
-// holds. A simple-queue menu this router does not have, or refuses, is sent once
-// as unavailable and not asked again on this connection.
+// derive is the simple queues, with the tree as last delivered and the FastTrack
+// state the firewall collector holds. A simple-queue menu this router does not
+// have, or refuses, is sent once as unavailable and not asked again on this
+// connection.
 func (q *Queues) derive(simpleRows []routeros.Reply, err error, _ bool) (*QueuesPayload, string) {
 	if err != nil && !menuGone(err) {
 		return nil, ""
@@ -530,24 +536,52 @@ func (q *Queues) derive(simpleRows []routeros.Reply, err error, _ bool) (*Queues
 		q.retire()
 		simpleRows = nil
 	}
-	treeRows := q.read(routeros.Cmd{Path: queueTreeCmd}, &q.treeAvail)
-	now := time.Now()
+	q.simpleRows = withID(simpleRows)
 	q.mu.Lock()
-	simple, tree := BuildQueueRows(simpleRows, treeRows, q.prev, now)
+	q.simple = BuildSimpleRows(simpleRows, q.prev, time.Now())
 	q.mu.Unlock()
-	statsRows := simpleRows
-	if len(statsRows) == 0 {
-		statsRows = treeRows
+	q.haveSimple = true
+	return q.payload()
+}
+
+// absorb is a reading of the tree, its own subscription. A transient failure
+// keeps the last tree; an absent or refused menu empties it, and table.go stops
+// reading it.
+func (q *Queues) absorb(_ int, rows []routeros.Reply, err error) (*QueuesPayload, string) {
+	if err != nil && !menuGone(err) {
+		return nil, ""
 	}
-	payload := &QueuesPayload{
-		TS: now.UnixMilli(), PollMs: q.PollMs(),
-		Simple: simple, Tree: tree,
+	if latchMenu(&q.treeAvail, err) {
+		q.denied = true
+	}
+	if err != nil {
+		rows = nil
+	}
+	q.treeRows = withID(rows)
+	q.mu.Lock()
+	q.tree = BuildTreeRows(rows, q.prev, time.Now())
+	q.mu.Unlock()
+	if !q.haveSimple {
+		return nil, ""
+	}
+	return q.payload()
+}
+
+// payload assembles both tables as last built.
+func (q *Queues) payload() (*QueuesPayload, string) {
+	statsRows := q.simpleRows
+	if len(statsRows) == 0 {
+		statsRows = q.treeRows
+	}
+	p := &QueuesPayload{
+		TS: time.Now().UnixMilli(), PollMs: q.PollMs(),
+		Simple: q.simple, Tree: q.tree,
 		Fasttrack: q.fasttrack(),
 		Stats:     statsLevel(statsRows),
 		Available: MenuAvailable(q.simpleAvail),
 		Denied:    q.denied,
 	}
-	return payload, q.fingerprint(payload)
+	return p, q.fingerprint(p)
 }
 
 func (q *Queues) send(p QueuesPayload) { EvQueuesUpdate.Emit(q.emit, queuesRooms.Join(), p) }
@@ -558,6 +592,8 @@ func (q *Queues) reset() {
 	q.prev = map[string]queueSample{}
 	q.mu.Unlock()
 	q.simpleAvail, q.treeAvail, q.denied = nil, nil, false
+	q.simple, q.tree, q.simpleRows, q.treeRows = []SimpleQueue{}, []TreeQueue{}, nil, nil
+	q.haveSimple = false
 }
 
 // fingerprint decides whether this tick is worth emitting.

@@ -635,7 +635,7 @@ type IfStatusInput struct {
 // something between ticks.
 //
 // The answer was already in the tree and had simply never been named as a rule:
-// `BuildBandwidth(prev, in)` and `BuildQueueRows(rows, prev, now)` take prior
+// `BuildBandwidth(prev, in)` and `BuildSimpleRows(rows, prev, now)` take prior
 // state as an argument. So does this. THAT IS THE RULE for 4.1 — prior in,
 // prior out, nothing held on a receiver — and it is what lets the derivation be
 // tested by handing it two readings instead of driving a collector twice.

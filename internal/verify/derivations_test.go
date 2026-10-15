@@ -31,7 +31,7 @@ import (
 // is the property 4.1 is actually for.
 //
 // PRIOR STATE AS A PARAMETER is the established shape, not a new invention:
-// `BuildBandwidth(prev, in)`, `BuildQueueRows(rows, prev, now)` and
+// `BuildBandwidth(prev, in)`, `BuildSimpleRows(rows, prev, now)` and
 // `BuildIfStatus(prev, in)` all take it as an argument. About a third of these
 // collectors carry something between ticks, and a derivation holding that on a
 // receiver is not extracted, whatever it is called.
@@ -50,7 +50,7 @@ func TestEveryCollectorDeclaresItsDerivation(t *testing.T) {
 		"connections.go": "BuildConns",
 		"dns.go":         "ParseDNSSettings,ParseStaticEntries",
 		"ifstatus.go":    "BuildIfStatus",
-		"queues.go":      "BuildQueueRows",
+		"queues.go":      "BuildSimpleRows,BuildTreeRows",
 		"rosusers.go":    "BuildUsersView",
 		"ppp.go":         "ParsePPPSessions",
 		"system.go":      "buildSystem",

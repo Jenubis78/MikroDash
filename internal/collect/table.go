@@ -36,8 +36,21 @@ package collect
 // is the second form this file exists to remove.
 //
 // Nor does it model "derive when several menus are fresh". A table collector
-// still subscribes to ONE menu and reads the rest inside `derive`, as
-// scheduled.go says. That question belongs to views, not to a lifecycle helper.
+// subscribes to the menu that drives it and reads configuration inside
+// `derive`, as scheduled.go says. That question belongs to views, not to a
+// lifecycle helper.
+//
+// ── A SECOND LIVE MENU IS A SUBSCRIPTION OF ITS OWN ────────────────────────
+//
+// What a collector may NOT do is read a second LIVE menu inside `derive`. Its
+// rows would arrive on the first menu's clock, and could not be streamed:
+// `queues` read /queue/tree that way, one direct command per simple-queue round.
+// A menu in `tableSpec.also` is subscribed beside `cmd`, at the same cadence,
+// streamed when the router's settings allow, started and stopped with it, and
+// delivered to the collector's `absorb` as it arrives. Each delivery derives
+// from ITS OWN rows only: a byte counter is a rate against the time its rows
+// arrived, and re-deriving the other menu's rows at a later time would measure
+// a window nobody read.
 
 import (
 	"log"
@@ -64,6 +77,16 @@ type tableRows[P any] interface {
 	reset()
 }
 
+// tableAlso is what a collector with `also` menus supplies besides tableRows.
+type tableAlso[P any] interface {
+	// absorb takes one reading of `also[i]` and answers as derive does: a payload
+	// to send, or nil to send nothing. It must not touch the rows `derive` was
+	// last given; see "A SECOND LIVE MENU" above. A menu the router does not
+	// have, or refuses, is delivered once with its error and not read again on
+	// this connection.
+	absorb(i int, rows []routeros.Reply, err error) (payload *P, fingerprint string)
+}
+
 // tableSpec is a table collector's declaration.
 type tableSpec struct {
 	// cmd is the subscribed menu. Its proplist is the subscription's field list.
@@ -80,6 +103,10 @@ type tableSpec struct {
 	heartbeat time.Duration
 	// streamKey names a row when the menu is streamed. Nil is RouterOS `.id`.
 	streamKey func(routeros.Reply) string
+	// also are further live menus, each a subscription of its own beside cmd and
+	// delivered to the collector's `absorb`. The collector must implement
+	// tableAlso.
+	also []routeros.Cmd
 }
 
 // tableCore is embedded by a table collector.
@@ -89,6 +116,13 @@ type tableCore[P any] struct {
 	pollMs *pollInterval
 	poll   *pollLoop
 	sched  scheduled
+	// also are the `tableSpec.also` subscriptions, in its order. On the polled
+	// path they have no loop: `fetch` reads them before the main menu.
+	also     []*scheduled
+	alsoCmds []routeros.Cmd
+	// alsoGone marks an also-menu the router does not have or refuses, which is
+	// not read again on this connection. Guarded by deriveMu.
+	alsoGone []bool
 
 	self      tableRows[P]
 	cmd       routeros.Cmd
@@ -120,6 +154,17 @@ func (c *tableCore[P]) setup(self tableRows[P], ros Reader, pollMs int, spec tab
 	// passed to the constructor instead is how three collectors ignored re-tunes.
 	c.sched = scheduled{loop: c.poll, menu: spec.cmd.Path, fields: fieldsOf(spec.cmd),
 		apply: c.apply, cadence: c.pollMs.duration, streamKey: spec.streamKey}
+	if len(spec.also) > 0 {
+		if _, ok := self.(tableAlso[P]); !ok {
+			panic("collect: a tableSpec with `also` menus needs a collector that implements absorb")
+		}
+	}
+	c.alsoCmds, c.alsoGone = spec.also, make([]bool, len(spec.also))
+	for i, cmd := range spec.also {
+		c.also = append(c.also, &scheduled{menu: cmd.Path, fields: fieldsOf(cmd),
+			apply:   func(rows []routeros.Reply, err error) { c.applyAlso(i, rows, err, true) },
+			cadence: c.pollMs.duration})
+	}
 }
 
 func (c *tableCore[P]) clamp(ms int) int {
@@ -132,6 +177,9 @@ func (c *tableCore[P]) clamp(ms int) int {
 func (c *tableCore[P]) UseCache(rc *roscache.Cache) {
 	c.cache = rc
 	c.sched.useCache(rc)
+	for _, s := range c.also {
+		s.useCache(rc)
+	}
 }
 
 // readShared reads a menu other collectors may also read, through the cache when
@@ -152,6 +200,21 @@ func (c *tableCore[P]) fetch(direct bool) bool {
 	c.deriveMu.Unlock()
 	if retired || !c.ros.Connected() {
 		return false
+	}
+	// THE ALSO-MENUS FIRST, AND UNSENT: the main menu's payload carries them, so
+	// a polled reading or a refresh sends once.
+	for i, cmd := range c.alsoCmds {
+		if c.gone(i) || (!direct && c.sched.scheduling()) {
+			continue
+		}
+		var rows []routeros.Reply
+		var err error
+		if direct {
+			rows, err = c.ros.Do(cmd)
+		} else {
+			rows, err = c.readShared(cmd)
+		}
+		c.applyAlso(i, rows, err, false)
 	}
 	if direct {
 		c.apply(c.ros.Do(c.cmd))
@@ -177,6 +240,40 @@ func (c *tableCore[P]) apply(rows []routeros.Reply, err error) {
 		return
 	}
 	c.ticks++
+	c.publish(payload, fp)
+}
+
+// applyAlso delivers one reading of an also-menu. `send` is false where the main
+// menu's reading follows and sends for both.
+func (c *tableCore[P]) applyAlso(i int, rows []routeros.Reply, err error, send bool) {
+	c.deriveMu.Lock()
+	defer c.deriveMu.Unlock()
+	if c.retired || c.alsoGone[i] {
+		return
+	}
+	if err != nil && menuGone(err) {
+		// Not asked again on this connection, as readOptional's latch did when
+		// the menu was read inside `derive`. Safe inside the callback: the
+		// scheduler delivers outside its lock so a subscriber can release itself.
+		c.alsoGone[i] = true
+		c.also[i].end()
+	}
+	payload, fp := c.self.(tableAlso[P]).absorb(i, rows, err)
+	if payload == nil || !send {
+		return
+	}
+	c.publish(payload, fp)
+}
+
+func (c *tableCore[P]) gone(i int) bool {
+	c.deriveMu.Lock()
+	defer c.deriveMu.Unlock()
+	return c.alsoGone[i]
+}
+
+// publish records a payload as the last one and sends it when it differs from
+// the last sent or the heartbeat is due. Called with deriveMu held.
+func (c *tableCore[P]) publish(payload *P, fp string) {
 	now := c.now()
 	c.lastMu.Lock()
 	c.last = payload
@@ -207,7 +304,25 @@ func (c *tableCore[P]) Last() *P {
 // loop. Under the scheduler the first payload arrives with its first delivery.
 func (c *tableCore[P]) Start() {
 	c.readFirst()
+	c.begin()
+}
+
+// begin wants every menu, end none: the main one and each `also`, together.
+// An also-menu the router has said it does not have stays unwanted.
+func (c *tableCore[P]) begin() {
 	c.sched.begin()
+	for i, s := range c.also {
+		if !c.gone(i) {
+			s.begin()
+		}
+	}
+}
+
+func (c *tableCore[P]) end() {
+	c.sched.end()
+	for _, s := range c.also {
+		s.end()
+	}
 }
 
 // readFirst is the immediate read on the polled path. Recorded as the loop's
@@ -221,23 +336,23 @@ func (c *tableCore[P]) readFirst() {
 // Reconnected forgets the old connection and reads again, so the first reading
 // on the new one always reaches the browser even if it is identical.
 func (c *tableCore[P]) Reconnected() {
-	c.sched.end()
+	c.end()
 	c.forget()
 	c.readFirst()
-	c.sched.begin()
+	c.begin()
 }
 
 // Suspend stops wanting the menu. Resume wants it again. Resume does not check
 // the connection: a subscription on a disconnected router reads nothing, and a
 // Resume dropped for that reason would leave the collector idle after it
 // reconnects.
-func (c *tableCore[P]) Suspend() { c.sched.end() }
-func (c *tableCore[P]) Resume()  { c.sched.begin() }
+func (c *tableCore[P]) Suspend() { c.end() }
+func (c *tableCore[P]) Resume()  { c.begin() }
 
 // Stop ends the subscription and forgets the connection's state, so a later
 // Start begins as a first reading.
 func (c *tableCore[P]) Stop() {
-	c.sched.end()
+	c.end()
 	c.forget()
 }
 
@@ -245,6 +360,8 @@ func (c *tableCore[P]) forget() {
 	c.deriveMu.Lock()
 	c.self.reset()
 	c.ticks, c.retired = 0, false
+	// A new connection may be a different build, so an absent menu is asked again.
+	clear(c.alsoGone)
 	c.deriveMu.Unlock()
 	c.lastMu.Lock()
 	c.lastFP = ""
@@ -257,12 +374,16 @@ func (c *tableCore[P]) SetPollMs(ms int) {
 	c.poll.retime()
 	// And the scheduler: a streamed menu reopens at the new interval.
 	c.sched.retune()
+	for _, s := range c.also {
+		s.retune()
+	}
 }
 
 func (c *tableCore[P]) PollMs() int { return c.pollMs.ms() }
 
-// RefreshNow re-reads after a write: the subscribed menu, and the slow lane with
-// it, because a write is exactly what a slow lane would miss.
+// RefreshNow re-reads after a write: the subscribed menu and every also-menu,
+// and the slow lane with them, because a write is exactly what a slow lane
+// would miss.
 //
 // ── FROM THE ROUTER, NOT THROUGH THE CACHE ──────────────────────────────────
 //
@@ -281,6 +402,9 @@ func (c *tableCore[P]) RefreshNow() {
 	c.deriveMu.Unlock()
 	if c.cache != nil {
 		c.cache.Invalidate(c.cmd.Path)
+		for _, cmd := range c.alsoCmds {
+			c.cache.Invalidate(cmd.Path)
+		}
 	}
 	c.fetch(true)
 }
