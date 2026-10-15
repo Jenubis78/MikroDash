@@ -185,6 +185,28 @@ var streamableMenus = map[string]string{
 	// can back it. Probed 2026-10-15 on CHR Test: streams, 36 rows in 4s, first row 8ms.
 	"/interface/wireguard/peers/print": "vpn",
 
+	// ── LIVE MENUS THAT STILL POLL, AND WHY (2026-10-15) ───────────────────
+	//
+	// Not a line here, each for a reason that is a fact rather than a guess:
+	//
+	//	/interface/wireless/registration-table, /caps-man/registration-table
+	//	    the legacy wireless stack. No router this project tests against
+	//	    runs it (the hAP AC2 runs the wifi package), so neither can be
+	//	    probed; a line would be a claim nobody measured.
+	//	/queue/tree
+	//	    read inside `queues`' derive beside the subscribed simple queues,
+	//	    through the generic table collector. Streaming it needs a second
+	//	    subscription in table.go. It probed fine on CHR Test.
+	//	/ip/ipsec/active-peers, /ip/ipsec/installed-sa
+	//	    read inside `vpn`'s apply on the thirty-second slow lane, and
+	//	    untested: one CHR cannot hold an IPsec session with itself.
+	//	/system/health, /ip/route, /user/active, capsman remote-cap and radio
+	//	    a deliberate slow window, failover configuration read beside a
+	//	    subscription, and metadata: a held channel would re-send them
+	//	    unchanged.
+	//	/tool/ping per neighbour (topology)
+	//	    unrollable: every reply is an event, not a row.
+
 	// ── METADATA DOES NOT STREAM, AND SEVEN LINES LEFT (2026-09-15) ─────────
 	//
 	// `/interface/wifi/print`, `/interface/vlan/print`,
