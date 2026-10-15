@@ -165,6 +165,21 @@ var streamableMenus = map[string]string{
 	// Probed 2026-10-15 on CHR Test with a temporary queue: 6 rows in 6s, first row 6ms.
 	"/queue/simple/print": "queues",
 
+	// The firewall streams the ONE table the page has open: it moves its
+	// subscription with the tab (`SetActiveTable`), so these eight lines cost
+	// one channel at a time, not eight. Ordered tables, served in the router's
+	// order. Probed 2026-10-15 on CHR Test, all eight: streams, first row 1-4ms
+	// (filter 10 rows in 4s, nat 20, raw 8, mangle 7 with a temporary rule; the
+	// IPv6 four 4-20).
+	"/ip/firewall/filter/print":   "firewall",
+	"/ip/firewall/nat/print":      "firewall",
+	"/ip/firewall/mangle/print":   "firewall",
+	"/ip/firewall/raw/print":      "firewall",
+	"/ipv6/firewall/filter/print": "firewall",
+	"/ipv6/firewall/nat/print":    "firewall",
+	"/ipv6/firewall/mangle/print": "firewall",
+	"/ipv6/firewall/raw/print":    "firewall",
+
 	// ── METADATA DOES NOT STREAM, AND SEVEN LINES LEFT (2026-09-15) ─────────
 	//
 	// `/interface/wifi/print`, `/interface/vlan/print`,
