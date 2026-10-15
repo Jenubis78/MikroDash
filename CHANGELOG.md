@@ -2,6 +2,35 @@
 
 All notable changes to MikroDash will be documented in this file.
 
+## [0.8.74] - More live data streams, and shared streams that serve every reader
+
+### Changed
+
+- **More pages are fed by a stream instead of repeated reads:** ARP, Top Talkers (Kid Control
+  devices), BGP sessions, simple queues, WireGuard peers, and the firewall's filter, NAT, mangle and
+  raw tables (IPv4 and IPv6, only the tab that is open). On the test routers, commands sent per
+  minute fell by up to a third.
+- Streamed tables keep the router's order, so firewall rules and queues show in the order they are
+  matched.
+
+### Fixed
+
+- When two parts of MikroDash read the same streamed table (Wi-Fi clients and CAPsMAN, for example),
+  whichever started first decided which fields and interval everyone got. A shared stream now carries
+  every field each reader needs, at the fastest interval asked for.
+- The bridge host table streamed but could never be used, so it was still read on every interval.
+- Interface rates set above 5 seconds fell back to one-off reads, because RouterOS refuses a longer
+  interval for that menu. They now stream at 5 seconds.
+- A streamed table that was empty from the start (no PPP sessions, no BGP) was still read on every
+  interval as well.
+- The note on a truncated PDF report no longer uses an em dash.
+
+### Internal
+
+- The stream table records which live menus still poll, and why.
+- `DESIGN.md` is tracked in the repository again.
+- Branch protection on `main`: no force pushes or deletion.
+
 ## [0.8.73] - A threat IP blocklist template, one look for every control, and true ping times
 
 ### New
