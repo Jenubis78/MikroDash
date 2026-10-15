@@ -868,10 +868,25 @@ func (f *streamFill) watch(s Streamer, done <-chan struct{}) {
 			// better error for these menus -- "no clients associated" invites a
 			// look, while three clients that left an hour ago look entirely
 			// plausible -- and it self-corrects on the first row that arrives.
-			if f.restarts > 0 && f.published && len(f.rows) > 0 &&
+			//
+			// ── AND A TABLE THAT WAS EMPTY FROM THE START (2026-10-15) ─────
+			//
+			// The rule first covered only a table that HAD rows and went empty.
+			// One empty from the moment the channel opened never completed a
+			// round, so it was never authoritative: `Get` went on reading it
+			// on every interval WHILE the channel stayed open, the cost of both
+			// mechanisms for nothing. Seen live on the Diagnostics card: a
+			// router with no BGP streaming `/routing/bgp/session` and still
+			// reading it eight times a minute, `/ppp/active` likewise. The same
+			// evidence answers it, silence surviving a deliberate restart, so it
+			// publishes the same empty round.
+			emptied := f.published && len(f.rows) > 0
+			neverHad := !f.published && len(f.round) == 0
+			if f.restarts > 0 && (emptied || neverHad) &&
 				!f.quietSince.IsZero() && time.Since(f.quietSince) > 2*f.stale {
 				f.rows, f.order = map[string]routeros.Reply{}, nil
 				f.round, f.roundOrder = map[string]routeros.Reply{}, nil
+				f.published = true
 				f.rounds++
 				f.quietSince = time.Now()
 			}

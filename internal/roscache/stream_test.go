@@ -650,6 +650,40 @@ func TestAnEmptiedTableEventuallyPublishesEmpty(t *testing.T) {
 		"what kept five menus on the polled path.", len(rows))
 }
 
+// TestATableEmptyFromTheStartBecomesAuthoritative. The rule above first
+// covered only a table that HAD rows. One empty from the moment its channel
+// opened never completed a round, so it was never authoritative and `Get` read
+// it on every interval while the channel stayed open: seen live on a router with
+// no BGP, `/routing/bgp/session` streamed and still read eight times a minute.
+func TestATableEmptyFromTheStartBecomesAuthoritative(t *testing.T) {
+	p := &pusher{}
+	c := New(p)
+	stop, err := fillTimed(t, c, "/interface/monitor-traffic", byName, 5*time.Millisecond, 5*time.Millisecond, 15*time.Millisecond)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+
+	f := c.fillFor("/interface/monitor-traffic")
+	// CONTROL: a channel that has only just opened is not yet evidence of
+	// anything, so it is not authoritative.
+	if f.authoritative() {
+		t.Fatal("a fill was authoritative the moment it opened, before any silence")
+	}
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		if f.authoritative() {
+			if rows, _ := c.Get("/interface/monitor-traffic", nil, time.Second); len(rows) != 0 {
+				t.Errorf("published %d rows for a table that never sent one", len(rows))
+			}
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Error("a table silent from the start, through a restart and a staleness window, " +
+		"was never published empty; the menu goes on being read while its channel is open")
+}
+
 // TestARowEndsTheSilenceRun — the other direction, so the rule above cannot be
 // satisfied by an entry that simply empties itself on a timer.
 func TestARowEndsTheSilenceRun(t *testing.T) {
