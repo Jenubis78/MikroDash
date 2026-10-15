@@ -515,7 +515,7 @@ the document quietly lying.
 | suspendable when idle (`disableable`) | 23 |
 | dormancy-eligible | 19 |
 | gated by demand (`session.TargetKeys`) | 26 |
-| menus enabled for stream delivery | 9 |
+| menus enabled for stream delivery | 10 |
 | collectors declaring rooms | 23 |
 | `keepAliveFor` entries | 3 |
 | collectors with an extracted derivation | 25 |

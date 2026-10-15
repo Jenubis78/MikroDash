@@ -149,6 +149,10 @@ var streamableMenus = map[string]string{
 	// Probed 2026-10-15: streams, 5 rows in 4s, first row 3ms.
 	"/ip/arp/print": "arp",
 
+	// Top Talkers' per-device rates are the payload, polled every three seconds.
+	// Probed 2026-10-15: streams, 24 rows in 6s, first row 4ms (four devices).
+	"/ip/kid-control/device/print": "talkers",
+
 	// ── METADATA DOES NOT STREAM, AND SEVEN LINES LEFT (2026-09-15) ─────────
 	//
 	// `/interface/wifi/print`, `/interface/vlan/print`,
