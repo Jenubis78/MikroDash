@@ -1467,12 +1467,14 @@
     /* dhcp */
 
     /* logs */
-    #logs{background:rgb(from var(--bg-deep) r g b / .85);font-family:var(--font-mono);font-size:11.5px;height:calc(100vh - 160px);overflow-y:auto;white-space:pre-wrap;word-break:break-all;color:rgb(from var(--text-main) r g b / 1);padding:10px 12px;border-radius:6px;line-height:1.6}
+    #logs{background:rgb(from var(--bg-deep) r g b / .85);font-family:var(--font-mono);font-size:11.5px;height:calc(100vh - 160px);overflow:auto;white-space:pre;color:rgb(from var(--text-main) r g b / 1);padding:10px 12px;border-radius:6px;line-height:1.6}
     html[data-theme="light"] #logs{background:rgb(from var(--bg-card) r g b / .9);color:rgb(from var(--text-main) r g b / 1)}
-    #logs::-webkit-scrollbar{width:4px} #logs::-webkit-scrollbar-thumb{background:rgb(from var(--border) r g b / .2);border-radius:2px}
+    #logs::-webkit-scrollbar{width:4px;height:6px} #logs::-webkit-scrollbar-thumb{background:rgb(from var(--border) r g b / .2);border-radius:2px}
     .log-error{color:var(--accent-err)} .log-warning{color:var(--accent-warn)} .log-debug{color:rgb(from var(--text-muted) r g b / .45)} .log-info{color:rgb(from var(--text-main) r g b / 1)}
     .log-dhcp{color:var(--accent-rx)} .log-wireless{color:var(--accent-alt)} .log-firewall{color:var(--accent-warn)} .log-system{color:var(--accent-tx)}
-    .log-line{display:block;padding:1px 0;line-height:1.6}
+    /* One entry, one line: the pane scrolls sideways instead of wrapping. As wide as the
+       longest line, so a hovered row's tint reaches its end when scrolled. */
+    .log-line{display:block;width:max-content;min-width:100%;padding:1px 0;line-height:1.6}
     .log-line:hover{background:rgb(from var(--border) r g b / .06);border-radius:4px}
     .log-topic{color:rgb(from var(--text-muted) r g b / .6)} .log-time{color:rgb(from var(--text-muted) r g b / .4)}
     html[data-theme="light"] .log-error{color:var(--accent-err)}
