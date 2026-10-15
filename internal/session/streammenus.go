@@ -180,6 +180,11 @@ var streamableMenus = map[string]string{
 	"/ipv6/firewall/mangle/print": "firewall",
 	"/ipv6/firewall/raw/print":    "firewall",
 
+	// Handshake age and the byte counters, the one live menu `vpn` reads; it moved
+	// from a direct read on a side loop to a subscription of its own so a channel
+	// can back it. Probed 2026-10-15 on CHR Test: streams, 36 rows in 4s, first row 8ms.
+	"/interface/wireguard/peers/print": "vpn",
+
 	// ── METADATA DOES NOT STREAM, AND SEVEN LINES LEFT (2026-09-15) ─────────
 	//
 	// `/interface/wifi/print`, `/interface/vlan/print`,

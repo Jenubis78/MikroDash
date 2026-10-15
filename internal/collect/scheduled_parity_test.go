@@ -178,17 +178,19 @@ var _ = time.Second
 // decided it was still fresh, so it refreshed at half its cadence, and every read
 // looked ordinary in a log.
 //
-// Three collectors are residual, and they satisfy the rule three different ways:
+// Two collectors are residual, and they satisfy the rule two different ways:
 //
 //	ifStatus  the loop takes a rates MEASUREMENT from /interface/monitor-traffic;
 //	          the subscription and its apply read /interface, /ip/address and
 //	          /interface/ethernet. Disjoint menus.
-//	vpn       the loop reads WireGuard with =detail=; the subscription reads
-//	          /ppp/active. Disjoint menus.
 //	vlans     the loop reads NOTHING AT ALL -- it re-rolls interface rates that
 //	          `ifStatus` already holds in memory. The cheapest way to satisfy the
 //	          rule, and the reason this collector could be scheduled without
 //	          slowing its rate column from five seconds to sixty.
+//
+// `vpn` was the third until 2026-10-15: its loop read WireGuard directly. It
+// subscribes to the peers now (a second `scheduled`), so it has no residual
+// loop and nothing here to check.
 func TestResidualLoopsDoNotReadSubscribedMenus(t *testing.T) {
 	cases := []struct {
 		name string
@@ -245,19 +247,6 @@ func TestResidualLoopsDoNotReadSubscribedMenus(t *testing.T) {
 				x := NewVlans(r, hub.Relay{}, nil, nil, 5000)
 				x.UseCache(c)
 				x.applyConfig([]routeros.Reply{{"name": "vlan10", "vlan-id": "10"}}, nil)
-			},
-		},
-		{
-			name: "vpn", subscribed: vpnPppCmd.Path,
-			loopSide: func(r Reader, c *roscache.Cache) {
-				x := NewVPN(r, hub.Relay{}, 10000)
-				x.UseCache(c)
-				x.RefreshNow()
-			},
-			subSide: func(r Reader, c *roscache.Cache) {
-				x := NewVPN(r, hub.Relay{}, 10000)
-				x.UseCache(c)
-				x.apply([]routeros.Reply{{"name": "peer1"}}, nil)
 			},
 		},
 	}

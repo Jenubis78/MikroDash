@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"mikrodash/internal/hub"
 	"mikrodash/internal/roscache"
 	"mikrodash/internal/routeros"
 )
@@ -124,4 +125,32 @@ func sameWords(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+// TestVPNSubscribesItsWireGuardPeers: the peers were read directly on a side
+// loop, which a channel cannot back. They are a subscription of their own now,
+// at the poll interval, beside /ppp/active on the slow lane.
+func TestVPNSubscribesItsWireGuardPeers(t *testing.T) {
+	c := roscache.New(&schedReader{})
+	v := NewVPN(&schedReader{}, hub.Relay{}, 5000)
+	v.UseCache(c)
+	v.Start()
+	defer v.Stop()
+
+	got := map[string]time.Duration{}
+	for _, d := range c.Demand() {
+		got[d.Menu] = d.Cadence
+	}
+	if got[vpnPeersCmd.Path] != 5*time.Second {
+		t.Errorf("demand = %v; the WireGuard peers must be subscribed at the poll interval", got)
+	}
+	if got[vpnPppCmd.Path] != vpnSlowTarget {
+		t.Errorf("demand = %v; /ppp/active stays on the slow lane", got)
+	}
+	// AND THEY GO WITH IT. A subscription outliving Suspend keeps an
+	// unwatched router's peers polled.
+	v.Suspend()
+	if d := c.Demand(); len(d) != 0 {
+		t.Errorf("demand after Suspend = %v, want none", d)
+	}
 }

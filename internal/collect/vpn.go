@@ -171,9 +171,12 @@ type VPN struct {
 	// cache coalesces reads shared with another collector; nil outside a live
 	// session, which is every test. See collect/cache.go.
 	cache *roscache.Cache
-	// See scheduled.go. Mechanism A: /ppp/active subscribed, WireGuard on the
-	// residual timer because this collector needs TWO CADENCES.
+	// See scheduled.go. TWO SUBSCRIPTIONS, because this collector needs two
+	// cadences: `sched` is /ppp/active on the slow lane, `wg` the WireGuard
+	// peers at the poll interval. WireGuard was a residual timer reading
+	// directly, which a stream could not back; as a subscription it streams.
 	sched scheduled
+	wg    scheduled
 
 	mu sync.Mutex
 	// order is the peer keys in the order the router first mentioned them, and
@@ -233,11 +236,23 @@ func NewVPN(ros Reader, emit Emit, pollMs int) *VPN {
 	// tunnel state change is now seen within thirty seconds instead of five --
 	// and instead of the sixty the pool gave it, so the alert rule that watches
 	// tunnels is BETTER served than it was, at a fifth of the reads.
+	//
+	// ── AND WIREGUARD IS A SUBSCRIPTION OF ITS OWN (2026-10-15) ────────────
+	//
+	// It was the residual loop: `RefreshNow` reading the peers directly beside
+	// the subscription. A direct read cannot be backed by a channel, so the one
+	// live menu here was the one that could not stream. `wg` subscribes it at
+	// the poll interval, which is the cadence the loop ran at. The loop stays
+	// as the fallback with no cache, where it was never residual anyway.
 	v.sched = scheduled{
-		loop: v.poll, residual: true,
+		loop: v.poll,
 		// fields nil: this collector reads /ppp/active whole, unlike `ppp`.
 		menu: vpnPppCmd.Path, fields: fieldsOf(vpnPppCmd), apply: v.apply,
 		cadence: func() time.Duration { return vpnSlowTarget },
+	}
+	v.wg = scheduled{
+		menu: vpnPeersCmd.Path, fields: fieldsOf(vpnPeersCmd), apply: v.applyPeers,
+		cadence: v.pollMs.duration,
 	}
 	return v
 }
@@ -479,6 +494,11 @@ func (v *VPN) RefreshNow() {
 		return
 	}
 	rows, err := v.ros.Do(vpnPeersCmd)
+	v.applyPeers(rows, err)
+}
+
+// applyPeers files one read of the peers, the subscription's or RefreshNow's.
+func (v *VPN) applyPeers(rows []routeros.Reply, err error) {
 	if err != nil {
 		return
 	}
@@ -742,10 +762,12 @@ func (v *VPN) Start() {
 		v.Tick()
 	}
 	v.sched.begin()
+	v.wg.begin()
 }
 
 func (v *VPN) Reconnected() {
 	v.sched.end()
+	v.wg.end()
 	v.mu.Lock()
 	clear(v.prev)
 	v.lastFP = ""
@@ -755,11 +777,12 @@ func (v *VPN) Reconnected() {
 	// RE-SUBSCRIBE, as Firewall and Wireless do: starting the raw loop left
 	// /ppp/active unsubscribed, so PPP and IPsec froze after a router reboot.
 	v.sched.begin()
+	v.wg.begin()
 }
 
-func (v *VPN) Suspend() { v.sched.end() }
-func (v *VPN) Resume()  { v.sched.begin() }
-func (v *VPN) Stop()    { v.sched.end() }
+func (v *VPN) Suspend() { v.sched.end(); v.wg.end() }
+func (v *VPN) Resume()  { v.sched.begin(); v.wg.begin() }
+func (v *VPN) Stop()    { v.sched.end(); v.wg.end() }
 
 // SetPollMs applies a new poll period to a running collector.
 // See `System.SetPollMs` for why both halves are needed.
@@ -768,10 +791,12 @@ func (v *VPN) SetPollMs(ms int) {
 	v.poll.retime()
 	// And the scheduler: a streamed menu reopens at the new interval.
 	v.sched.retune()
+	v.wg.retune()
 }
 
 // UseCache feeds BOTH halves: the 1.4 shared-read cache and the subscription.
 func (v *VPN) UseCache(rc *roscache.Cache) {
 	v.cache = rc
 	v.sched.useCache(rc)
+	v.wg.useCache(rc)
 }
