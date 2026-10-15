@@ -236,29 +236,58 @@ func TestAQuietGapEndsTheRound(t *testing.T) {
 // TestTheSnapshotOrderIsStable. The collectors fingerprint their payloads to
 // suppress redundant emits, so an unstable order makes every payload look
 // changed — a page that redraws constantly and a dirty check that means nothing.
+//
+// RE-AIMED 2026-10-15: the order is the ROUTER'S, not sorted by key. It used to
+// be sorted, which is stable but wrong for an ordered table (firewall rules,
+// simple queues), where the first match decides and a rule moved on the router
+// keeps its `.id`. TestTheSnapshotFollowsTheRoutersOrder pins the move.
 func TestTheSnapshotOrderIsStable(t *testing.T) {
 	p := &pusher{}
 	c := New(p)
 	defer fill(t, c, "/interface/monitor-traffic")()
 
-	// Pushed in an order that is not sorted, from a map that has no order.
+	// Pushed in an order that is not sorted, which is the router's.
 	p.push(
 		routeros.Reply{"name": "sfp1"},
 		routeros.Reply{"name": "ether1"},
 		routeros.Reply{"name": "bridge"},
 	)
 
-	want := []string{"bridge", "ether1", "sfp1"}
+	want := []string{"sfp1", "ether1", "bridge"}
 	// TWENTY TIMES, because Go's map iteration is randomised PER RANGE: one
 	// agreeing pair proves nothing.
 	for i := 0; i < 20; i++ {
 		rows, _ := c.Get("/interface/monitor-traffic", nil, time.Second)
 		for j, w := range want {
 			if rows[j]["name"] != w {
-				t.Fatalf("pass %d: rows[%d] = %q, want %q — the order is not stable",
+				t.Fatalf("pass %d: rows[%d] = %q, want %q — not the router's order, or not stable",
 					i, j, rows[j]["name"], w)
 			}
 		}
+	}
+}
+
+// TestTheSnapshotFollowsTheRoutersOrder: a row moved on the router keeps its
+// key, so only the order of the next round says it moved.
+func TestTheSnapshotFollowsTheRoutersOrder(t *testing.T) {
+	p := &pusher{}
+	c := New(p)
+	defer fill(t, c, "/interface/monitor-traffic")()
+
+	p.push(routeros.Reply{"name": "a"}, routeros.Reply{"name": "b"}, routeros.Reply{"name": "c"})
+	// The next round, with "c" moved to the top. Its first row repeats a key,
+	// which closes the round before.
+	p.push(routeros.Reply{"name": "c"}, routeros.Reply{"name": "a"}, routeros.Reply{"name": "b"})
+	// And one more repeat, which closes the moved round so it is published.
+	p.push(routeros.Reply{"name": "c"})
+
+	rows, _ := c.Get("/interface/monitor-traffic", nil, time.Second)
+	got := ""
+	for _, r := range rows {
+		got += r["name"]
+	}
+	if got != "cab" {
+		t.Errorf("published order %q, want %q: a row moved on the router must move here", got, "cab")
 	}
 }
 

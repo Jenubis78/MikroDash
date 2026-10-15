@@ -46,9 +46,10 @@ package roscache
 // signal to wait on. A ROLLING MAP has no boundary to detect: each row replaces
 // its own key and the entry is always current.
 //
-// `snapshot` returns the values SORTED BY KEY. That is not tidiness: collectors
-// fingerprint their payloads to suppress redundant emits, and an unstable order
-// would make every payload look changed and defeat the dirty check.
+// `snapshot` returns the values in the order the router sent them, which is
+// stable for an unchanged table. That is not tidiness: collectors fingerprint
+// their payloads to suppress redundant emits, and an unstable order would make
+// every payload look changed and defeat the dirty check.
 
 import (
 	"fmt"
@@ -151,6 +152,9 @@ type streamFill struct {
 	rows map[string]routeros.Reply
 	// round is the round being received. See absorb for how its end is found.
 	round map[string]routeros.Reply
+	// order and roundOrder are the keys of rows and round in the order the
+	// router sent them. See snapshot.
+	order, roundOrder []string
 	// published is false until the first round has completed, and while it is
 	// false `snapshot` serves the ACCUMULATING round instead. Without it a page
 	// would be blank for a whole interval after the channel opens, which is the
@@ -693,6 +697,7 @@ func (f *streamFill) absorb(r routeros.Reply) {
 			f.round = map[string]routeros.Reply{}
 		}
 		f.round[k] = r
+		f.roundOrder = append(f.roundOrder, k)
 		return done
 	}()
 	if published {
@@ -724,8 +729,8 @@ func (f *streamFill) finishRoundLocked() bool {
 	if len(f.round) == 0 {
 		return false
 	}
-	f.rows = f.round
-	f.round = map[string]routeros.Reply{}
+	f.rows, f.order = f.round, f.roundOrder
+	f.round, f.roundOrder = map[string]routeros.Reply{}, nil
 	f.published = true
 	f.rounds++
 	return true
@@ -775,25 +780,30 @@ func (f *streamFill) authoritative() bool {
 	return f.published || len(f.round) > 0
 }
 
-// snapshot is the current value of every key, sorted. See the header on why the
-// order is load-bearing rather than tidy.
+// snapshot is the current value of every key, in the order the router sent
+// them. See the header on why a stable order is load-bearing rather than tidy.
+//
+// ── THE ROUTER'S ORDER, NOT THE KEY'S ──────────────────────────────────────
+//
+// This used to sort by key, which is stable but not the router's order: `.id`
+// order is creation order, and a rule moved on the router keeps its id. For an
+// ORDERED table, the firewall's or the simple queues', where the first match
+// decides, the order is the data, and a page drawn in id order shows rules
+// that never run as if they did. A round arrives in the router's order, and an
+// unchanged table arrives in the same order every round, so the dirty check
+// that wanted a stable order still gets one.
 func (f *streamFill) snapshot() []routeros.Reply {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	src := f.rows
+	src, order := f.rows, f.order
 	if !f.published {
 		// The first round is still arriving. Serving it partially fills the page
 		// a whole interval sooner than waiting, and the next round replaces it
 		// wholesale.
-		src = f.round
+		src, order = f.round, f.roundOrder
 	}
-	keys := make([]string, 0, len(src))
-	for k := range src {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	out := make([]routeros.Reply, 0, len(keys))
-	for _, k := range keys {
+	out := make([]routeros.Reply, 0, len(order))
+	for _, k := range order {
 		out = append(out, src[k])
 	}
 	return out
@@ -860,8 +870,8 @@ func (f *streamFill) watch(s Streamer, done <-chan struct{}) {
 			// plausible -- and it self-corrects on the first row that arrives.
 			if f.restarts > 0 && f.published && len(f.rows) > 0 &&
 				!f.quietSince.IsZero() && time.Since(f.quietSince) > 2*f.stale {
-				f.rows = map[string]routeros.Reply{}
-				f.round = map[string]routeros.Reply{}
+				f.rows, f.order = map[string]routeros.Reply{}, nil
+				f.round, f.roundOrder = map[string]routeros.Reply{}, nil
 				f.rounds++
 				f.quietSince = time.Now()
 			}
