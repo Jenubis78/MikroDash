@@ -1357,8 +1357,7 @@ func (m *Manager) Acquire(routerID string) (*Session, error) {
 	// The cache asks this before it subscribes a menu. Set here rather than per
 	// collector because this is the only place that knows both halves: which
 	// collector owns a menu, and what this router's resolved config says about
-	// it. See streammenus.go, and note that the table it consults is EMPTY --
-	// B.4 fills it one collector at a time.
+	// it. See streammenus.go: a menu the table does not list polls.
 	s.roscache.StreamWhen(s.streamsMenu)
 
 	m.live[routerID] = s

@@ -796,9 +796,11 @@ func TestTheDefaultStreamArgsMatchThePolledRead(t *testing.T) {
 		t.Errorf("args = %q; the interval must be the collector's own cadence, or "+
 			"choosing Stream silently changes the poll setting", got)
 	}
-	if !strings.Contains(got, "=.proplist=name,running") {
+	// What the polled read asked for, plus `.id`: a stream keys its rows by it
+	// and RouterOS sends it only when asked (see proplistWithID).
+	if !strings.Contains(got, "=.proplist=.id,name,running") {
 		t.Errorf("args = %q; a streamed menu must ask for exactly what the polled "+
-			"read asked for", got)
+			"read asked for, and the .id that names its rows", got)
 	}
 
 	// SUB-SECOND FLOORS TO ONE. RouterOS takes seconds, and rounding to zero

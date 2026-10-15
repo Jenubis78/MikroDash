@@ -35,6 +35,9 @@ const monitorTrafficMenu = "/interface/monitor-traffic"
 // chart can grey a downed interface. `ifStatus` ignores them, and carrying two
 // fields it does not read is free — one channel with a wider proplist is
 // strictly cheaper than two channels.
+// monitorTrafficMaxSec is the longest `=interval=` RouterOS accepts here.
+const monitorTrafficMaxSec = 5
+
 const monitorTrafficProps = "=.proplist=name,rx-bits-per-second,tx-bits-per-second,running,disabled"
 
 // monitorTrafficCmd builds one holder's claim.
@@ -46,6 +49,14 @@ const monitorTrafficProps = "=.proplist=name,rx-bits-per-second,tx-bits-per-seco
 func monitorTrafficCmd(names []string, sec int) routeros.Cmd {
 	if sec < 1 {
 		sec = 1
+	}
+	// FIVE SECONDS IS THE MOST THIS MENU TAKES. Measured on CHR Test (7.24.5):
+	// `=interval=6` is refused, "value of interval is out of range
+	// (00:00:00.020 .. 00:00:05)". `ifStatus` polls up to a minute, so above five
+	// its join failed and it fell back to `=once=` reads. A channel at five is
+	// fresher than its cadence, which costs it nothing.
+	if sec > monitorTrafficMaxSec {
+		sec = monitorTrafficMaxSec
 	}
 	sorted := append([]string(nil), names...)
 	sort.Strings(sorted)
@@ -105,6 +116,9 @@ func joinMonitorTraffic(c *roscache.Cache, names []string, sec int,
 	onRow func(routeros.Reply)) (func(), error) {
 	if sec < 1 {
 		sec = 1
+	}
+	if sec > monitorTrafficMaxSec {
+		sec = monitorTrafficMaxSec // the boundary is the channel's interval, see monitorTrafficCmd
 	}
 	return c.JoinStream(roscache.Join{
 		Menu:     monitorTrafficMenu,

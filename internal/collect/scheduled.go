@@ -29,6 +29,7 @@ package collect
 // only ever one.
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -203,9 +204,85 @@ func defaultStreamArgs(cadence func() time.Duration, fields []string) []string {
 	}
 	args := []string{"=interval=" + strconv.Itoa(sec)}
 	if len(fields) > 0 {
-		args = append(args, "=.proplist="+strings.Join(fields, ","))
+		args = append(args, "=.proplist="+strings.Join(proplistWithID(fields), ","))
 	}
 	return args
+}
+
+// proplistWithID puts `.id` in a stream's proplist when the subscription left it out.
+//
+// A PROPLIST IS ALL ROUTEROS SENDS, `.id` INCLUDED. Measured on CHR Test
+// (7.24.5): `/ip/arp/print =.proplist=address,interface` returns rows with no
+// `.id` at all. A polled read never needed it, but a stream folds rows into a
+// map by key, and `keyByID` cannot name a row without one: every row was
+// counted unkeyed, no round ever completed, and the menu went on polling with a
+// channel open for nothing. The bridge host table streamed like that.
+func proplistWithID(fields []string) []string {
+	for _, f := range fields {
+		if f == ".id" {
+			return fields
+		}
+	}
+	return append([]string{".id"}, fields...)
+}
+
+// mergeTableStream is the merge rule for a `/print =interval=` channel that
+// more than one collector reads.
+//
+// ── THE UNION OF THE FIELDS, AND THE FINEST INTERVAL ───────────────────────
+//
+// A stream-filled read is served from the channel whatever proplist the reader
+// asked for, so the channel must carry every field any holder reads. Before
+// this the FIRST collector to join set the command and a second was refused:
+// whichever of `wireless` and `capsman` started first decided whether
+// `wireless` got every field or only `capsman`'s five. A holder with no
+// proplist asks for every field, so then the channel has none either.
+//
+// The finest interval because the faster holder is the one with something to
+// lose; a slower holder reads a fresher snapshot and loses nothing. That is
+// `/interface/monitor-traffic`'s rule (monitortraffic.go), for the same reason.
+//
+// The command is rebuilt from scratch, so the same set of holders always
+// produces the same words and `roscache` reopens the channel only on a change.
+func mergeTableStream(cmds []routeros.Cmd) routeros.Cmd {
+	var out routeros.Cmd
+	best := 0
+	all := false
+	seen := map[string]bool{}
+	var fields []string
+	for _, c := range cmds {
+		out.Path = c.Path
+		props := false
+		for _, a := range c.Args {
+			switch {
+			case strings.HasPrefix(a, "=interval="):
+				if n, err := strconv.Atoi(strings.TrimPrefix(a, "=interval=")); err == nil &&
+					n > 0 && (best == 0 || n < best) {
+					best = n
+				}
+			case strings.HasPrefix(a, "=.proplist="):
+				props = true
+				for _, f := range strings.Split(strings.TrimPrefix(a, "=.proplist="), ",") {
+					if f != "" && !seen[f] {
+						seen[f] = true
+						fields = append(fields, f)
+					}
+				}
+			}
+		}
+		if !props {
+			all = true
+		}
+	}
+	if best == 0 {
+		best = 1
+	}
+	out.Args = []string{"=interval=" + strconv.Itoa(best)}
+	if !all && len(fields) > 0 {
+		sort.Strings(fields)
+		out.Args = append(out.Args, "=.proplist="+strings.Join(proplistWithID(fields), ","))
+	}
+	return out
 }
 
 // fillIfStreaming asks the cache to keep this menu current from an open channel
@@ -268,13 +345,13 @@ func (s *scheduled) fillIfStreaming(menu string) {
 			boundary = d
 		}
 	}
-	// NO `Merge`, WHICH IS THE DECLARATION THAT THIS MENU HAS ONE OWNER. A
-	// second holder is refused rather than merged — seven of the eight
-	// streamed menus have exactly one consumer, and two collectors quietly
-	// sharing a channel is a real bug class. `/interface/monitor-traffic` is the
-	// exception and declares a merge rule; see collect/monitortraffic.go.
+	// A MERGE, BECAUSE A STREAMED MENU CAN HAVE SEVERAL READERS.
+	// `/interface/wifi/registration-table` is read by `wireless` and `capsman`,
+	// `/ppp/active` by `ppp` and `vpn`. Without a merge the first to join
+	// owned the channel with its own fields and cadence, the rest were refused
+	// and read whatever it carried. See mergeTableStream.
 	stop, err := s.cache.JoinStream(roscache.Join{
-		Menu: menu, Cmd: cmd, KeyOf: keyOf, Boundary: boundary,
+		Menu: menu, Cmd: cmd, KeyOf: keyOf, Boundary: boundary, Merge: mergeTableStream,
 	})
 	if err != nil {
 		return // polling, which is what the subscription already does

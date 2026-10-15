@@ -232,7 +232,8 @@ type streamFill struct {
 //
 // A Join with no Merge is single-owner and a second caller is refused,
 // deliberately: two collectors quietly fighting over one channel is a whole
-// class of bug, and seven of the eight streamed menus have exactly one consumer.
+// class of bug. A `/print` menu several collectors read declares a merge too
+// (collect.mergeTableStream).
 //
 // `/interface/monitor-traffic` has two, and they want different things.
 // `ifStatus` wants every enabled interface at its own cadence and reads a
@@ -260,10 +261,9 @@ type Join struct {
 	//
 	// ── NIL MEANS UNSHARED, AND THAT IS THE WHOLE DECLARATION ──────────────
 	//
-	// Seven of the eight streamed menus have exactly one consumer, and a
-	// second one arriving is a real bug class: two collectors quietly fighting
-	// over one channel. A nil Merge says "this menu has one owner", and a second
-	// `JoinStream` on it is REFUSED rather than merged.
+	// A second holder arriving unannounced is a real bug class: two collectors
+	// quietly fighting over one channel. A nil Merge says "this menu has one
+	// owner", and a second `JoinStream` on it is REFUSED rather than merged.
 	//
 	// That refusal used to be a whole second entry point, `FillFromStream`, kept
 	// beside this one because migrating its single caller was work. It is a
@@ -508,6 +508,10 @@ type StreamStats struct {
 	// ago is not stale for having produced nothing yet, which is the distinction
 	// `traffic`'s watchdog drew with `streamStart`.
 	SinceOpen time.Duration
+	// Unkeyed counts rows the key function could not name since the fill
+	// opened. Anything above zero is a menu this fill cannot represent: its
+	// rounds never complete and the menu goes on polling with a channel open.
+	Unkeyed int
 }
 
 // StreamStats reports one menu's fill, and whether there is one.
@@ -518,7 +522,7 @@ func (c *Cache) StreamStats(menu string) (StreamStats, bool) {
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	st := StreamStats{Open: f.stop != nil, Restarts: f.restarts}
+	st := StreamStats{Open: f.stop != nil, Restarts: f.restarts, Unkeyed: f.unkeyed}
 	if !f.lastRow.IsZero() {
 		st.Silent = time.Since(f.lastRow)
 	}
@@ -637,8 +641,9 @@ func (f *streamFill) open(s Streamer) error {
 //
 // That is a far smaller error than the unbounded growth it replaces, and it is
 // bounded by the next row rather than by the session. It is still an error, and
-// it is why the registration tables stay refused: "no wireless clients" is an
-// ordinary state, and ghost clients would be the visible result.
+// a registration table is where it would show: "no wireless clients" is an
+// ordinary state, and ghost clients the visible result. The empty-table rule in
+// the doc (silence surviving a deliberate restart) is what answers it.
 func (f *streamFill) absorb(r routeros.Reply) {
 	// ── THE FAN-OUT COMES FIRST, AND NOT UNDER THE LOCK ────────────────────
 	//
@@ -696,7 +701,7 @@ func (f *streamFill) absorb(r routeros.Reply) {
 }
 
 // rowHooks copies the holders' row callbacks so `absorb` can call them without
-// holding the lock. Nil for every unshared fill, which is seven of eight.
+// holding the lock. Nil for a fill no holder asked to see every row of.
 func (f *streamFill) rowHooks() []func(routeros.Reply) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

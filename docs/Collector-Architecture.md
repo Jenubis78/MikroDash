@@ -162,14 +162,18 @@ Two mechanisms make it safe:
   table rather than a broken one.
 
 **One entry point, `JoinStream`, and a `Join` declares whether the menu is
-shared.** A nil `Merge` means single-owner: seven of the eight streamed
-menus have exactly one consumer, and a second holder is *refused* rather than
-merged, because two collectors quietly fighting over one channel is a real bug
-class. A non-nil `Merge` means shared - it combines the holders' commands (the
-union of the interfaces, the finest interval) and each row is fanned out to
-holders that asked for one. `/interface/monitor-traffic` is the only shared menu:
-`ifStatus` wants a snapshot, `traffic` wants every packet, and they hold **one
-channel** between them.
+shared.** A nil `Merge` means single-owner, and a second holder is *refused*
+rather than merged, because two collectors quietly fighting over one channel is a
+real bug class. A non-nil `Merge` means shared - it combines the holders' commands
+and each row is fanned out to holders that asked for one. Every `/print` stream
+opened by `scheduled` is shared through `mergeTableStream`: the union of the
+holders' fields (none, if any holder reads every field) and the finest interval,
+with `.id` always in the proplist, because RouterOS sends it only when asked and a
+fill keys its rows by it. That is what lets `wireless` and `capsman` read one Wi-Fi
+registration channel, and `ppp` and `vpn` one `/ppp/active`, whichever starts
+first. `/interface/monitor-traffic` has its own rule: `ifStatus` wants a snapshot,
+`traffic` wants every packet, and they hold **one channel** between them, at no more
+than five seconds, the longest interval that menu accepts.
 
 ### The stream/poll duality
 

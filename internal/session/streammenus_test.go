@@ -26,7 +26,7 @@ import (
 // Neither breaks a page, so nothing else in the suite would notice.
 func TestStreamableMenusAreRealAndOwned(t *testing.T) {
 	if len(streamableMenus) == 0 {
-		// EMPTY IS THE CORRECT STATE UNTIL B.4, and this is not a skip: the
+		// Every router polling is a valid state, and this is not a skip: the
 		// checks below have nothing to say, but the file being present and
 		// parsed is what stops the table being deleted as unused.
 		return

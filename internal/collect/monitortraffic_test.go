@@ -100,3 +100,20 @@ func TestTheChartAsksForOneSecond(t *testing.T) {
 			"second; a coarser interval looks like a quiet network, not like a bug.")
 	}
 }
+
+// TestMonitorTrafficNeverAsksForMoreThanFiveSeconds. Measured on CHR Test
+// (7.24.5): `=interval=6` is refused, "value of interval is out of range
+// (00:00:00.020 .. 00:00:05)". `ifStatus` polls up to a minute, and at any
+// cadence above five its join was refused and it fell back to `=once=` reads.
+func TestMonitorTrafficNeverAsksForMoreThanFiveSeconds(t *testing.T) {
+	for _, sec := range []int{6, 30, 60} {
+		cmd := monitorTrafficCmd([]string{"ether1"}, sec)
+		if got := cmd.Args[1]; got != "=interval=5" {
+			t.Errorf("asked at %ds, the channel opens with %q; RouterOS refuses above 5", sec, got)
+		}
+	}
+	// CONTROL: an interval it accepts is passed through.
+	if got := monitorTrafficCmd([]string{"ether1"}, 3).Args[1]; got != "=interval=3" {
+		t.Errorf("asked at 3s, the channel opens with %q", got)
+	}
+}
