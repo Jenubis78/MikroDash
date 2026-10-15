@@ -153,6 +153,12 @@ var streamableMenus = map[string]string{
 	// Probed 2026-10-15: streams, 24 rows in 6s, first row 4ms (four devices).
 	"/ip/kid-control/device/print": "talkers",
 
+	// Session state is what the Routing page and its alert read; a peer going down
+	// shows within one interval. `/ip/route` stays polled: a large table that churns,
+	// read on the slow lane. Probed 2026-10-15 on CHR Test with a looped eBGP pair:
+	// streams, 12 rows in 6s, first row 4ms.
+	"/routing/bgp/session/print": "routing",
+
 	// ── METADATA DOES NOT STREAM, AND SEVEN LINES LEFT (2026-09-15) ─────────
 	//
 	// `/interface/wifi/print`, `/interface/vlan/print`,
