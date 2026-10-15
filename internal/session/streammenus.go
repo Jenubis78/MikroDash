@@ -159,6 +159,12 @@ var streamableMenus = map[string]string{
 	// streams, 12 rows in 6s, first row 4ms.
 	"/routing/bgp/session/print": "routing",
 
+	// An ORDERED table (the first match decides), which streams in the router's
+	// order since roscache keeps each round's arrival order. The rates and byte
+	// counters are the page. `/queue/tree` is read beside it and still polls.
+	// Probed 2026-10-15 on CHR Test with a temporary queue: 6 rows in 6s, first row 6ms.
+	"/queue/simple/print": "queues",
+
 	// ── METADATA DOES NOT STREAM, AND SEVEN LINES LEFT (2026-09-15) ─────────
 	//
 	// `/interface/wifi/print`, `/interface/vlan/print`,

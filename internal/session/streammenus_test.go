@@ -81,8 +81,24 @@ func subscribedMenusInCollect(t *testing.T) map[string]bool {
 		t.Fatalf("read %s: %v", dir, err)
 	}
 	decl := regexp.MustCompile(`(\w+)\s*=\s*routeros\.Cmd\{\s*Path:\s*"(/[^"]+)"`)
-	// `cmd: xxxCmd,` is a table collector's tableSpec (internal/collect/table.go).
-	sub := regexp.MustCompile(`menu:\s*(\w+)\.Path|\bcmd:\s*(\w+),`)
+	// A bare path constant, as `queueSimpleCmd = "/queue/simple/print"`.
+	declConst := regexp.MustCompile(`(?m)^\s*(\w+)\s*=\s*"(/[^"]+)"`)
+	// `cmd: xxxCmd,` is a table collector's tableSpec (internal/collect/table.go),
+	// and `cmd: routeros.Cmd{Path: xxx}` the same with a bare constant.
+	sub := regexp.MustCompile(`menu:\s*(\w+)\.Path|\bcmd:\s*(\w+),|\bcmd:\s*routeros\.Cmd\{Path:\s*(\w+)\}`)
+	// MECHANISM B: a collector that moves its subscription with
+	// `resubscribe(menu.Path, ...)` subscribes to every Cmd it assigns to
+	// `menu` (wireless: the modern or the legacy registration table).
+	moved := regexp.MustCompile(`\bmenu\s*:?=\s*(\w+)\b`)
+	// And the firewall's, which builds its menu from a table key with fwMenu:
+	// every key SetActiveTable accepts.
+	fwKeys := regexp.MustCompile(`case\s+((?:"\w+",?\s*)+):`)
+	fwMenu := func(key string) string { // collect.fwMenu, which is unexported
+		if base, ok := strings.CutSuffix(key, "6"); ok {
+			return "/ipv6/firewall/" + base + "/print"
+		}
+		return "/ip/firewall/" + key + "/print"
+	}
 
 	out := map[string]bool{}
 	for _, e := range entries {
@@ -99,9 +115,29 @@ func subscribedMenusInCollect(t *testing.T) map[string]bool {
 		for _, m := range decl.FindAllStringSubmatch(src, -1) {
 			paths[m[1]] = m[2]
 		}
+		for _, m := range declConst.FindAllStringSubmatch(src, -1) {
+			paths[m[1]] = m[2]
+		}
 		for _, m := range sub.FindAllStringSubmatch(src, -1) {
-			if p, ok := paths[m[1]+m[2]]; ok {
+			if p, ok := paths[m[1]+m[2]+m[3]]; ok {
 				out[p] = true
+			}
+		}
+		if strings.Contains(src, "resubscribe(menu.Path") {
+			for _, m := range moved.FindAllStringSubmatch(src, -1) {
+				if p, ok := paths[m[1]]; ok {
+					out[p] = true
+				}
+			}
+		}
+		if strings.Contains(src, "resubscribe(fwMenu(") {
+			for _, m := range fwKeys.FindAllStringSubmatch(src, -1) {
+				if !strings.Contains(m[1], `"filter"`) {
+					continue // another switch in the file, not the table keys
+				}
+				for _, k := range regexp.MustCompile(`"(\w+)"`).FindAllStringSubmatch(m[1], -1) {
+					out[fwMenu(k[1])] = true
+				}
 			}
 		}
 	}
