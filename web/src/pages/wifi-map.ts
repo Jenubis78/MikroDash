@@ -391,14 +391,32 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
     return out;
   }
 
-  /** Which pin a client belongs to, or null when its AP is not on the map. */
-  function pinFor(c: WirelessClient, map: Record<string, string>): MapAP | null {
+  /** Virtual AP -> the radio it rides, for a local network added after its pin. */
+  function ifaceToRadio(): Record<string, string> {
+    const out: Record<string, string> = {};
+    (wifi?.networks || []).forEach((n) => { if (n.radio) out[n.name] = n.radio; });
+    return out;
+  }
+
+  /**
+   * Which pin a client belongs to, or null when its AP is not on the map.
+   *
+   * THE AP IDENTITY DECIDES WHEN THERE IS ONE. A pin's interface names are a
+   * snapshot from when it was placed, and a manager hands `cap1`, `cap2`... out
+   * in connection order, so after a reboot another CAP can hold an interface an
+   * older pin still lists. Matching names first put that CAP's clients around
+   * the wrong box. Names only place clients of radios with no identity.
+   */
+  function pinFor(c: WirelessClient, map: Record<string, string>,
+                  radio: Record<string, string>): MapAP | null {
     const ap = map[c.iface] || '';
-    for (const p of doc.aps) {
-      if (ap && p.ap && p.ap === ap) return p;
-      if (p.ifaces.indexOf(c.iface) !== -1) return p;
+    if (ap) {
+      const byAp = doc.aps.find((p) => p.ap === ap);
+      if (byAp) return byAp;
     }
-    return null;
+    const names = [c.iface, radio[c.iface] || ''].filter(Boolean);
+    return doc.aps.find((p) => (!ap || !p.ap) &&
+      names.some((n) => p.ifaces.indexOf(n) !== -1)) || null;
   }
 
   // ── rendering ─────────────────────────────────────────────────────────────
@@ -677,11 +695,12 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
 
   function render(): void {
     const map = ifaceToAp();
+    const radio = ifaceToRadio();
     const groups = new Map<string, { pin: MapAP; clients: WirelessClient[] }>();
     const counts: Record<string, number> = {};
     let unplaced = 0;
     (wireless?.clients || []).forEach((c) => {
-      const pin = pinFor(c, map);
+      const pin = pinFor(c, map, radio);
       if (!pin) { unplaced++; return; }
       const key = pinKey(pin);
       counts[key] = (counts[key] || 0) + 1;

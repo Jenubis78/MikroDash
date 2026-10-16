@@ -208,7 +208,16 @@ function fieldHtml(f: SchemaField, value: unknown, choices?: string[]): string {
   if (neg) value = neg.value;
   let body: string;
 
-  if (choices && choices.length) {
+  if (choices && choices.length && f.suggest) {
+    // A list the value is usually from but need not be: a FWD entry forwards
+    // to a named forwarder or to any address.
+    const listId = 'resl_' + f.name;
+    const v = value === undefined || value === null ? '' : String(value);
+    body = '<input class="sform-input" id="' + id + '" type="text" list="' + listId + '"' +
+      ' value="' + esc(v) + '" placeholder="' + esc(f.placeholder || '') + '" autocomplete="off">' +
+      '<datalist id="' + listId + '">' +
+      choices.map((o) => '<option value="' + esc(o) + '"></option>').join('') + '</datalist>';
+  } else if (choices && choices.length) {
     // THE ROUTER TOLD US WHAT THIS FIELD MAY BE, so offer that rather than a
     // blank box - even for a field whose declared type is free text. That is
     // what the live form does, and without it the VLAN parent and both
@@ -1203,9 +1212,8 @@ export function mountRows(socket: Socket): void {
  *
  * An existing row is NOT rendered from the list payload. The collector reads
  * with a proplist narrow enough for the page it feeds, so a form filled from it
- * would blank every property the page does not display - on dnsStatic that is
- * match-subdomain, cname, forward-to and text. The server is asked for a fresh
- * read instead, and answers on `res:row`.
+ * would blank every property the page does not display. The server is asked for
+ * a fresh read instead, and answers on `res:row`.
  */
 export function openResource(socket: Socket, key: string,
                              row: { id: string; name?: string } | null): void {

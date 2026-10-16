@@ -387,6 +387,9 @@ func (cn *conn) prepareWrite(res *resource.Resource, req *resRequest) (*prepared
 	if len(res.Identity) == 1 {
 		name = validated.Values[res.Identity[0]]
 	}
+	if name == "" && res.IdentityFallback != "" {
+		name = validated.Values[res.IdentityFallback]
+	}
 	if name == "" {
 		name = req.ExpectedIdentity
 	}
@@ -1130,11 +1133,19 @@ func (cn *conn) resOptions(res *resource.Resource) map[string][]string {
 	if cn.rsession == nil {
 		return out
 	}
+	// ONLY THE PROPERTIES THE PICKERS TAKE. A whole /file row carries a small
+	// file's contents, and a whole /ip/dns/static is every record on a router
+	// that holds a thousand, to collect one column.
+	props := map[string][]string{}
+	for _, src := range res.OptionSources() {
+		props[src.Menu] = append(props[src.Menu], src.Value)
+	}
 	menus := map[string][]routeros.Reply{}
 	failed := map[string]bool{}
 	for _, src := range res.OptionSources() {
 		if _, seen := menus[src.Menu]; !seen && !failed[src.Menu] {
-			rows, err := cn.rsession.Exec(routeros.Cmd{Path: src.Menu + "/print"})
+			rows, err := cn.rsession.Exec(routeros.Cmd{Path: src.Menu + "/print",
+				Args: []string{"=.proplist=" + strings.Join(props[src.Menu], ",")}})
 			if err != nil {
 				failed[src.Menu] = true
 			} else {

@@ -48,6 +48,11 @@ var addedSinceNode = map[string][]string{
 		"name", "privateKey", "clientAddress", "clientDns", "clientEndpoint",
 		"clientKeepalive", "clientAllowedAddress", "responder",
 	},
+	// A static entry's regexp and address list, added 2026-10-13. Only the
+	// preview gate reads this entry: the form itself left the Node parity gate
+	// for the manual's property list (TestDNSFormsCoverTheManual). Both clear
+	// with `=!<prop>=` on an edit, which the preview's strip matches.
+	"dnsStatic": {"regexp", "addressList"},
 }
 
 // addedFor reports the recorded additions for a resource.

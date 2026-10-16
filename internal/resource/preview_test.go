@@ -67,7 +67,7 @@ func TestPreviewCommandMatchesTheLiveModule(t *testing.T) {
 				if f == nil || f.ROS == "" {
 					continue
 				}
-				stripped := regexp.MustCompile(` =`+regexp.QuoteMeta(f.ROS)+`=[^ ]*`).
+				stripped := regexp.MustCompile(` =!?`+regexp.QuoteMeta(f.ROS)+`=[^ ]*`).
 					ReplaceAllString(got, "")
 				if stripped != got {
 					seenAdded[c.Key+"/"+name] = true

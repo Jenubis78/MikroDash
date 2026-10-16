@@ -38,7 +38,10 @@ var driftCases = []struct {
 	file string // under src/collectors/
 }{
 	{"dns settings", dnsSettingsCmd, "dns.js"},
-	{"dns static", dnsStaticCmd, "dns.js"},
+	// NOT the static entries, since 2026-10-13: that read is now the dnsStatic
+	// resource's own fields (areaReadCmd), so the table, the edit form and the
+	// fleet copy ask for the same properties. Node's list had no address-list.
+	// TestDNSStaticReadCarriesEveryFormField holds it instead.
 	{"bridges", bridgeCmd, "bridges.js"},
 	{"bridge ports", bridgePortCmd, "bridges.js"},
 	{"bridge hosts", bridgeHostCmd, "bridges.js"},

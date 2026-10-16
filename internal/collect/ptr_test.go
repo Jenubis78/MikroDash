@@ -252,7 +252,7 @@ func TestALeaseNameBeatsAPTRRecord(t *testing.T) {
 	ptr := ptrWith(f)
 	w := &Wireless{
 		leases: stubLeases{&LeasesPayload{Leases: []Lease{
-			{MAC: "AA:BB:CC:DD:EE:FF", Name: "FromLease"},
+			{MAC: "AA:BB:CC:DD:EE:FF", Name: "FromLease", HostName: "FromLease"},
 		}}},
 		ptr: ptr,
 	}

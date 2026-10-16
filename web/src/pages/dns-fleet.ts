@@ -39,6 +39,9 @@ interface FleetEntry {
   ttl: string;
   disabled: boolean;
   comment: string;
+  addressList: string;
+  matchSubdomain: boolean;
+  dynamic: boolean;
   /** The resource descriptor's view of the row - every field the form has. */
   values: Record<string, unknown>;
 }
@@ -62,6 +65,11 @@ interface FleetRow {
   type: string;
   /** The routers that have it, by id. */
   on: Record<string, FleetEntry>;
+  /** What a copy writes: a static holder's record, or null when every router
+   *  holding it has it from a DHCP server, which is that server's to add. */
+  source: FleetEntry | null;
+  /** Lined up by value as well as name and type: round-robin records. */
+  byValue: boolean;
   missing: string[];
   differs: boolean;
 }
@@ -79,26 +87,62 @@ const SEP = '\u0001';
 /** What two routers have to agree on for a record to count as the same.
  *
  *  NOT the row id, which is per-router and always differs; not the comment,
- *  which is a note rather than an answer. The value, the type and the TTL are
- *  what a resolver acts on. */
+ *  which is a note rather than an answer. The value, the type, the TTL, which
+ *  names it covers and which address list it feeds are what a resolver acts on,
+ *  and so are an MX record's preference and an SRV record's numbers, which the
+ *  value column does not show. */
+const NUMBERS = ['mxPreference', 'srvPort', 'srvPriority', 'srvWeight'];
+
 function same(a: FleetEntry, b: FleetEntry): boolean {
   return a.address === b.address && a.type === b.type && a.ttl === b.ttl &&
-    a.disabled === b.disabled;
+    a.disabled === b.disabled && a.addressList === b.addressList &&
+    a.matchSubdomain === b.matchSubdomain &&
+    NUMBERS.every((k) => String(a.values[k] ?? '') === String(b.values[k] ?? ''));
 }
 
-function buildRows(routers: FleetRouter[]): FleetRow[] {
+/**
+ * The key a record lines up on: its name and type, and its value too when any
+ * router holds two records with that name and type. Round-robin A records and
+ * two TXT on one name were one line before, the second invisible and never
+ * copied.
+ *
+ * A NAME LINES UP WITHOUT CASE. RouterOS keeps the case a name was written in,
+ * so `MDPROBE.test` and `mdprobe.test` can both exist, and the resolver answers
+ * them as one name. A regexp is a pattern and keeps its case.
+ */
+function rowKeys(routers: FleetRouter[]): { keyOf: (e: FleetEntry) => string; valued: (e: FleetEntry) => boolean } {
+  const base = (e: FleetEntry): string => (e.name ? e.name.toLowerCase() : e.regexp) + SEP + e.type;
+  const multi = new Set<string>();
+  routers.forEach((r) => {
+    const seen = new Set<string>();
+    r.entries.forEach((e) => {
+      const k = base(e);
+      if (seen.has(k)) multi.add(k);
+      seen.add(k);
+    });
+  });
+  return {
+    keyOf: (e) => (multi.has(base(e)) ? base(e) + SEP + e.address : base(e)),
+    valued: (e) => multi.has(base(e)),
+  };
+}
+
+export function buildRows(routers: FleetRouter[]): FleetRow[] {
   const by = new Map<string, FleetRow>();
+  const { keyOf, valued } = rowKeys(routers.filter((r) => r.ok));
   routers.forEach((r) => {
     if (!r.ok) return;
     r.entries.forEach((e) => {
-      const key = (e.name || e.regexp) + SEP + e.type;
+      const key = keyOf(e);
       let row = by.get(key);
       if (!row) {
         row = { id: 'r' + String(by.size), key, name: e.name || e.regexp,
-          type: e.type, on: {}, missing: [], differs: false };
+          type: e.type, on: {}, source: null, byValue: valued(e),
+          missing: [], differs: false };
         by.set(key, row);
       }
       row.on[r.id] = e;
+      if (!row.source && !e.dynamic) row.source = e;
     });
   });
   const rows = [...by.values()];
@@ -261,6 +305,10 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
 
   function cell(row: FleetRow, r: FleetRouter): string {
     const e = row.on[r.id];
+    if (!e && !row.source) {
+      return '<td class="dns-fleet-col"><span class="muted-note" title="Added by a DHCP server where it exists, ' +
+        'so not copied">-</span></td>';
+    }
     if (!e) {
       return '<td class="dns-fleet-col">' +
         '<button class="sbtn sbtn-outline" data-dnscopy="' + esc(row.id) + '"' +
@@ -271,7 +319,9 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
     const odd = !same(e, first);
     return '<td class="dns-fleet-col">' +
       '<span class="dns-fleet-yes' + (odd ? ' is-odd' : '') + '" title="' +
-        esc(e.address + (e.ttl ? ' · ttl ' + e.ttl : '') + (e.disabled ? ' · disabled' : '')) +
+        esc(e.address + (e.ttl ? ' · ttl ' + e.ttl : '') +
+          (e.addressList ? ' · list ' + e.addressList : '') +
+          (e.matchSubdomain ? ' · subdomains' : '') + (e.disabled ? ' · disabled' : '')) +
         '">' + (odd ? '≠' : '✓') + '</span></td>';
   }
 
@@ -345,30 +395,38 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
    * exactly like a button that does nothing. The per-router result now goes in
    * the card's note, the same place the Add dialog puts it.
    */
-  function push(routerIds: string[], values: Record<string, unknown>): Promise<void> {
-    notice = '';
+  interface PushOutcome {
+    /** Why the whole request was refused, or '' when each router answered. */
+    refused: string;
+    results: Array<{ id: string; ok: boolean; code: string }>;
+  }
+
+  /** `byValue`: the record is lined up by its value too, so another value under
+   *  its name and type on a router is not it (see rowKeys). */
+  function push(routerIds: string[], values: Record<string, unknown>, byValue = false): Promise<PushOutcome> {
     return fetch('/api/dns/fleet-add', {
       method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ routerIds, values }),
+      body: JSON.stringify({ routerIds, values, byValue }),
     })
       .then((r) => (r.ok ? r.json() : { ok: false, code: 'refused' }))
-      .then((d) => {
+      .then((d): PushOutcome => {
         if (d && d.ok === false) {
           // THE FIELD ERRORS TOO: `invalid` alone says a record was refused
           // without saying which property the descriptor would not take.
           const errs = (d.errors || []) as Array<{ field?: string; message?: string }>;
-          notice = 'the write was refused' + (d.code ? ': ' + d.code : '') +
-            (errs.length ? ' - ' + errs.map((e) => e.message || e.field).join('; ') : '');
-          return;
+          return { results: [], refused: 'the write was refused' + (d.code ? ': ' + d.code : '') +
+            (errs.length ? ' - ' + errs.map((e) => e.message || e.field).join('; ') : '') };
         }
-        const bad = (((d && d.results) || []) as Array<{ id: string; ok: boolean; code: string }>)
-          .filter((x) => !x.ok);
-        if (bad.length) {
-          notice = bad.map((x) => named(x.id).label + ': ' + x.code).join(' · ');
-        }
+        return { refused: '', results: (d && d.results) || [] };
       })
-      .catch(() => { notice = 'the write did not reach the server'; });
+      .catch((): PushOutcome => ({ refused: 'the write did not reach the server', results: [] }));
+  }
+
+  /** One write's outcome, for the card's note: only the routers that refused. */
+  function describe(o: PushOutcome): string {
+    if (o.refused) return o.refused;
+    return o.results.filter((x) => !x.ok).map((x) => named(x.id).label + ': ' + x.code).join(' · ');
   }
 
   /** Copy one record to one or more routers, then re-read so the table is the
@@ -376,11 +434,12 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
   function copy(rowID: string, toIDs: string[]): void {
     const row = rows.find((x) => x.id === rowID);
     if (!row || !toIDs.length) return;
-    const from = Object.values(row.on)[0];
+    const from = row.source;
     if (!from) return;
     busy = rowID;
+    notice = '';
     render();
-    void push(toIDs, from.values).then(() => { busy = ''; load(); });
+    void push(toIDs, from.values, row.byValue).then((o) => { notice = describe(o); busy = ''; load(); });
   }
 
   // ── wiring ────────────────────────────────────────────────────────────────
@@ -446,7 +505,8 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
     saved(values) {
       const to = alsoIDs.slice();
       if (scope !== 'fleet' || !to.length) { if (scope === 'fleet') load(); return; }
-      void push(to, values).then(() => load());
+      notice = '';
+      void push(to, values).then((o) => { notice = describe(o); load(); });
     },
   });
 
@@ -456,18 +516,48 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
 
   el('dnsFleetReload')?.addEventListener('click', load);
   el('dnsFleetSyncAll')?.addEventListener('click', () => {
-    // EVERY MISSING PAIR, IN ONE REQUEST PER RECORD. The server is idempotent -
-    // a record already present answers `already-present` rather than adding a
+    // EVERY MISSING PAIR, ONE RECORD AT A TIME. The server is idempotent - a
+    // record already present answers `already-present` rather than adding a
     // second - so a second press is safe.
-    const work = rows.filter((r) => r.missing.length);
-    if (!work.length) return;
+    //
+    // NOT ALL AT ONCE. A router takes 30 writes a minute from one user (#97),
+    // and a hundred parallel requests got thirty through, seventy refused, and a
+    // note naming whichever refusal arrived last. A router that says
+    // `rate-limited` is left out of the rest of the run, and the note counts.
+    const work = rows.filter((r) => r.missing.length && r.source);
+    if (!work.length || busy) return;
     if (!window.confirm('Copy ' + work.length + ' record' + (work.length === 1 ? '' : 's') +
       ' to every router that is missing it?')) return;
-    let left = work.length;
-    work.forEach((row) => {
-      const from = Object.values(row.on)[0];
-      if (!from) { left--; return; }
-      void push(row.missing, from.values).then(() => { if (--left <= 0) load(); });
+    busy = 'all';
+    notice = 'copying…';
+    render();
+    const limited = new Set<string>();
+    let added = 0, left = 0;
+    const failed: string[] = [];
+    const next = (i: number): Promise<void> => {
+      if (i >= work.length) return Promise.resolve();
+      const row = work[i]!;
+      const from = row.source;
+      const to = row.missing.filter((id) => !limited.has(id));
+      left += row.missing.length - to.length;
+      if (!from || !to.length) return next(i + 1);
+      return push(to, from.values, row.byValue).then((o) => {
+        if (o.refused) { failed.push(row.name + ': ' + o.refused); return; }
+        o.results.forEach((x) => {
+          if (x.code === 'added') added++;
+          else if (x.code === 'rate-limited') { limited.add(x.id); left++; }
+          else if (!x.ok) failed.push(row.name + ' on ' + named(x.id).label + ': ' + x.code);
+        });
+      }).then(() => next(i + 1));
+    };
+    void next(0).then(() => {
+      notice = added + ' copied' +
+        (left ? ' · ' + left + ' left on ' + [...limited].map((id) => named(id).label).join(', ') +
+          ' (30 writes a minute per router): press Sync all missing again in a minute' : '') +
+        (failed.length ? ' · ' + failed.length + ' refused: ' + failed.slice(0, 3).join(' · ') +
+          (failed.length > 3 ? ' …' : '') : '');
+      busy = '';
+      load();
     });
   });
 

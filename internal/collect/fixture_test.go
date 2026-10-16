@@ -540,6 +540,23 @@ var addedSinceNode = map[string][]addedField{
 	"system": {
 		{Spec: "publicIp", ProvenBy: "TestThePublicAddressReachesThePayloadAndTheHook"},
 	},
+	// The rest of DNS, added 2026-10-13: a static entry's address list, its
+	// match-subdomain flag and whether it is dynamic, the resolver's address list
+	// extra time, and the forwarders and adlists. Purely additive. Both captures
+	// read the static table with the old proplist and neither asked for
+	// /ip/dns/forwarders or /ip/dns/adlist, so the replay answers those with no
+	// rows; the proofs are named tests. The extra time is filled from the
+	// recording, which read the settings row whole.
+	"dns": {
+		{Spec: "staticEntries[].addressList", ProvenBy: "TestStaticEntriesCarryTheAddressList"},
+		{Spec: "staticEntries[].matchSubdomain", ProvenBy: "TestStaticEntriesCarryTheAddressList"},
+		{Spec: "staticEntries[].dynamic", ProvenBy: "TestStaticEntriesCarryTheAddressList"},
+		added("settings.addressListExtraTime"),
+		{Spec: "forwarders", ProvenBy: "TestForwardersCountTheEntriesNamingThem"},
+		{Spec: "forwardersAvailable", ProvenBy: "TestARouterWithoutForwardersIsAskedOnce"},
+		{Spec: "adlists", ProvenBy: "TestAdlistsCarryTheirSourceAndCounts"},
+		{Spec: "adlistsAvailable", ProvenBy: "TestARouterWithoutForwardersIsAskedOnce"},
+	},
 }
 
 // collectDeclares reports whether this package declares a function by that name.

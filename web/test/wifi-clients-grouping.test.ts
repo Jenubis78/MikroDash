@@ -247,5 +247,26 @@ const TWO_APS = [
   say('ok  a repeat press reverses, a new column starts at its natural direction');
 }
 
+// ── the operator's label leads, the host name sits under it ─────────────────
+//
+// `name` is the host name the device sent and `comment` the lease's comment.
+// The row used to print `name`, which the server filled with the comment, so
+// the Wi-Fi map's Name and Comment toggles showed the comment twice. The row
+// keeps showing the label first and now shows the host name too.
+{
+  const { send, body, restore } = boot();
+  send([
+    client({ mac: '02:00:00:00:00:01', name: 'android-4f2c', comment: 'Kitchen tablet', signal: -40 }),
+    client({ mac: '02:00:00:00:00:02', name: '', comment: 'Hall camera', signal: -50 }),
+    client({ mac: '02:00:00:00:00:03', name: 'printer', comment: '', signal: -60 }),
+  ]);
+  const html = body();
+  restore();
+  assert.deepStrictEqual(names(html), ['Kitchen tablet', 'Hall camera', 'printer'],
+    'the comment does not lead the row: ' + JSON.stringify(names(html)));
+  assert.ok(html.includes('>android-4f2c<'), 'the host name of a commented client is not shown:\n' + html);
+  say('ok  a commented client shows its comment, then its host name');
+}
+
 fs.rmSync(OUT, { force: true });
 say('wifi-clients-grouping: all checks passed');

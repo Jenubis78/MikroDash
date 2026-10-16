@@ -23,12 +23,12 @@ the rows, since the generator that once produced them is gone.
 
 | Kind | Count |
 |---|---|
-| read | 79 |
+| read | 81 |
 | stream | 16 |
 | write | 13 |
 | action | 19 |
 | menu | 34 |
-| distinct proplists | 73 |
+| distinct proplists | 75 |
 
 ## Reads
 
@@ -77,8 +77,10 @@ the rows, since the generator that once produced them is gone.
 | `/ip/dhcp-server/lease/print` | src/collectors/dhcpLeases.js |
 | `/ip/dhcp-server/network/print` | src/collectors/dhcpNetworks.js |
 | `/ip/dhcp-server/print` | src/collectors/dhcpLeases.js |
+| `/ip/dns/adlist/print` | internal/collect/dns.go |
+| `/ip/dns/forwarders/print` | internal/collect/dns.go |
 | `/ip/dns/print` | src/collectors/dns.js |
-| `/ip/dns/static/print` | src/collectors/dns.js |
+| `/ip/dns/static/print` | internal/collect/dns.go, internal/server/dnsfleet_api.go |
 | `/ip/firewall/connection/print` | src/collectors/connections.js |
 | `/ip/firewall/filter/print` | src/collectors/firewall.js |
 | `/ip/firewall/mangle/print` | src/collectors/firewall.js |
@@ -231,6 +233,10 @@ from the add's `!done =ret=`. Only a settings menu (no id), a reorder and the Wi
 inherit guard read the whole menu. Before 2026-09-18 every write read the whole menu
 twice, 37,111 rows each way for one address-list entry on a synced blocklist.
 
+A form's pickers read each menu they name once per form open, asking only for the
+property they take (`print =.proplist=<property>`, `resOptions`): a whole `/file` row
+carries a small file's contents.
+
 | Menu | Resource | Page | Verbs |
 |---|---|---|---|
 | `/certificate` | certificate | certificates | add, set, remove, sign (self-signs: `sign =.id=` measured on the CHR, 7.24.4) |
@@ -281,9 +287,11 @@ twice, 37,111 rows each way for one address-list entry on a synced blocklist.
 | `/ip/ipsec/policy` | ipsecPolicy | ipsec | add, set, remove, move (guarded by ipsecPath) |
 | `/ip/pool` | ipPool | ip-pools | add, set, remove |
 | `/ip/arp` | arp | arp | add, set, remove (dynamic rows read-only) |
-| `/ip/dns` | dnsSettings | dns | set |
+| `/ip/dns` | dnsSettings | dns | set; `cache/flush` and `adlist/reload` as actions, sent as `/ip/dns/cache/flush` and `/ip/dns/adlist/reload` with no id |
+| `/ip/dns/forwarders` | dnsForwarder | dns | add, set, remove |
+| `/ip/dns/adlist` | dnsAdlist | dns | add, set, remove (`url` and `file` set on add only) |
 | `/ip/service` | ipService | ip-services | set |
-| `/ip/dns/static` | dnsStatic | dns | add, set, remove |
+| `/ip/dns/static` | dnsStatic | dns | add, set, remove (dynamic rows read-only; `forward-to` and `address-list` clear with `!`); the fleet copy checks for the record first: `print =.proplist=.id,name,regexp,type,address,cname,forward-to,mx-exchange,ns,srv-target,text`, with `?regexp=<regexp>` for a regexp entry (names are compared without case, which `?name=` cannot do); `name` and `regexp` clear with an empty value |
 | `/ip/firewall/address-list` | addressList | address-lists | add, set, remove; the page polls `print =.proplist=list,dynamic,disabled` for its per-list summary and reads one list with `print ?list=<name>` when it is opened; the assistant's `list_addressList` reads the same two ways |
 | `/ip/firewall/filter` | fwFilter | firewall | add, set, remove, move, enable, disable |
 | `/ip/firewall/mangle` | fwMangle | firewall | add, set, remove, move, enable, disable |
@@ -458,7 +466,9 @@ A proplist is the only thing keeping a credential out of a payload - see
 | `=.proplist=.id,dst-address,gateway,distance,active,dynamic` | src/collectors/wan.js |
 | `=.proplist=.id,dst-address,gateway,distance,comment,.flags,active,static,dynamic,connect,bgp,ospf,disabled` | src/collectors/routing.js |
 | `=.proplist=.id,interface,status,address,gateway,primary-dns,secondary-dns,expires-after,dhcp-server,disabled,invalid` | src/collectors/wan.js |
-| `=.proplist=.id,name,address,type,ttl,disabled,comment,regexp,cname,forward-to,text,mx-exchange,ns,srv-target` | src/collectors/dns.js |
+| `=.proplist=.id,name,regexp,type,address,cname,forward-to,text,mx-exchange,mx-preference,ns,srv-target,srv-port,srv-priority,srv-weight,address-list,ttl,match-subdomain,comment,disabled,dynamic` | internal/collect/dns.go (the dnsStatic resource's fields) |
+| `=.proplist=.id,name,dns-servers,doh-servers,verify-doh-cert,comment,disabled` | internal/collect/dns.go (the dnsForwarder resource's fields) |
+| `=.proplist=.id,url,file,ssl-verify,comment,disabled,name-count,match-count` | internal/collect/dns.go (the dnsAdlist resource's fields) |
 | `=.proplist=.id,name,authentication-types,wps,ft,ft-over-ds,connect-priority,disabled,comment` | src/routeros/wifiMenus.js |
 | `=.proplist=.id,name,band,frequency,width,secondary-frequency,skip-dfs-channels,disabled,comment` | src/routeros/wifiMenus.js |
 | `=.proplist=.id,name,bridge,vlan-id,client-isolation,local-forwarding,traffic-processing,disabled,comment` | src/routeros/wifiMenus.js |

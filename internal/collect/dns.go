@@ -2,8 +2,16 @@ package collect
 
 // DNS collector — the port of src/collectors/dns.js.
 //
-//	/ip/dns          resolver settings — servers, DoH, cache size and usage
-//	/ip/dns/static   static entries
+//	/ip/dns             resolver settings - servers, DoH, cache size and usage
+//	/ip/dns/static      static entries
+//	/ip/dns/forwarders  named upstream sets a FWD entry forwards to
+//	/ip/dns/adlist      blocklists
+//
+// The last three are configuration and share the slow lane. Each is read with
+// the fields its resource declares, so a row the page opens in the edit form
+// and a row the fleet comparison copies carry the same properties. A router
+// without forwarders or adlists answers "no such command" once and is not
+// asked again on that connection.
 //
 // THE CACHE CONTENTS ARE NOT READ, and that is a decision worth carrying over
 // rather than an omission to fix. /ip/dns/cache holds every name the router has
@@ -18,14 +26,15 @@ import (
 	"sort"
 	"time"
 
+	"mikrodash/internal/resource"
 	"mikrodash/internal/routeros"
 )
 
 var (
-	dnsSettingsCmd = routeros.Cmd{Path: "/ip/dns/print"}
-	dnsStaticCmd   = routeros.Cmd{Path: "/ip/dns/static/print", Args: []string{
-		"=.proplist=.id,name,address,type,ttl,disabled,comment,regexp,cname," +
-			"forward-to,text,mx-exchange,ns,srv-target"}}
+	dnsSettingsCmd   = routeros.Cmd{Path: "/ip/dns/print"}
+	dnsStaticCmd     = areaReadCmd(resource.DNSStatic)
+	dnsForwardersCmd = areaReadCmd(resource.DNSForwarder)
+	dnsAdlistCmd     = areaReadCmd(resource.DNSAdlist)
 )
 
 // DNSStaticCmd is the static-entry read, for the ONE caller outside this
@@ -66,6 +75,9 @@ type DNSSettings struct {
 	QueryTotalTimeout       string   `json:"queryTotalTimeout"`
 	MdnsRepeatIfaces        []string `json:"mdnsRepeatIfaces"`
 	VRF                     string   `json:"vrf"`
+	// How long an address a static entry put on an address list outlives the
+	// answer's TTL.
+	AddressListExtraTime string `json:"addressListExtraTime"`
 }
 
 // DNSStaticEntry is one row of the static table.
@@ -81,6 +93,39 @@ type DNSStaticEntry struct {
 	TTL      string `json:"ttl"`
 	Disabled bool   `json:"disabled"`
 	Comment  string `json:"comment"`
+	// The firewall list the answers are added to. It changes what the router
+	// does with a match as much as the address does, so the fleet comparison
+	// holds two routers to it.
+	AddressList    string `json:"addressList"`
+	MatchSubdomain bool   `json:"matchSubdomain"`
+	// Added by another service, a DHCP server's add-dns-entries, and read-only.
+	Dynamic bool `json:"dynamic"`
+}
+
+// DNSForwarderEntry is one row of /ip/dns/forwarders.
+type DNSForwarderEntry struct {
+	ID            string   `json:"id"`
+	Name          string   `json:"name"`
+	DNSServers    []string `json:"dnsServers"`
+	DoHServers    []string `json:"dohServers"`
+	VerifyDohCert bool     `json:"verifyDohCert"`
+	Comment       string   `json:"comment"`
+	Disabled      bool     `json:"disabled"`
+	// How many static entries forward to it, counted from the static table so
+	// the page can say a forwarder is in use before anyone removes it.
+	UsedBy int `json:"usedBy"`
+}
+
+// DNSAdlistEntry is one row of /ip/dns/adlist.
+type DNSAdlistEntry struct {
+	ID         string   `json:"id"`
+	URL        string   `json:"url"`
+	File       string   `json:"file"`
+	SSLVerify  bool     `json:"sslVerify"`
+	Comment    string   `json:"comment"`
+	Disabled   bool     `json:"disabled"`
+	NameCount  *float64 `json:"nameCount"`
+	MatchCount *float64 `json:"matchCount"`
 }
 
 // DNSPayload is the dns:update body.
@@ -90,6 +135,12 @@ type DNSPayload struct {
 	Settings      DNSSettings      `json:"settings"`
 	StaticEntries []DNSStaticEntry `json:"staticEntries"`
 	Available     bool             `json:"available"`
+	// False when this router has no such menu: forwarders and adlists are
+	// newer than the rest of the resolver.
+	Forwarders          []DNSForwarderEntry `json:"forwarders"`
+	ForwardersAvailable bool                `json:"forwardersAvailable"`
+	Adlists             []DNSAdlistEntry    `json:"adlists"`
+	AdlistsAvailable    bool                `json:"adlistsAvailable"`
 }
 
 // ParseDNSSettings normalises the settings row into the shape the page renders.
@@ -117,6 +168,7 @@ func ParseDNSSettings(row routeros.Reply) DNSSettings {
 		QueryTotalTimeout:       row["query-total-timeout"],
 		MdnsRepeatIfaces:        splitList(row["mdns-repeat-ifaces"]),
 		VRF:                     row["vrf"],
+		AddressListExtraTime:    row["address-list-extra-time"],
 	}
 }
 
@@ -150,6 +202,8 @@ func ParseStaticEntries(rows []routeros.Reply) []DNSStaticEntry {
 			ID: r[".id"], Name: r["name"], Regexp: r["regexp"],
 			Address: address, Type: typ, TTL: r["ttl"],
 			Disabled: boolOf(r["disabled"]), Comment: r["comment"],
+			AddressList: r["address-list"], MatchSubdomain: boolOf(r["match-subdomain"]),
+			Dynamic: boolOf(r["dynamic"]),
 		})
 	}
 	// Collate, not a byte sort: this order is rendered verbatim and the Node
@@ -168,17 +222,66 @@ func ParseStaticEntries(rows []routeros.Reply) []DNSStaticEntry {
 	return out
 }
 
+// ParseForwarders builds the forwarder table, counting the static entries that
+// name each one in forward-to.
+func ParseForwarders(rows []routeros.Reply, static []DNSStaticEntry) []DNSForwarderEntry {
+	used := map[string]int{}
+	for _, e := range static {
+		if e.Type == "FWD" && e.Address != "" {
+			used[e.Address]++
+		}
+	}
+	out := []DNSForwarderEntry{}
+	for _, r := range rows {
+		if r["name"] == "" {
+			continue
+		}
+		out = append(out, DNSForwarderEntry{
+			ID: r[".id"], Name: r["name"],
+			DNSServers: splitList(r["dns-servers"]), DoHServers: splitList(r["doh-servers"]),
+			// The manual's default is yes, and a router may leave a property at
+			// its default out of the print.
+			VerifyDohCert: r["verify-doh-cert"] == "" || boolOf(r["verify-doh-cert"]),
+			Comment:       r["comment"], Disabled: boolOf(r["disabled"]), UsedBy: used[r["name"]],
+		})
+	}
+	sort.SliceStable(out, func(i, j int) bool { return Collate(out[i].Name, out[j].Name) < 0 })
+	return out
+}
+
+// ParseAdlists builds the adlist table, in the router's order.
+func ParseAdlists(rows []routeros.Reply) []DNSAdlistEntry {
+	out := []DNSAdlistEntry{}
+	for _, r := range rows {
+		if r["url"] == "" && r["file"] == "" {
+			continue
+		}
+		out = append(out, DNSAdlistEntry{
+			ID: r[".id"], URL: r["url"], File: r["file"],
+			SSLVerify: r["ssl-verify"] == "" || boolOf(r["ssl-verify"]),
+			Comment:   r["comment"], Disabled: boolOf(r["disabled"]),
+			NameCount: numOf(r, "name-count"), MatchCount: numOf(r, "match-count"),
+		})
+	}
+	return out
+}
+
 // DNS is the collector.
 type DNS struct {
 	tableCore[DNSPayload]
 	emit Emit
 
 	// The table core subscribes to the SETTINGS menu, which is the live one; the
-	// static entries are its slow lane and are carried between readings.
-	static []DNSStaticEntry
+	// static entries, forwarders and adlists are its slow lane and are carried
+	// between readings.
+	static     []DNSStaticEntry
+	forwarders []DNSForwarderEntry
+	adlists    []DNSAdlistEntry
 	// nil = unprobed, false = this router has no such menu, stop asking.
-	settingsAvailable *bool
-	staticAvailable   *bool
+	settingsAvailable   *bool
+	staticAvailable     *bool
+	forwardersAvailable *bool
+	adlistsAvailable    *bool
 }
 
 // dnsHeartbeat is how long an unchanged `dns:update` may be suppressed. See
@@ -188,7 +291,8 @@ const dnsHeartbeat = 10 * time.Second
 
 // NewDNS builds the collector. pollMs of 0 takes the registry default.
 func NewDNS(ros Reader, emit Emit, pollMs int) *DNS {
-	d := &DNS{emit: emit, static: []DNSStaticEntry{}}
+	d := &DNS{emit: emit, static: []DNSStaticEntry{},
+		forwarders: []DNSForwarderEntry{}, adlists: []DNSAdlistEntry{}}
 	// The settings row carries cache-used, which is live, so it is read every
 	// reading; the static entries only every dnsConfigEvery.
 	d.setup(d, ros, pollMs, tableSpec{
@@ -213,8 +317,13 @@ type DNSInput struct {
 	// reads as available -- a router is presumed to have DNS until it says
 	// otherwise, and the alternative would blank the page on the first tick.
 	Available *bool
-	PollMs    int
-	Now       int64
+	// Forwarders and Adlists are carried like Static, each with its own latch.
+	Forwarders          []DNSForwarderEntry
+	ForwardersAvailable *bool
+	Adlists             []DNSAdlistEntry
+	AdlistsAvailable    *bool
+	PollMs              int
+	Now                 int64
 }
 
 // BuildDNS is the DNS payload, pure: input in, payload out, no receiver and no
@@ -235,10 +344,19 @@ func BuildDNS(in DNSInput) *DNSPayload {
 	if len(in.Rows) > 0 {
 		first = in.Rows[0]
 	}
+	forwarders, adlists := in.Forwarders, in.Adlists
+	if forwarders == nil {
+		forwarders = []DNSForwarderEntry{}
+	}
+	if adlists == nil {
+		adlists = []DNSAdlistEntry{}
+	}
 	return &DNSPayload{
 		TS: in.Now, PollMs: in.PollMs,
 		Settings: ParseDNSSettings(first), StaticEntries: in.Static,
-		Available: MenuAvailable(in.Available),
+		Available:  MenuAvailable(in.Available),
+		Forwarders: forwarders, ForwardersAvailable: MenuAvailable(in.ForwardersAvailable),
+		Adlists: adlists, AdlistsAvailable: MenuAvailable(in.AdlistsAvailable),
 	}
 }
 
@@ -257,9 +375,15 @@ func (d *DNS) derive(rows []routeros.Reply, err error, slow bool) (*DNSPayload, 
 	if slow {
 		static, _ := readOptional(d.ros.Do, dnsStaticCmd, &d.staticAvailable)
 		d.static = ParseStaticEntries(static)
+		forwarders, _ := readOptional(d.ros.Do, dnsForwardersCmd, &d.forwardersAvailable)
+		d.forwarders = ParseForwarders(forwarders, d.static)
+		adlists, _ := readOptional(d.ros.Do, dnsAdlistCmd, &d.adlistsAvailable)
+		d.adlists = ParseAdlists(adlists)
 	}
 	payload := BuildDNS(DNSInput{
 		Rows: rows, Static: d.static, Available: d.settingsAvailable,
+		Forwarders: d.forwarders, ForwardersAvailable: d.forwardersAvailable,
+		Adlists: d.adlists, AdlistsAvailable: d.adlistsAvailable,
 		PollMs: d.PollMs(), Now: time.Now().UnixMilli(),
 	})
 
@@ -277,9 +401,13 @@ func (d *DNS) derive(rows []routeros.Reply, err error, slow bool) (*DNSPayload, 
 	// `ts` is still excluded, and must be: it moves every tick and would make
 	// every tick an emit, which is the thing the fingerprint exists to prevent.
 	fp, _ := json.Marshal(struct {
-		S DNSSettings      `json:"s"`
-		T []DNSStaticEntry `json:"t"`
-	}{payload.Settings, payload.StaticEntries})
+		S DNSSettings         `json:"s"`
+		T []DNSStaticEntry    `json:"t"`
+		F []DNSForwarderEntry `json:"f"`
+		A []DNSAdlistEntry    `json:"a"`
+		B [2]bool             `json:"b"`
+	}{payload.Settings, payload.StaticEntries, payload.Forwarders, payload.Adlists,
+		[2]bool{payload.ForwardersAvailable, payload.AdlistsAvailable}})
 	return payload, string(fp)
 }
 
@@ -288,4 +416,7 @@ func (d *DNS) send(p DNSPayload) { EvDnsUpdate.Emit(d.emit, dnsRooms.Join(), p) 
 // reset drops every latch. A router that has just come back may be a different
 // build — an upgrade is the usual reason a connection dropped — so an "this menu
 // is absent" decision taken against the old one must not persist.
-func (d *DNS) reset() { d.settingsAvailable, d.staticAvailable = nil, nil }
+func (d *DNS) reset() {
+	d.settingsAvailable, d.staticAvailable = nil, nil
+	d.forwardersAvailable, d.adlistsAvailable = nil, nil
+}

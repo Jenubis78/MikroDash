@@ -818,6 +818,11 @@ export function initTopologyPage(socket: Socket, isVisible: (page: string) => bo
         (st.fleetStat.added ? ', +' + st.fleetStat.added : '') +
         (st.fleetStat.moved ? ', ' + st.fleetStat.moved + ' moved' : '') +
         (st.fleetStat.failed ? ', ' + st.fleetStat.failed + ' unreachable' : '') + '</span>');
+    } else if (st.fleetOn && st.fleetStat.failed) {
+      // Every peer failed, or this router's own addresses could not be read:
+      // the Fleet button is on and the map is this router's alone.
+      bits.push('<span style="color:var(--accent-warn)">fleet: nothing merged, ' +
+        st.fleetStat.failed + ' router' + (st.fleetStat.failed === 1 ? '' : 's') + ' not read</span>');
     }
     bits.push('LLDP/CDP/MNDP');
     const note = bits.join(' &middot; ');

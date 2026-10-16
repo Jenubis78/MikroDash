@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"mikrodash/internal/collect"
 	"mikrodash/internal/resource"
+	"mikrodash/internal/routeros"
 )
 
 // A ROW THIS ENDPOINT READ MUST BE A ROW IT CAN WRITE BACK.
@@ -64,5 +66,35 @@ func TestAFleetRowSurvivesTheRoundTripBackToTheRouter(t *testing.T) {
 	if validated.Values["matchSubdomain"] != "yes" {
 		t.Errorf("matchSubdomain reached the router as %q, want yes",
 			validated.Values["matchSubdomain"])
+	}
+}
+
+// A ROUND-ROBIN RECORD IS PRESENT ONLY WITH ITS VALUE. Once a router holds two
+// A records of a name, the comparison lines them up by value and shows the
+// second as missing elsewhere; its copy must add it rather than answer that the
+// name is already there. Without byValue, the Add dialog's "also add it to",
+// any record of the name and type is the record, as before.
+func TestARoundRobinRecordIsPresentOnlyWithItsValue(t *testing.T) {
+	rows := []routeros.Reply{{".id": "*1", "name": "www.lan", "type": "A", "address": "198.51.100.1"}}
+	record := func(v map[string]string) collect.DNSStaticEntry { return dnsRecordOf(resource.DNSStatic, v) }
+	first := record(map[string]string{"name": "www.lan", "type": "A", "address": "198.51.100.1"})
+	second := record(map[string]string{"name": "www.lan", "type": "A", "address": "198.51.100.2"})
+	if !dnsAlreadyPresent(rows, second, false) {
+		t.Error("by name and type, the router's A record of www.lan was not the record")
+	}
+	if dnsAlreadyPresent(rows, second, true) {
+		t.Error("the second round-robin record was taken for the first, so its copy writes nothing")
+	}
+	if !dnsAlreadyPresent(rows, first, true) {
+		t.Error("the record the router holds was not found by its value")
+	}
+	re := record(map[string]string{"regexp": `^ads\.`, "type": "A", "address": "198.51.100.1"})
+	if dnsAlreadyPresent(rows, re, false) {
+		t.Error("a regexp record was found in a router holding only a name record")
+	}
+	// RouterOS keeps a name's case; the resolver does not care about it.
+	upper := record(map[string]string{"name": "WWW.lan", "type": "A", "address": "198.51.100.1"})
+	if !dnsAlreadyPresent(rows, upper, true) {
+		t.Error("the same name in another case was not found, so a copy would add a duplicate")
 	}
 }

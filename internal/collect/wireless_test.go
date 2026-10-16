@@ -204,15 +204,25 @@ func TestParseWirelessSSIDsAggregates(t *testing.T) {
 // The comment is a SECOND name and not a fallback for the first: a device whose
 // hostname is `android-4f2c` has a perfectly good `Name` and is still unreadable
 // without what somebody wrote on the lease.
+//
+// The lease is built by applyLease, not typed: its `Name` is the comment when
+// there is one, and a stub carrying the host name there hid the Wi-Fi map
+// printing the comment on both lines.
 func TestWirelessClientCarriesTheLeaseComment(t *testing.T) {
-	w := &Wireless{leases: stubLeases{&LeasesPayload{Leases: []Lease{
-		{MAC: "AA:BB:CC:DD:EE:FF", Name: "android-4f2c", Comment: "Kitchen tablet"},
-	}}}}
+	d := NewDHCPLeases(nil, Emit{}, 0)
+	d.applyLease(routeros.Reply{"address": "198.51.100.20", "mac-address": "AA:BB:CC:DD:EE:FF",
+		"host-name": "android-4f2c", "comment": "Kitchen tablet", "status": "bound"})
+	d.applyLease(routeros.Reply{"address": "198.51.100.21", "mac-address": "AA:BB:CC:DD:EE:01",
+		"comment": "Hall camera", "status": "bound"})
+	w := &Wireless{leases: stubLeases{d.build()}}
 	if got := w.leaseComment("aa:bb:cc:dd:ee:ff"); got != "Kitchen tablet" {
 		t.Errorf("leaseComment = %q, want Kitchen tablet", got)
 	}
 	if got := w.leaseName("AA:BB:CC:DD:EE:FF"); got != "android-4f2c" {
 		t.Errorf("the comment displaced the name: %q", got)
+	}
+	if got := w.leaseName("AA:BB:CC:DD:EE:01"); got != "" {
+		t.Errorf("a lease with no host name named its client %q, its comment", got)
 	}
 	if got := w.leaseComment("02:00:00:00:00:99"); got != "" {
 		t.Errorf("a MAC with no lease answered %q", got)

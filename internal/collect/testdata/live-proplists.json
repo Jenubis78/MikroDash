@@ -12,9 +12,6 @@
     "=.proplist=.id,name,protocol-mode,vlan-filtering,igmp-snooping,dhcp-snooping,fast-forward,priority,ageing-time,mac-address,actual-mtu,mtu,running,disabled,comment"
   ],
   "dns settings": null,
-  "dns static": [
-    "=.proplist=.id,name,address,type,ttl,disabled,comment,regexp,cname,forward-to,text,mx-exchange,ns,srv-target"
-  ],
   "log backlog": [
     "=.proplist=time,topics,message"
   ],

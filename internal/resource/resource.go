@@ -93,6 +93,10 @@ type OptionsFrom struct {
 	Value string // the property to take, e.g. "name"
 	// Values is a fixed list needing no read. Mutually exclusive with Menu.
 	Values []string
+	// Suggest draws the list as suggestions under a text box instead of a
+	// select: the value may also be something the list does not hold. A FWD
+	// entry forwards to a named forwarder or to any address.
+	Suggest bool
 }
 
 // ShowIf makes a field conditional on another's value.
@@ -248,7 +252,10 @@ type Resource struct {
 	// row I was looking at when I clicked". A firewall rule has no name and
 	// nothing unique about it, so it takes a composite — see IdentityOf.
 	Identity []string
-	Fields   []Field
+	// IdentityFallback is the field that identifies a row whose Identity is
+	// empty: a regexp DNS entry has no name, and is the pattern it matches.
+	IdentityFallback string
+	Fields           []Field
 	// ReadOnlyWhen refuses a row the app cannot correctly edit, judged on a
 	// freshly-read row rather than on the browser's claim about it.
 	ReadOnlyWhen func(row map[string]string) bool
@@ -859,7 +866,13 @@ func (r *Resource) IdentityOf(row map[string]string) string {
 	// U+0001 as the separator, matching identityOf() in resources.js. A
 	// character no RouterOS value contains, so two rows cannot collide by
 	// having their fields split differently across the join.
-	return strings.Join(parts, IdentityOfSeparator)
+	id := strings.Join(parts, IdentityOfSeparator)
+	if id == "" && r.IdentityFallback != "" {
+		if f := r.FieldByName(r.IdentityFallback); f != nil {
+			return row[f.ROS]
+		}
+	}
+	return id
 }
 
 // IdentityOfSeparator joins the parts of a composite identity.
@@ -912,6 +925,7 @@ func (r *Resource) Describe() map[string]any {
 			"options": opts, "placeholder": f.Placeholder,
 			"help": f.Help, "showIf": showIf, "min": minv, "max": maxv, "display": f.Display,
 			"createOnly": f.CreateOnly, "tab": f.Tab, "negatable": f.Negatable,
+			"suggest": f.OptionsFrom != nil && f.OptionsFrom.Suggest,
 		})
 	}
 	actions := make([]map[string]any, 0, len(r.Actions))
@@ -927,17 +941,28 @@ func (r *Resource) Describe() map[string]any {
 
 // ── The registry ─────────────────────────────────────────────────────────────
 
-// DNSStatic mirrors the dnsStatic entry in src/routeros/resources.js.
+// DNSStatic is /ip/dns/static, every property the RouterOS manual lists for it
+// (manual.mikrotik.com/docs/cli-reference/ip/dns/static, v7.26).
+//
+// Name and Regexp are alternatives: a regexp entry is matched instead of a
+// name, so exactly one of them is set. Turning one kind into the other clears
+// the property it no longer has with an empty value in the same set: RouterOS
+// refuses `!name` or `!regexp` beside the other ("only name or regexp
+// allowed") and accepts `=name= =regexp=^x$` (CHR and hAP ac2, 7.24.5).
 var DNSStatic = &Resource{
 	Key: "dnsStatic", Page: "dns", Label: "DNS Entry",
-	Title: "Static DNS Entry", Menu: "/ip/dns/static", Identity: []string{"name"},
-	// A regexp entry has no `name` to identify it by and matches a pattern
-	// rather than a host. Editing one is a different form; until it exists,
-	// saying so beats offering a form that would rename it to its own regexp.
-	ReadOnlyWhen:   func(row map[string]string) bool { return row["regexp"] != "" },
+	Title: "Static DNS Entry", Menu: "/ip/dns/static", Identity: []string{"name"}, IdentityFallback: "regexp",
+	// A dynamic entry was added by another service, a DHCP server's
+	// add-dns-entries, and is that service's to change.
+	ReadOnlyWhen:   func(row map[string]string) bool { return row["dynamic"] == "true" },
 	ReadOnlyReason: "read-only-row",
+	Check:          dnsNameOrRegexp,
 	Fields: []Field{
-		{Name: "name", ROS: "name", Label: "Name", Type: TypeText, Required: true, Placeholder: "server.lan"},
+		{Name: "name", ROS: "name", Label: "Name", Type: TypeText, Clearable: true,
+			Placeholder: "server.lan", Help: "The domain this entry answers. Leave it empty for a Regexp entry."},
+		{Name: "regexp", ROS: "regexp", Label: "Regexp", Type: TypeText, Clearable: true,
+			Placeholder: `^host[0-9]+\.example\.com$`,
+			Help:        "Matched instead of Name. Write it in lower case: queries are lower-cased before matching."},
 		// All nine types RouterOS defines. Listing six was not a smaller feature,
 		// it was data loss: the form showed "A" for an MX record and Save rewrote
 		// it as one. The renderer no longer coerces an unlisted value, so a tenth
@@ -949,8 +974,15 @@ var DNSStatic = &Resource{
 			ShowIf: &ShowIf{Field: "type", In: []string{"A", "AAAA"}}},
 		{Name: "cname", ROS: "cname", Label: "Canonical Name", Type: TypeText, Required: true,
 			ShowIf: &ShowIf{Field: "type", In: []string{"CNAME"}}},
-		{Name: "forwardTo", ROS: "forward-to", Label: "Forward To", Type: TypeText, Required: true,
-			ShowIf: &ShowIf{Field: "type", In: []string{"FWD"}}},
+		// NOT REQUIRED. A FWD entry with no forward-to sends its queries to the
+		// resolver's own servers, which is how a name is exempted from an adlist
+		// or kept on an address list without changing where it resolves.
+		{Name: "forwardTo", ROS: "forward-to", Label: "Forward To", Type: TypeText,
+			Clearable: true, ClearBang: true,
+			ShowIf:      &ShowIf{Field: "type", In: []string{"FWD"}},
+			OptionsFrom: &OptionsFrom{Menu: "/ip/dns/forwarders", Value: "name", Suggest: true},
+			Placeholder: "198.51.100.53",
+			Help:        "A forwarder's name, or a server's address or host name. Empty uses the resolver's own servers."},
 		{Name: "text", ROS: "text", Label: "Text", Type: TypeText, Required: true,
 			ShowIf: &ShowIf{Field: "type", In: []string{"TXT"}}},
 		{Name: "mxExchange", ROS: "mx-exchange", Label: "Mail Exchanger", Type: TypeText, Required: true,
@@ -974,10 +1006,86 @@ var DNSStatic = &Resource{
 			ShowIf: &ShowIf{Field: "type", In: []string{"SRV"}}, Min: intp(0), Max: intp(65535), Placeholder: "0"},
 		{Name: "srvWeight", ROS: "srv-weight", Label: "Weight", Type: TypeInt,
 			ShowIf: &ShowIf{Field: "type", In: []string{"SRV"}}, Min: intp(0), Max: intp(65535), Placeholder: "0"},
-		{Name: "ttl", ROS: "ttl", Label: "TTL", Type: TypeText, Placeholder: "1d"},
+		{Name: "addressList", ROS: "address-list", Label: "Address List", Type: TypeText,
+			Clearable: true, ClearBang: true,
+			OptionsFrom: &OptionsFrom{Menu: "/ip/dns/static", Value: "address-list", Suggest: true},
+			Placeholder: "to_vpn",
+			Help: "The firewall address list the answered addresses are added to. Each stays for the " +
+				"answer's TTL plus the resolver's Address List Extra Time."},
+		// Every type but FWD, whose answer comes from upstream with that server's
+		// TTL. WinBox draws no TTL on a FWD entry either.
+		{Name: "ttl", ROS: "ttl", Label: "TTL", Type: TypeText, Placeholder: "1d",
+			ShowIf: &ShowIf{Field: "type", In: []string{"A", "AAAA", "CNAME", "MX", "NS", "NXDOMAIN", "SRV", "TXT"}}},
 		{Name: "matchSubdomain", ROS: "match-subdomain", Label: "Match Subdomains", Type: TypeBool, Clearable: true},
 		{Name: "comment", ROS: "comment", Label: "Comment", Type: TypeText, Clearable: true},
 		{Name: "disabled", ROS: "disabled", Label: "Disabled", Type: TypeBool, Clearable: true},
+		{Name: "dynamic", ROS: "dynamic", Label: "Dynamic", Type: TypeBool, Display: true},
+	},
+}
+
+func dnsNameOrRegexp(clean map[string]string) []Error {
+	switch {
+	case clean["name"] == "" && clean["regexp"] == "":
+		return []Error{{"name", "Name or Regexp is required"}}
+	case clean["name"] != "" && clean["regexp"] != "":
+		return []Error{{"regexp", "Regexp is matched instead of Name: set one of them"}}
+	}
+	return nil
+}
+
+// DNSForwarder is /ip/dns/forwarders: a named set of upstream servers that a
+// FWD static entry names in forward-to (cli-reference/ip/dns/forwarders).
+var DNSForwarder = &Resource{
+	Key: "dnsForwarder", Page: "dns", Label: "DNS Forwarder",
+	Title: "DNS Forwarder", Menu: "/ip/dns/forwarders", Identity: []string{"name"},
+	Fields: []Field{
+		{Name: "name", ROS: "name", Label: "Name", Type: TypeText, Required: true, Placeholder: "corp",
+			Help: "What a FWD entry writes in Forward To."},
+		{Name: "dnsServers", ROS: "dns-servers", Label: "DNS Servers", Type: TypeText, Clearable: true,
+			Placeholder: "198.51.100.53,198.51.100.54",
+			Help:        "Addresses or host names, comma separated. Queries go to these and the DoH servers in turn, one each."},
+		{Name: "dohServers", ROS: "doh-servers", Label: "DoH Servers", Type: TypeText, Clearable: true,
+			Placeholder: "https://dns.example/dns-query",
+			Help:        "DNS over HTTPS URLs, comma separated. Their host names resolve through the resolver's own servers."},
+		{Name: "verifyDohCert", ROS: "verify-doh-cert", Label: "Verify DoH Certificate", Type: TypeBool,
+			Clearable: true, Default: "yes"},
+		{Name: "comment", ROS: "comment", Label: "Comment", Type: TypeText, Clearable: true},
+		{Name: "disabled", ROS: "disabled", Label: "Disabled", Type: TypeBool, Clearable: true},
+	},
+}
+
+// DNSAdlist is /ip/dns/adlist: a blocklist the resolver loads from a URL or a
+// file on the router and answers with 0.0.0.0 and :: (cli-reference/ip/dns/
+// adlist). RouterOS re-reads every list each 4 hours; the resolver settings
+// carry Reload Adlists for the impatient.
+//
+// THE SOURCE IS CHOSEN WHEN THE LIST IS ADDED. `!url` and `!file` are accepted
+// and change nothing, and `file` cannot be cleared at all, so a list switched
+// from one source to the other on a live router kept both (CHR and hAP ac2,
+// 7.24.5). Both are CreateOnly: an edit shows the source and never sends it,
+// and a different source is a new list.
+var DNSAdlist = &Resource{
+	Key: "dnsAdlist", Page: "dns", Label: "Adlist",
+	Title: "DNS Adlist", Menu: "/ip/dns/adlist", Identity: []string{"url"}, IdentityFallback: "file",
+	Check: func(clean map[string]string) []Error {
+		if clean["url"] != "" && clean["file"] != "" {
+			return []Error{{"file", "A list is read from a URL or a file, not both"}}
+		}
+		return nil
+	},
+	Fields: []Field{
+		{Name: "url", ROS: "url", Label: "URL", Type: TypeText, CreateOnly: true,
+			Placeholder: "https://example.com/hosts.txt",
+			Help:        "A hosts-format list, re-read every 4 hours. Set when the list is added; a new source is a new list."},
+		{Name: "file", ROS: "file", Label: "File", Type: TypeText, CreateOnly: true,
+			OptionsFrom: &OptionsFrom{Menu: "/file", Value: "name", Suggest: true},
+			Help:        "A list already on the router, instead of a URL. Set when the list is added."},
+		{Name: "sslVerify", ROS: "ssl-verify", Label: "Verify Certificate", Type: TypeBool,
+			Clearable: true, Default: "yes"},
+		{Name: "comment", ROS: "comment", Label: "Comment", Type: TypeText, Clearable: true},
+		{Name: "disabled", ROS: "disabled", Label: "Disabled", Type: TypeBool, Clearable: true},
+		{Name: "nameCount", ROS: "name-count", Label: "Names", Type: TypeText, Display: true},
+		{Name: "matchCount", ROS: "match-count", Label: "Matches", Type: TypeText, Display: true},
 	},
 }
 
@@ -1288,26 +1396,60 @@ var Certificate = &Resource{
 // DNSSettings is /ip/dns: the router's own resolver (MikroMCP parity,
 // 2026-09-21). The DNS page showed these read-only from its collector; this
 // makes them editable there and gives the assistant list_ and change_row.
-// Properties from the RouterOS command tree for /ip/dns/set; the read-only
-// cache-used is documented on the DNS page.
+// Every writable property of /ip/dns/set in the manual (cli-reference/ip/dns,
+// v7.26), on four tabs; dynamic-servers and cache-used are read-only.
+//
+// THE TWO ACTIONS ARE COMMANDS OF SUB-MENUS. A singleton's verb is sent with no
+// id, so `cache/flush` is `/ip/dns/cache/flush` and `adlist/reload` is
+// `/ip/dns/adlist/reload`; neither takes a row.
 var DNSSettings = &Resource{
 	Key: "dnsSettings", Page: "dns", Label: "DNS Settings",
 	Title: "DNS Settings", Menu: "/ip/dns", Singleton: true,
 	NoCreate:      true,
 	RemovableWhen: func(map[string]string) bool { return false },
+	Actions: []Action{
+		{Key: "flushCache", Verb: "cache/flush", Label: "Flush Cache", Note: "flushed the DNS cache"},
+		{Key: "reloadAdlists", Verb: "adlist/reload", Label: "Reload Adlists", Note: "reloaded the DNS adlists"},
+	},
 	Fields: []Field{
-		{Name: "servers", ROS: "servers", Label: "Servers", Type: TypeText, Clearable: true,
+		{Name: "servers", ROS: "servers", Label: "Servers", Type: TypeText, Clearable: true, Tab: "General",
 			Placeholder: "1.1.1.1,9.9.9.9", Help: "Upstream resolvers, comma separated."},
+		{Name: "dynamicServers", ROS: "dynamic-servers", Label: "Dynamic Servers", Type: TypeText,
+			Display: true, Tab: "General"},
 		{Name: "allowRemoteRequests", ROS: "allow-remote-requests", Label: "Allow Remote Requests",
-			Type: TypeBool, Clearable: true,
+			Type: TypeBool, Clearable: true, Tab: "General",
 			Help: "Answer DNS for other devices. Keep it firewalled from the internet."},
-		{Name: "useDohServer", ROS: "use-doh-server", Label: "DoH Server", Type: TypeText, Clearable: true,
-			Placeholder: "https://cloudflare-dns.com/dns-query", Help: "DNS over HTTPS. Empty uses plain DNS."},
+		{Name: "vrf", ROS: "vrf", Label: "VRF", Type: TypeText, Placeholder: "main", Tab: "General"},
+		{Name: "mdnsRepeatIfaces", ROS: "mdns-repeat-ifaces", Label: "mDNS Repeat Interfaces", Type: TypeText,
+			Clearable: true, ClearBang: true, Tab: "General",
+			Help: "Interfaces whose mDNS is repeated between each other, comma separated. IPv4 only, and the " +
+				"input chain must accept UDP 5353 on them."},
+		{Name: "addressListExtraTime", ROS: "address-list-extra-time", Label: "Address List Extra Time",
+			Type: TypeText, Placeholder: "0s", Tab: "General",
+			Help: "How long an address a static entry put on an address list outlives the answer's TTL."},
+		{Name: "useDohServer", ROS: "use-doh-server", Label: "DoH Server", Type: TypeText, Clearable: true, Tab: "DoH",
+			Placeholder: "https://cloudflare-dns.com/dns-query",
+			Help:        "DNS over HTTPS. Empty uses plain DNS. There is no fallback to plain DNS while it is set."},
 		{Name: "verifyDohCert", ROS: "verify-doh-cert", Label: "Verify DoH Certificate", Type: TypeBool,
-			Clearable: true},
-		{Name: "cacheSize", ROS: "cache-size", Label: "Cache Size (KiB)", Type: TypeInt, Min: intp(64)},
-		{Name: "cacheMaxTtl", ROS: "cache-max-ttl", Label: "Cache Max TTL", Type: TypeText, Placeholder: "1w"},
-		{Name: "cacheUsed", ROS: "cache-used", Label: "Cache Used (KiB)", Type: TypeText, Display: true},
+			Clearable: true, Tab: "DoH"},
+		{Name: "dohMaxServerConnections", ROS: "doh-max-server-connections", Label: "Max Server Connections",
+			Type: TypeInt, Min: intp(1), Placeholder: "5", Tab: "DoH"},
+		{Name: "dohMaxConcurrentQueries", ROS: "doh-max-concurrent-queries", Label: "Max Concurrent Queries",
+			Type: TypeInt, Min: intp(1), Placeholder: "50", Tab: "DoH"},
+		{Name: "dohTimeout", ROS: "doh-timeout", Label: "Timeout", Type: TypeText, Placeholder: "5s", Tab: "DoH"},
+		{Name: "cacheSize", ROS: "cache-size", Label: "Cache Size (KiB)", Type: TypeInt, Min: intp(64), Tab: "Cache"},
+		{Name: "cacheMaxTtl", ROS: "cache-max-ttl", Label: "Cache Max TTL", Type: TypeText, Placeholder: "1w", Tab: "Cache"},
+		{Name: "cacheUsed", ROS: "cache-used", Label: "Cache Used (KiB)", Type: TypeText, Display: true, Tab: "Cache"},
+		{Name: "queryServerTimeout", ROS: "query-server-timeout", Label: "Query Server Timeout", Type: TypeText,
+			Placeholder: "2s", Tab: "Limits"},
+		{Name: "queryTotalTimeout", ROS: "query-total-timeout", Label: "Query Total Timeout", Type: TypeText,
+			Placeholder: "10s", Tab: "Limits"},
+		{Name: "maxConcurrentQueries", ROS: "max-concurrent-queries", Label: "Max Concurrent Queries",
+			Type: TypeInt, Min: intp(1), Placeholder: "100", Tab: "Limits"},
+		{Name: "maxConcurrentTcpSessions", ROS: "max-concurrent-tcp-sessions", Label: "Max Concurrent TCP Sessions",
+			Type: TypeInt, Min: intp(1), Placeholder: "20", Tab: "Limits"},
+		{Name: "maxUdpPacketSize", ROS: "max-udp-packet-size", Label: "Max UDP Packet Size", Type: TypeInt,
+			Min: intp(50), Max: intp(65507), Placeholder: "4096", Tab: "Limits"},
 	},
 }
 
@@ -3172,6 +3314,8 @@ var byKey = map[string]*Resource{
 	QueueTree.Key:           QueueTree,
 	IPPool.Key:              IPPool,
 	DNSSettings.Key:         DNSSettings,
+	DNSForwarder.Key:        DNSForwarder,
+	DNSAdlist.Key:           DNSAdlist,
 	ARP.Key:                 ARP,
 	RoutingTable.Key:        RoutingTable,
 	RoutingRule.Key:         RoutingRule,

@@ -64,6 +64,8 @@ export interface ResSchemaField {
   tab: string;
   /** A match RouterOS inverts with a leading `!`: drawn with a "not" toggle. */
   negatable: boolean;
+  /** The router's list is offered under a text box rather than as a select. */
+  suggest: boolean;
 }
 
 /**

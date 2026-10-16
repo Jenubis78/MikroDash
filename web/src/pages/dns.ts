@@ -5,7 +5,7 @@
 // acceptance criterion for this page is that it renders identically, not that
 // it renders correctly.
 
-import { esc, el, resRow, debounce, renderSortHeader, sortMul, pill, type SortCol, type SortState, kv } from '../dom';
+import { esc, el, resRow, debounce, renderSortHeader, sortMul, sortRows, pill, type SortCol, type SortState, kv } from '../dom';
 import type { Socket } from '../socket';
 import { mountAdds, mountRows, openResource } from '../resource';
 import { initDnsFleet } from './dns-fleet';
@@ -13,9 +13,26 @@ import type { DNSStaticEntry, DNSPayload } from '../gen/payloads';
 
 const COLS_S: SortCol[] = [
   { key: 'name', label: 'Name' },
-  { key: 'address', label: 'Address' },
+  { key: 'address', label: 'Value' },
   { key: 'type', label: 'Type' },
+  { key: 'addressList', label: 'Address List' },
   { key: 'ttl', label: 'TTL' },
+  { key: 'comment', label: 'Comment' },
+];
+
+const COLS_F: SortCol[] = [
+  { key: 'name', label: 'Name' },
+  { key: 'dnsServers', label: 'DNS Servers' },
+  { key: 'dohServers', label: 'DoH Servers' },
+  { key: 'usedBy', label: 'Used By' },
+  { key: 'comment', label: 'Comment' },
+];
+
+const COLS_A: SortCol[] = [
+  { key: 'source', label: 'Source' },
+  { key: 'nameCount', label: 'Names', cls: 'text-end' },
+  { key: 'matchCount', label: 'Matches', cls: 'text-end' },
+  { key: 'certificate', label: 'Certificate' },
   { key: 'comment', label: 'Comment' },
 ];
 
@@ -25,6 +42,8 @@ export function initDnsPage(socket: Socket, isVisible: (page: string) => boolean
 
   let data: DNSPayload | null = null;
   const sortS: SortState = { col: 'name', dir: 'asc' };
+  const sortF: SortState = { col: 'name', dir: 'asc' };
+  const sortA: SortState = { col: 'source', dir: 'asc' };
 
   // The resolver's settings are the `dnsSettings` resource: one row with no
   // id of its own, which the engine calls "singleton". The shared form edits
@@ -55,6 +74,7 @@ export function initDnsPage(socket: Socket, isVisible: (page: string) => boolean
     html += kv('mDNS repeat', esc(s.mdnsRepeatIfaces.join(', ') || '-'));
     html += kv('Max UDP packet', s.maxUdpPacketSize === null ? '-' : String(s.maxUdpPacketSize));
     html += kv('Query timeout', esc(s.queryServerTimeout || '-') + ' / ' + esc(s.queryTotalTimeout || '-'));
+    html += kv('Address list extra time', esc(s.addressListExtraTime || '-'));
     settingsBody!.innerHTML = html;
   }
 
@@ -72,30 +92,85 @@ export function initDnsPage(socket: Socket, isVisible: (page: string) => boolean
     const q = (search?.value || '').toLowerCase().trim();
     const list = rows.filter((e) => {
       if (!q) return true;
-      return ((e.name || e.regexp) + ' ' + e.address).toLowerCase().indexOf(q) !== -1;
+      return [e.name || e.regexp, e.address, e.addressList, e.comment].join(' ')
+        .toLowerCase().indexOf(q) !== -1;
     });
     renderSortHeader('dnsStaticThead', COLS_S, sortS, () => render());
     const badge = el('dnsStaticBadge');
     if (badge) badge.textContent = String(rows.length);
     const table = el('dnsStaticTable');
     if (!table) return;
+    // A regexp entry has no name, and its regexp is what identifies it: the
+    // server finds the row by it and audits the write under it.
     table.innerHTML = list.length ? sorted(list, sortS).map((e) =>
-      '<tr' + (e.disabled ? ' style="opacity:.55"' : '') + resRow(e.id, e.name) + '>' +
+      '<tr' + (e.disabled ? ' style="opacity:.55"' : '') + resRow(e.id, e.name || e.regexp) + '>' +
       '<td>' + esc(e.name || e.regexp) +
-        (e.regexp ? ' ' + pill('regexp', 'alt') : '') + '</td>' +
-      '<td class="mono">' + esc(e.address) + '</td>' +
+        (e.regexp ? ' ' + pill('regexp', 'alt') : '') +
+        (e.matchSubdomain ? ' ' + pill('+sub', 'rx') : '') +
+        (e.dynamic ? ' ' + pill('dynamic', 'muted') : '') + '</td>' +
+      // A FWD entry with no forward-to goes to the resolver's own servers.
+      '<td class="mono">' + esc(e.address || (e.type === 'FWD' ? 'default servers' : '')) + '</td>' +
       '<td>' + esc(e.type) + '</td>' +
+      '<td class="mono">' + esc(e.addressList || '') + '</td>' +
       '<td>' + esc(e.ttl || '-') + '</td>' +
       '<td style="color:var(--text-muted)">' + esc(e.comment || '') + '</td>' +
       '</tr>').join('')
-      : '<tr><td colspan="5" class="empty-state">' +
+      : '<tr><td colspan="6" class="empty-state">' +
         (q ? 'No entries match that search.' : 'No static DNS entries.') + '</td></tr>';
+  }
+
+  /** Forwarders and adlists: a card each, shown only where the router has the menu. */
+  function renderForwarders(): void {
+    const card = el('dnsFwdCard');
+    if (card) card.style.display = data?.forwardersAvailable ? '' : 'none';
+    const rows = data?.forwarders || [];
+    renderSortHeader('dnsFwdThead', COLS_F, sortF, () => renderForwarders());
+    const count = el('dnsFwdBadge');
+    if (count) count.textContent = String(rows.length);
+    const table = el('dnsFwdTable');
+    if (!table) return;
+    table.innerHTML = rows.length ? sortRows(rows, sortF.col, sortF.dir).map((f) =>
+      '<tr' + (f.disabled ? ' style="opacity:.55"' : '') + resRow(f.id, f.name) + '>' +
+      '<td>' + esc(f.name) + (f.disabled ? ' ' + pill('disabled', 'muted') : '') + '</td>' +
+      '<td class="mono">' + esc(f.dnsServers.join(', ') || '-') + '</td>' +
+      '<td class="mono">' + esc(f.dohServers.join(', ') || '-') +
+        (f.dohServers.length && !f.verifyDohCert ? ' ' + pill('no cert check', 'warn') : '') + '</td>' +
+      '<td>' + (f.usedBy ? f.usedBy + (f.usedBy === 1 ? ' entry' : ' entries') : '-') + '</td>' +
+      '<td style="color:var(--text-muted)">' + esc(f.comment) + '</td>' +
+      '</tr>').join('')
+      : '<tr><td colspan="5" class="empty-state">No forwarders.</td></tr>';
+  }
+
+  function renderAdlists(): void {
+    const card = el('dnsAdlistCard');
+    if (card) card.style.display = data?.adlistsAvailable ? '' : 'none';
+    const rows = (data?.adlists || []).map((a) => ({ ...a, source: a.url || a.file,
+      certificate: a.url ? (a.sslVerify ? 'verified' : 'not verified') : '' }));
+    renderSortHeader('dnsAdlistThead', COLS_A, sortA, () => renderAdlists());
+    const count = el('dnsAdlistBadge');
+    if (count) count.textContent = String(rows.length);
+    const table = el('dnsAdlistTable');
+    if (!table) return;
+    const num = (n: number | null): string => (n === null ? '-' : n.toLocaleString());
+    table.innerHTML = rows.length ? sortRows(rows, sortA.col, sortA.dir).map((a) =>
+      '<tr' + (a.disabled ? ' style="opacity:.55"' : '') + resRow(a.id, a.source) + '>' +
+      '<td class="mono" style="word-break:break-all">' + esc(a.source) +
+        (a.file && !a.url ? ' ' + pill('file', 'alt') : '') +
+        (a.disabled ? ' ' + pill('disabled', 'muted') : '') + '</td>' +
+      '<td class="text-end">' + num(a.nameCount) + '</td>' +
+      '<td class="text-end">' + num(a.matchCount) + '</td>' +
+      '<td>' + (a.certificate ? pill(a.certificate, a.sslVerify ? 'ok' : 'err') : '-') + '</td>' +
+      '<td style="color:var(--text-muted)">' + esc(a.comment) + '</td>' +
+      '</tr>').join('')
+      : '<tr><td colspan="5" class="empty-state">No adlists.</td></tr>';
   }
 
   function render(): void {
     if (!data) return;
     renderSettings();
     renderStatic();
+    renderForwarders();
+    renderAdlists();
   }
 
   function renderSummary(): void {
