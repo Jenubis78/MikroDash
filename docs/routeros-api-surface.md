@@ -289,9 +289,9 @@ carries a small file's contents.
 | `/ip/arp` | arp | arp | add, set, remove (dynamic rows read-only) |
 | `/ip/dns` | dnsSettings | dns | set; `cache/flush` and `adlist/reload` as actions, sent as `/ip/dns/cache/flush` and `/ip/dns/adlist/reload` with no id |
 | `/ip/dns/forwarders` | dnsForwarder | dns | add, set, remove |
-| `/ip/dns/adlist` | dnsAdlist | dns | add, set, remove (`url` and `file` clear with `!`) |
+| `/ip/dns/adlist` | dnsAdlist | dns | add, set, remove (`url` and `file` set on add only) |
 | `/ip/service` | ipService | ip-services | set |
-| `/ip/dns/static` | dnsStatic | dns | add, set, remove (dynamic rows read-only; `name`, `regexp`, `forward-to` and `address-list` clear with `!`); the fleet copy checks for the record first with `print ?name=<name>` or `?regexp=<regexp>` |
+| `/ip/dns/static` | dnsStatic | dns | add, set, remove (dynamic rows read-only; `forward-to` and `address-list` clear with `!`); the fleet copy checks for the record first: `print =.proplist=.id,name,regexp,type,address,cname,forward-to,mx-exchange,ns,srv-target,text`, with `?regexp=<regexp>` for a regexp entry (names are compared without case, which `?name=` cannot do); `name` and `regexp` clear with an empty value |
 | `/ip/firewall/address-list` | addressList | address-lists | add, set, remove; the page polls `print =.proplist=list,dynamic,disabled` for its per-list summary and reads one list with `print ?list=<name>` when it is opened; the assistant's `list_addressList` reads the same two ways |
 | `/ip/firewall/filter` | fwFilter | firewall | add, set, remove, move, enable, disable |
 | `/ip/firewall/mangle` | fwMangle | firewall | add, set, remove, move, enable, disable |

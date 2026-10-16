@@ -105,9 +105,13 @@ function same(a: FleetEntry, b: FleetEntry): boolean {
  * router holds two records with that name and type. Round-robin A records and
  * two TXT on one name were one line before, the second invisible and never
  * copied.
+ *
+ * A NAME LINES UP WITHOUT CASE. RouterOS keeps the case a name was written in,
+ * so `MDPROBE.test` and `mdprobe.test` can both exist, and the resolver answers
+ * them as one name. A regexp is a pattern and keeps its case.
  */
-function rowKeys(routers: FleetRouter[]): (e: FleetEntry) => string {
-  const base = (e: FleetEntry): string => (e.name || e.regexp) + SEP + e.type;
+function rowKeys(routers: FleetRouter[]): { keyOf: (e: FleetEntry) => string; valued: (e: FleetEntry) => boolean } {
+  const base = (e: FleetEntry): string => (e.name ? e.name.toLowerCase() : e.regexp) + SEP + e.type;
   const multi = new Set<string>();
   routers.forEach((r) => {
     const seen = new Set<string>();
@@ -117,12 +121,15 @@ function rowKeys(routers: FleetRouter[]): (e: FleetEntry) => string {
       seen.add(k);
     });
   });
-  return (e) => (multi.has(base(e)) ? base(e) + SEP + e.address : base(e));
+  return {
+    keyOf: (e) => (multi.has(base(e)) ? base(e) + SEP + e.address : base(e)),
+    valued: (e) => multi.has(base(e)),
+  };
 }
 
-function buildRows(routers: FleetRouter[]): FleetRow[] {
+export function buildRows(routers: FleetRouter[]): FleetRow[] {
   const by = new Map<string, FleetRow>();
-  const keyOf = rowKeys(routers.filter((r) => r.ok));
+  const { keyOf, valued } = rowKeys(routers.filter((r) => r.ok));
   routers.forEach((r) => {
     if (!r.ok) return;
     r.entries.forEach((e) => {
@@ -130,7 +137,7 @@ function buildRows(routers: FleetRouter[]): FleetRow[] {
       let row = by.get(key);
       if (!row) {
         row = { id: 'r' + String(by.size), key, name: e.name || e.regexp,
-          type: e.type, on: {}, source: null, byValue: key !== (e.name || e.regexp) + SEP + e.type,
+          type: e.type, on: {}, source: null, byValue: valued(e),
           missing: [], differs: false };
         by.set(key, row);
       }

@@ -203,13 +203,14 @@ func (s *Server) dnsFleetAddOne(ctx context.Context, r *http.Request, sess *Sess
 		}
 	}
 	werr := sn.InWriteQueue(func() error {
-		// FILTERED ON THE ROUTER. The whole table is 1,265 rows on the
-		// operator's routers, and Sync all read it once per missing record.
-		read := collect.DNSStaticCmd()
-		if q := validated.Values["name"]; q != "" {
-			read.Args = append(append([]string{}, read.Args...), "?name="+q)
-		} else {
-			read.Args = append(append([]string{}, read.Args...), "?regexp="+validated.Values["regexp"])
+		// A REGEXP IS FILTERED ON THE ROUTER; A NAME CANNOT BE. RouterOS keeps
+		// a name's case and `?name=` matches it exactly, so `MDPROBE.test` and
+		// `mdprobe.test` are two entries and a copy of one beside the other
+		// was a duplicate. Names are read in the columns the comparison needs
+		// and compared without case (dnsAlreadyPresent).
+		read := routeros.Cmd{Path: "/ip/dns/static/print", Args: []string{dnsPresenceProps}}
+		if q := validated.Values["regexp"]; q != "" {
+			read.Args = append(read.Args, "?regexp="+q)
 		}
 		rows, rerr := sn.Exec(read)
 		if rerr != nil {
@@ -260,12 +261,17 @@ func dnsRecordOf(res *resource.Resource, values map[string]string) collect.DNSSt
 	return collect.DNSStaticEntry{}
 }
 
+// dnsPresenceProps is what dnsAlreadyPresent reads: the keys and the value
+// column, not the whole row.
+const dnsPresenceProps = "=.proplist=.id,name,regexp,type,address,cname,forward-to,mx-exchange,ns,srv-target,text"
+
 // dnsAlreadyPresent is whether a router's rows hold the record. Name and regexp
 // both, because a regexp entry has no name: comparing names alone found every
-// regexp record already present on a router holding any.
+// regexp record already present on a router holding any. A name compares
+// without case, as the resolver answers it.
 func dnsAlreadyPresent(rows []routeros.Reply, want collect.DNSStaticEntry, byValue bool) bool {
 	for _, e := range collect.ParseStaticEntries(rows) {
-		if e.Name == want.Name && e.Regexp == want.Regexp && e.Type == want.Type &&
+		if strings.EqualFold(e.Name, want.Name) && e.Regexp == want.Regexp && e.Type == want.Type &&
 			(!byValue || e.Address == want.Address) {
 			return true
 		}

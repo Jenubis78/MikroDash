@@ -945,8 +945,10 @@ func (r *Resource) Describe() map[string]any {
 // (manual.mikrotik.com/docs/cli-reference/ip/dns/static, v7.26).
 //
 // Name and Regexp are alternatives: a regexp entry is matched instead of a
-// name, so exactly one of them is set, and both clear with `!` so that turning
-// one kind into the other removes the property it no longer has.
+// name, so exactly one of them is set. Turning one kind into the other clears
+// the property it no longer has with an empty value in the same set: RouterOS
+// refuses `!name` or `!regexp` beside the other ("only name or regexp
+// allowed") and accepts `=name= =regexp=^x$` (CHR and hAP ac2, 7.24.5).
 var DNSStatic = &Resource{
 	Key: "dnsStatic", Page: "dns", Label: "DNS Entry",
 	Title: "Static DNS Entry", Menu: "/ip/dns/static", Identity: []string{"name"}, IdentityFallback: "regexp",
@@ -956,9 +958,9 @@ var DNSStatic = &Resource{
 	ReadOnlyReason: "read-only-row",
 	Check:          dnsNameOrRegexp,
 	Fields: []Field{
-		{Name: "name", ROS: "name", Label: "Name", Type: TypeText, Clearable: true, ClearBang: true,
+		{Name: "name", ROS: "name", Label: "Name", Type: TypeText, Clearable: true,
 			Placeholder: "server.lan", Help: "The domain this entry answers. Leave it empty for a Regexp entry."},
-		{Name: "regexp", ROS: "regexp", Label: "Regexp", Type: TypeText, Clearable: true, ClearBang: true,
+		{Name: "regexp", ROS: "regexp", Label: "Regexp", Type: TypeText, Clearable: true,
 			Placeholder: `^host[0-9]+\.example\.com$`,
 			Help:        "Matched instead of Name. Write it in lower case: queries are lower-cased before matching."},
 		// All nine types RouterOS defines. Listing six was not a smaller feature,
@@ -1054,24 +1056,30 @@ var DNSForwarder = &Resource{
 
 // DNSAdlist is /ip/dns/adlist: a blocklist the resolver loads from a URL or a
 // file on the router and answers with 0.0.0.0 and :: (cli-reference/ip/dns/
-// adlist). A list is one or the other, so the two clear with `!` as Name and
-// Regexp do on a static entry. RouterOS re-reads every list each 4 hours; the
-// resolver settings carry Reload Adlists for the impatient.
+// adlist). RouterOS re-reads every list each 4 hours; the resolver settings
+// carry Reload Adlists for the impatient.
+//
+// THE SOURCE IS CHOSEN WHEN THE LIST IS ADDED. `!url` and `!file` are accepted
+// and change nothing, and `file` cannot be cleared at all, so a list switched
+// from one source to the other on a live router kept both (CHR and hAP ac2,
+// 7.24.5). Both are CreateOnly: an edit shows the source and never sends it,
+// and a different source is a new list.
 var DNSAdlist = &Resource{
 	Key: "dnsAdlist", Page: "dns", Label: "Adlist",
 	Title: "DNS Adlist", Menu: "/ip/dns/adlist", Identity: []string{"url"}, IdentityFallback: "file",
 	Check: func(clean map[string]string) []Error {
-		if clean["url"] == "" && clean["file"] == "" {
-			return []Error{{"url", "URL or File is required"}}
+		if clean["url"] != "" && clean["file"] != "" {
+			return []Error{{"file", "A list is read from a URL or a file, not both"}}
 		}
 		return nil
 	},
 	Fields: []Field{
-		{Name: "url", ROS: "url", Label: "URL", Type: TypeText, Clearable: true, ClearBang: true,
-			Placeholder: "https://example.com/hosts.txt", Help: "A hosts-format list, re-read every 4 hours."},
-		{Name: "file", ROS: "file", Label: "File", Type: TypeText, Clearable: true, ClearBang: true,
+		{Name: "url", ROS: "url", Label: "URL", Type: TypeText, CreateOnly: true,
+			Placeholder: "https://example.com/hosts.txt",
+			Help:        "A hosts-format list, re-read every 4 hours. Set when the list is added; a new source is a new list."},
+		{Name: "file", ROS: "file", Label: "File", Type: TypeText, CreateOnly: true,
 			OptionsFrom: &OptionsFrom{Menu: "/file", Value: "name", Suggest: true},
-			Help:        "A list already on the router, instead of a URL."},
+			Help:        "A list already on the router, instead of a URL. Set when the list is added."},
 		{Name: "sslVerify", ROS: "ssl-verify", Label: "Verify Certificate", Type: TypeBool,
 			Clearable: true, Default: "yes"},
 		{Name: "comment", ROS: "comment", Label: "Comment", Type: TypeText, Clearable: true},

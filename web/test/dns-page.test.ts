@@ -18,7 +18,8 @@ const say = console.log.bind(console);
 const ROOT = process.env.MIKRODASH_ROOT || path.join(__dirname, '..', '..');
 
 const ENTRY = path.join(ROOT, 'testdata', '.dnspage-entry.ts');
-fs.writeFileSync(ENTRY, "export { initDnsPage } from '../web/src/pages/dns.js';\n");
+fs.writeFileSync(ENTRY, "export { initDnsPage } from '../web/src/pages/dns.js';\n" +
+  "export { buildRows } from '../web/src/pages/dns-fleet.js';\n");
 const OUT = path.join(ROOT, 'testdata', '.dnspage.cjs');
 execFileSync(path.join(ROOT, 'web', 'node_modules', '.bin', 'esbuild'),
   [ENTRY, '--bundle', '--format=cjs', '--platform=node', '--outfile=' + OUT, '--log-level=warning'],
@@ -127,6 +128,27 @@ function boot() {
     'a file adlist carries no identity, or a disabled one is not marked:\n' + ads);
   assert.strictEqual((heads.match(/th-sort/g) || []).length, 10, 'a column of the two tables does not sort:\n' + heads);
   say('ok  forwarders and adlists render where the router has them, and only there');
+}
+
+// ── the comparison lines a name up without case, and a round-robin pair by value
+{
+  const { buildRows } = require(OUT);
+  const rec = (id, name, address) => ({ id, name, regexp: '', address, type: 'A', ttl: '', disabled: false,
+    comment: '', addressList: '', matchSubdomain: false, dynamic: false, values: {} });
+  const router = (id, entries) => ({ id, label: id, ok: true, error: '', entries });
+  const same = buildRows([router('a', [rec('*1', 'MDPROBE.test', '198.51.100.1')]),
+    router('b', [rec('*2', 'mdprobe.test', '198.51.100.1')])]);
+  assert.strictEqual(same.length, 1, 'a name in another case is a second line: ' + JSON.stringify(same.map((r) => r.name)));
+  assert.deepStrictEqual(same[0].missing, [], 'a case variant is offered as a copy');
+  assert.strictEqual(same[0].byValue, false);
+
+  const pair = buildRows([router('a', [rec('*1', 'www.lan', '198.51.100.1'), rec('*2', 'WWW.lan', '198.51.100.2')]),
+    router('b', [rec('*3', 'www.lan', '198.51.100.1')])]);
+  assert.strictEqual(pair.length, 2, 'two records of one name are not two lines');
+  assert.ok(pair.every((r) => r.byValue), 'a round-robin pair is not lined up by value');
+  assert.deepStrictEqual(pair.filter((r) => r.missing.length).map((r) => r.missing), [['b']],
+    'only the second address is missing on b');
+  say('ok  names line up without case, a round-robin pair by value');
 }
 
 fs.rmSync(OUT, { force: true });

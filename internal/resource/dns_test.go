@@ -85,7 +85,9 @@ func TestAFWDEntryNeedsNoForwardTo(t *testing.T) {
 }
 
 // TestNameAndRegexpAreAlternatives. Exactly one of them is set, and editing an
-// entry into the other kind removes the property it no longer has.
+// entry into the other kind empties the property it no longer has in the same
+// set. Never with `!`: RouterOS refuses `!name` beside a regexp, and the other
+// way round, with "only name or regexp allowed" (CHR and hAP ac2, 7.24.5).
 func TestNameAndRegexpAreAlternatives(t *testing.T) {
 	for _, vals := range []map[string]string{
 		{"type": "A", "address": "198.51.100.1"},
@@ -99,12 +101,19 @@ func TestNameAndRegexpAreAlternatives(t *testing.T) {
 	nameRow := map[string]string{".id": "*1", "name": "a.lan", "type": "A", "address": "198.51.100.1"}
 	got := dnsArgs(t, map[string]string{"regexp": `^a[0-9]\.lan$`, "type": "A",
 		"address": "198.51.100.1"}, true, nameRow)
-	if !strings.Contains(got, "=!name=") || !strings.Contains(got, `=regexp=^a[0-9]\.lan$`) {
+	if !strings.Contains(" "+got+" ", " =name= ") || !strings.Contains(got, `=regexp=^a[0-9]\.lan$`) ||
+		strings.Contains(got, "=!") {
 		t.Errorf("a name entry turned into a regexp one: %s", got)
 	}
 
-	// An edit of a regexp entry that stays one names neither absent property.
 	reRow := map[string]string{".id": "*2", "regexp": `^a[0-9]\.lan$`, "type": "A", "address": "198.51.100.1"}
+	got = dnsArgs(t, map[string]string{"name": "a.lan", "type": "A", "address": "198.51.100.1"}, true, reRow)
+	if !strings.Contains(" "+got+" ", " =regexp= ") || !strings.Contains(got, "=name=a.lan") ||
+		strings.Contains(got, "=!") {
+		t.Errorf("a regexp entry turned into a name one: %s", got)
+	}
+
+	// An edit of a regexp entry that stays one removes nothing with `!`.
 	got = dnsArgs(t, map[string]string{"regexp": `^a[0-9]\.lan$`, "type": "A",
 		"address": "198.51.100.1", "comment": "lab"}, true, reRow)
 	for _, word := range []string{"=!name=", "=!forward-to=", "=!address-list="} {
@@ -142,12 +151,24 @@ func TestTheResolverActionsAreSubMenuCommands(t *testing.T) {
 	}
 }
 
-func TestAnAdlistNeedsASource(t *testing.T) {
-	if _, errs := DNSAdlist.Validate(map[string]string{}, false); len(errs) == 0 {
-		t.Error("an adlist with neither URL nor file was accepted")
+// TestAnAdlistsSourceIsSetWhenItIsAdded. RouterOS takes `!url` and `!file`
+// and changes nothing, and cannot clear `file` at all, so an edit that switched
+// the source left both set. The source is set by the add, one of the two, and
+// an edit never sends either.
+func TestAnAdlistsSourceIsSetWhenItIsAdded(t *testing.T) {
+	if _, errs := DNSAdlist.Validate(map[string]string{"url": "https://example.com/h.txt", "file": "h.txt"}, false); len(errs) == 0 {
+		t.Error("an adlist with both a URL and a file was accepted")
 	}
 	if _, errs := DNSAdlist.Validate(map[string]string{"file": "hosts.txt"}, false); len(errs) > 0 {
 		t.Errorf("a file adlist was refused: %v", errs)
+	}
+	v, errs := DNSAdlist.Validate(map[string]string{"url": "https://example.com/other.txt", "comment": "x"}, true)
+	if len(errs) > 0 {
+		t.Fatal(errs)
+	}
+	v.Stored = map[string]string{".id": "*1", "file": "hosts.txt"}
+	if got := strings.Join(DNSAdlist.BuildArgs(v), " "); strings.Contains(got, "url") || strings.Contains(got, "file") {
+		t.Errorf("an edit sent the source: %s", got)
 	}
 }
 

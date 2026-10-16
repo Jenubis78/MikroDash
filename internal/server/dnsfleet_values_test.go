@@ -92,4 +92,9 @@ func TestARoundRobinRecordIsPresentOnlyWithItsValue(t *testing.T) {
 	if dnsAlreadyPresent(rows, re, false) {
 		t.Error("a regexp record was found in a router holding only a name record")
 	}
+	// RouterOS keeps a name's case; the resolver does not care about it.
+	upper := record(map[string]string{"name": "WWW.lan", "type": "A", "address": "198.51.100.1"})
+	if !dnsAlreadyPresent(rows, upper, true) {
+		t.Error("the same name in another case was not found, so a copy would add a duplicate")
+	}
 }
