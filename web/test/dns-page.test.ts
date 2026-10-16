@@ -34,6 +34,9 @@ const IDS = [
   'dnsAdlistCard', 'dnsAdlistBadge', 'dnsAdlistThead', 'dnsAdlistTable',
   'dnsFleetCard', 'dnsScopeOne', 'dnsScopeFleet', 'dnsFleetPick', 'dnsFleetThead', 'dnsFleetTable',
   'dnsFleetBadge', 'dnsFleetNote', 'dnsFleetAddBtn', 'dnsFleetReload', 'dnsFleetSyncAll',
+  // Settings -> Features: the cache browser and the route trace.
+  'dnsCacheCard', 'dnsCacheBadge', 'dnsCacheNote', 'dnsCacheSearch', 'dnsCacheRead', 'dnsCacheThead',
+  'dnsCacheTable', 'dnsTraceCard', 'dnsTraceName', 'dnsTraceGo', 'dnsTraceOut',
 ];
 
 const SETTINGS = {
@@ -66,6 +69,7 @@ function boot() {
   initDnsPage(socket, () => true);
   return {
     doc,
+    handlers,
     send: (over) => handlers['dns:update'](Object.assign({
       ts: 1, pollMs: 10000, settings: SETTINGS, available: true,
       staticEntries: [], forwarders: [], forwardersAvailable: true, adlists: [], adlistsAvailable: true,
@@ -96,6 +100,8 @@ function boot() {
   assert.ok(body.includes('data-id="*3" data-identity="^ads[0-9]*\\."'), 'a regexp entry carries no identity:\n' + body);
   assert.ok(String(doc.nodes['dnsSettingsBody'].innerHTML).includes('4h'),
     'the resolver card does not show the address list extra time');
+  assert.strictEqual(doc.nodes['dnsCacheCard'].style.display, 'none', 'the cache card shows with its feature off');
+  assert.strictEqual(doc.nodes['dnsTraceCard'].style.display, 'none', 'the trace card shows with its feature off');
   restore();
   say('ok  a FWD entry shows its address list, its forwarder, or the default servers');
 }
@@ -177,5 +183,32 @@ function boot() {
   say('ok  names line up without case, a round-robin pair by value');
 }
 
-fs.rmSync(OUT, { force: true });
-say('dns-page: all checks passed');
+// ── 6. a slow read of the router that was selected is not drawn under the next one
+{
+  const { doc, handlers, restore } = boot();
+  const pending = [];
+  const prevFetch = global.fetch;
+  global.fetch = (url) => new Promise((resolve) => pending.push({ url, resolve }));
+  const answer = (rows) => ({ ok: true, statusText: '', json: () => Promise.resolve({ total: rows.length,
+    cached: rows.length, rows, steps: [], matches: [], answering: [] }) });
+  handlers['router:active']({ activeId: 'A' });
+  doc.nodes['dnsCacheRead'].fire('click');
+  doc.nodes['dnsTraceName'].value = 'www.example.com';
+  doc.nodes['dnsTraceGo'].fire('click');
+  assert.strictEqual(pending.length, 2, 'the two reads were not started: ' + pending.length);
+  handlers['router:switched']({ activeId: 'B' });
+  pending[0].resolve(answer([{ name: 'from-a.example', type: 'A', data: '198.51.100.1', ttl: '1m' }]));
+  pending[1].resolve({ ok: true, statusText: '', json: () => Promise.resolve({ name: 'www.example.com', matches: [],
+    answering: [], steps: [{ step: 'Static entry', state: 'ok', text: 'from A' }] }) });
+  setTimeout(() => {
+    const table = String(doc.nodes['dnsCacheTable'].innerHTML);
+    global.fetch = prevFetch;
+    restore();
+    assert.ok(!table.includes('from-a.example'), 'router A\'s cache was drawn under router B:\n' + table);
+    assert.ok(!String(doc.nodes['dnsTraceOut'].innerHTML).includes('from A'),
+      'router A\'s trace was drawn under router B');
+    say('ok  a read of the router that was selected is dropped when another is');
+    fs.rmSync(OUT, { force: true });
+    say('dns-page: all checks passed');
+  }, 20);
+}

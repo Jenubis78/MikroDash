@@ -29,7 +29,9 @@
     "displayTimezone",
     "userNotifyEnabled",
     "aiReady",
-    "hiddenAreas"
+    "hiddenAreas",
+    "dnsCacheEnabled",
+    "dnsTraceEnabled"
   ],
   "cases": {
     "defaults": {

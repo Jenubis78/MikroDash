@@ -29,7 +29,9 @@ export const FORM_FIELDS: Record<FieldKind, readonly string[]> = {
     "rosDebug",
     "routerTls",
     "routerTlsInsecure",
-    "userNotifyEnabled"
+    "userNotifyEnabled",
+    "dnsCacheEnabled",
+    "dnsTraceEnabled"
   ],
   "checkOn": [
     "pageAudit",

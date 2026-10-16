@@ -446,6 +446,22 @@ RouterOS 7.24.4 on the lab CHR, 2026-09-22. What the call-home script depends on
 | `/ip/firewall/filter/add` (script) | `place-before=[:pick [find] 0]` puts the rule first (position 0 of 3); with no rules at all, a plain `add` |
 | `/system/scheduler/add` | `=interval=5s =on-event=/system scheduler remove [find name=<n>]`: **a scheduler can remove itself**, gone within 12 s. The bootstrap's enrolment retry ends that way once it succeeds |
 
+## The optional features (Settings -> Features)
+
+Added by hand, and kept out of the counts above, like the sections before it.
+Each command runs only while its feature is switched on, and only when somebody
+asks. Paths are from the RouterOS manual's CLI reference (v7.26). The trace reads
+the address list, mangle and route menus only for a viewer granted the Address
+Lists, Firewall and Routing pages on that router, and follows IPv4 only.
+
+| Command | Proplist or arguments | Used by |
+|---|---|---|
+| `/ip/dns/cache/print` | `=.proplist=name,type,data,ttl`, and `?name=<name>` for a trace | cache browser (administrators), route trace (`internal/server/dnstools_api.go`) |
+| `/ip/dns/static/print` | the dnsStatic resource's fields | route trace |
+| `/ip/firewall/address-list/print` | `=.proplist=.id,list,address,timeout,dynamic,disabled,comment` `?list=<list>` `?address=<addr>` | route trace |
+| `/ip/firewall/mangle/print` | `=.proplist=.id,chain,action,dst-address-list,new-routing-mark,passthrough,packets,bytes,disabled,comment` `?dst-address-list=<list>` | route trace |
+| `/ip/route/print` | `=.proplist=.id,dst-address,gateway,distance,active,disabled,routing-table` `?routing-table=<mark>` | route trace |
+
 ## Proplists
 
 A proplist is the only thing keeping a credential out of a payload - see

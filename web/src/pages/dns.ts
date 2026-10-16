@@ -9,6 +9,7 @@ import { esc, el, resRow, debounce, renderSortHeader, sortMul, sortRows, pill, t
 import type { Socket } from '../socket';
 import { mountAdds, mountRows, openResource } from '../resource';
 import { initDnsFleet } from './dns-fleet';
+import { initDnsTools } from './dns-tools';
 import type { DNSStaticEntry, DNSPayload } from '../gen/payloads';
 
 const COLS_S: SortCol[] = [
@@ -216,4 +217,5 @@ export function initDnsPage(socket: Socket, isVisible: (page: string) => boolean
   // The fleet comparison is its own module: a different source, a different
   // cadence and a different table shape. See its header.
   initDnsFleet(socket, isVisible);
+  initDnsTools(socket);
 }

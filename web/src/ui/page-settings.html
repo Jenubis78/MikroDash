@@ -16,6 +16,7 @@
         <button class="stab" data-tab="auth">Authentication</button>
         <button class="stab" data-tab="ai">AI Agent</button>
         <button class="stab" data-tab="provisioning">Provisioning</button>
+        <button class="stab" data-tab="features">Features</button>
         <button class="stab" data-tab="about">About</button>
       </div>
 
@@ -1553,6 +1554,31 @@
               <thead><tr><th>Name</th><th>State</th><th>Devices</th><th></th></tr></thead>
               <tbody id="ztpBatchBody"><tr><td colspan="4" class="ztp-help">No generic scripts yet.</td></tr></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Features tab: optional features, each off until switched on ──── -->
+      <div class="stab-panel" id="stab-features">
+        <div class="scard">
+          <div class="scard-header">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:var(--accent-rx);stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg>
+            <span class="scard-title">DNS tools</span>
+          </div>
+          <div class="scard-body">
+            <p style="font-size:.74rem;color:var(--text-muted);margin-bottom:.8rem">Each is off until you switch it on, and off it draws nothing and reads nothing.</p>
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="s_dnsCacheEnabled">DNS cache browser</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_dnsCacheEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Administrators: a Cache card on the DNS page that reads the resolver&#39;s cache when you press Read, searchable. The cache lists every name the network has looked up, so DNS read access alone does not open it. Nothing is read in the background.</div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="s_dnsTraceEnabled">Domain route trace</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_dnsTraceEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Why a domain does or does not take its route: the static entry that catches it, what it resolved to, whether the address reached the list, and the mangle rule and route behind it.</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

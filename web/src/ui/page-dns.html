@@ -125,5 +125,46 @@
         </div>
       </div>
 
+      <!-- Settings -> Features: read only when asked (internal/server/dnstools_api.go). -->
+      <div class="card" id="dnsTraceCard" style="margin-top:.85rem;display:none">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <h3 class="card-title mb-0">Domain route trace</h3>
+          <div class="hdr-actions">
+            <input id="dnsTraceName" class="sform-input sform-sm" placeholder="www.example.com"
+                   style="flex:0 1 260px;width:260px" autocomplete="off"/>
+            <button class="sbtn sbtn-outline is-sm" id="dnsTraceGo" type="button"
+                    title="Which entry catches it, what it resolved to, and whether it takes its route">Trace</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="dnsTraceOut" class="kv-grid"><span class="empty-state">Type a domain a client opened, then Trace.</span></div>
+        </div>
+      </div>
+
+      <div class="card" id="dnsCacheCard" style="margin-top:.85rem;display:none">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <h3 class="card-title mb-0">Cache</h3>
+            <span id="dnsCacheBadge" class="card-badge active-blue">-</span>
+          </div>
+          <div class="hdr-actions">
+            <span class="muted-note" id="dnsCacheNote"></span>
+            <input id="dnsCacheSearch" class="sform-input sform-sm" placeholder="Search name or answer&hellip;"
+                   style="flex:0 1 220px;width:220px"/>
+            <button class="sbtn sbtn-outline is-sm" id="dnsCacheRead" type="button" title="Read the cache now">Read</button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="data-scroll" style="max-height:360px;overflow-y:auto">
+            <table class="table table-vcenter mb-0" style="width:100%;min-width:620px">
+              <thead><tr id="dnsCacheThead"></tr></thead>
+              <tbody id="dnsCacheTable">
+                <tr><td colspan="4" class="empty-state">Not read yet: press Read.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
