@@ -12,7 +12,9 @@
       "rosDebug",
       "routerTls",
       "routerTlsInsecure",
-      "userNotifyEnabled"
+      "userNotifyEnabled",
+      "dnsCacheEnabled",
+      "dnsTraceEnabled"
     ],
     "checkOn": [
       "pageAudit",

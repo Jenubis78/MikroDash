@@ -193,7 +193,9 @@
     "aiOverviewEnabled",
     "aiConfirmWrites",
     "aiAllowRawCommands",
-    "ztpEnabled"
+    "ztpEnabled",
+    "dnsCacheEnabled",
+    "dnsTraceEnabled"
   ],
   "credFields": [
     "aiApiKey"

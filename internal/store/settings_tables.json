@@ -102,7 +102,9 @@
     "ztpLanUrl": "",
     "ztpPrivateKey": "",
     "ztpInstanceId": "",
-    "hiddenAreas": []
+    "hiddenAreas": [],
+    "dnsCacheEnabled": false,
+    "dnsTraceEnabled": false
   },
   "defaultsOrder": [
     "routerHost",
@@ -206,7 +208,9 @@
     "ztpLanUrl",
     "ztpPrivateKey",
     "ztpInstanceId",
-    "hiddenAreas"
+    "hiddenAreas",
+    "dnsCacheEnabled",
+    "dnsTraceEnabled"
   ],
   "encrypted": [
     "routerPass",

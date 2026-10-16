@@ -107,7 +107,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -219,7 +221,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -331,7 +335,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -444,7 +450,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -557,7 +565,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -670,7 +680,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -783,7 +795,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -896,7 +910,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -1007,7 +1023,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -1118,7 +1136,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -1229,7 +1249,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -1342,7 +1364,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -1453,7 +1477,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -1564,7 +1590,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -1675,7 +1703,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -1786,7 +1816,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -1898,7 +1930,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -2010,7 +2044,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -2121,7 +2157,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -2232,7 +2270,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -2343,7 +2383,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     },
     {
@@ -2454,7 +2496,9 @@
         "ztpLanUrl": "",
         "ztpPrivateKey": "",
         "ztpInstanceId": "",
-        "hiddenAreas": []
+        "hiddenAreas": [],
+        "dnsCacheEnabled": false,
+        "dnsTraceEnabled": false
       }
     }
   ]

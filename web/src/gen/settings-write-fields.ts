@@ -70,6 +70,8 @@ export const BOOL_FIELDS: readonly string[] = [
   "aiConfirmWrites",
   "aiEnabled",
   "aiOverviewEnabled",
+  "dnsCacheEnabled",
+  "dnsTraceEnabled",
   "pageAudit",
   "pageBackups",
   "pageBandwidth",

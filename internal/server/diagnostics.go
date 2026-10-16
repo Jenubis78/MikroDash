@@ -66,6 +66,7 @@ var commandSources = map[string]string{
 	"wan.go":              "Pages",
 	"routers_identity.go": "Pages",
 	"dnsfleet_api.go":     "Pages",
+	"dnstools_api.go":     "Pages",
 	"topofleet_api.go":    "Pages",
 	"packages.go":         "Packages",
 	"files.go":            "Files",

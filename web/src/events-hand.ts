@@ -139,6 +139,8 @@ export interface PageSettings {
   notifIfaceBridge: boolean; notifIfaceVlan: boolean; notifIfaceOther: boolean;
   vpnDashTopN: number;
   displayTimezone: string;
+  /** The optional features, Settings -> Features; see store.FeatureOn. */
+  dnsCacheEnabled: boolean; dnsTraceEnabled: boolean;
 }
 
 export interface HandEvents {
