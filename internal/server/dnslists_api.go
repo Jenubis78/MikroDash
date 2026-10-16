@@ -49,6 +49,7 @@ import (
 	"net/netip"
 	"net/url"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -427,14 +428,31 @@ func (s *Server) dnsListSave(w http.ResponseWriter, r *http.Request) {
 	for _, t := range targets {
 		l.RouterIDs = append(l.RouterIDs, t.ID)
 	}
+	was, existed := s.dnsListByID(l.ID)
 	id, err := s.auditDB.SaveDNSList(l)
 	if err != nil {
 		writeJSONErr(w, http.StatusBadRequest, "the list could not be saved; is the name taken?")
 		return
 	}
-	s.httpRecorder(r, sess).Record(audit.Event{Action: "dnsList.save", TargetType: "dnsList",
+	rec := s.httpRecorder(r, sess)
+	rec.Record(audit.Event{Action: "dnsList.save", TargetType: "dnsList",
 		TargetID: strconv.FormatInt(id, 10), TargetName: l.Name})
-	writeJSON(w, map[string]any{"ok": true, "id": id})
+	dropped := []string{}
+	if existed {
+		for _, rid := range was.RouterIDs {
+			if !slices.Contains(l.RouterIDs, rid) {
+				dropped = append(dropped, rid)
+			}
+		}
+	}
+	purging := false
+	if len(dropped) > 0 {
+		// Nothing visits a router that is no longer on the list, so the entries
+		// it made there go now, as a forgotten list's do.
+		l.ID = id
+		purging = s.startListSync(s.features.ctx, l, sess.Username, rec, listSyncOpts{purge: true, only: dropped})
+	}
+	writeJSON(w, map[string]any{"ok": true, "id": id, "dropped": len(dropped), "purging": purging})
 }
 
 func httpURL(raw string) bool {
@@ -491,7 +509,10 @@ func (s *Server) dnsListByID(id int64) (db.DNSList, bool) {
 }
 
 // planDNSListFleet plans every enabled router the list names for these domains.
-func (s *Server) planDNSListFleet(ctx context.Context, l db.DNSList, domains []string) []DNSListPlan {
+// A router that is disabled or gone is left out of a sync, which visits it when
+// it is back; a purge, whose point is that nothing is left behind, reports it as
+// a plan that failed.
+func (s *Server) planDNSListFleet(ctx context.Context, l db.DNSList, domains []string, purge bool) []DNSListPlan {
 	labels := map[string]string{}
 	if all, _ := s.store.Routers(); all != nil {
 		for _, r := range all {
@@ -501,12 +522,16 @@ func (s *Server) planDNSListFleet(ctx context.Context, l db.DNSList, domains []s
 		}
 	}
 	targets := make([]fleetTarget, 0, len(l.RouterIDs))
+	var unavailable []DNSListPlan
 	for _, id := range l.RouterIDs {
-		if labels[id] != "" {
+		switch {
+		case labels[id] != "":
 			targets = append(targets, fleetTarget{ID: id, Label: labels[id]})
+		case purge:
+			unavailable = append(unavailable, DNSListPlan{RouterID: id, Label: id, Error: "disabled or removed"})
 		}
 	}
-	return fleetEach(ctx, targets, func(ctx context.Context, t fleetTarget) DNSListPlan {
+	return append(unavailable, fleetEach(ctx, targets, func(ctx context.Context, t fleetTarget) DNSListPlan {
 		p := DNSListPlan{RouterID: t.ID, Label: t.Label}
 		sn, drop, ok := s.fleetSession(ctx, t.ID, dnsBulkHold)
 		if !ok {
@@ -524,7 +549,7 @@ func (s *Server) planDNSListFleet(ctx context.Context, l db.DNSList, domains []s
 		p.in.RouterID, p.in.Label = t.ID, "domain list "+l.Name
 		p.Add, p.Change, p.Remove = len(p.in.Add), len(p.in.Set), len(p.in.Remove)
 		return p
-	})
+	})...)
 }
 
 func (s *Server) dnsListPreview(w http.ResponseWriter, r *http.Request) {
@@ -543,7 +568,7 @@ func (s *Server) dnsListPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, map[string]any{"domains": len(domains), "lastCount": l.LastCount,
-		"refused": ListShrank(len(domains), l.LastCount), "routers": s.planDNSListFleet(r.Context(), l, domains)})
+		"refused": ListShrank(len(domains), l.LastCount), "routers": s.planDNSListFleet(r.Context(), l, domains, false)})
 }
 
 func (s *Server) dnsListSync(w http.ResponseWriter, r *http.Request) {
@@ -568,8 +593,12 @@ func (s *Server) dnsListSync(w http.ResponseWriter, r *http.Request) {
 // listSyncOpts says how a sync differs from the usual one. `force` accepts a
 // fetch that shrank, and only an administrator's own Sync passes it. `purge`
 // holds no domains at all, so every entry the list made goes, and forgets the
-// list once every router has done it.
-type listSyncOpts struct{ force, purge bool }
+// list once every router has done it. `only` narrows a purge to those routers
+// and keeps the list: the ones a save took off it.
+type listSyncOpts struct {
+	force, purge bool
+	only         []string
+}
 
 // startListSync runs one list's sync in the background and records how it
 // went on the list. False when it is already running.
@@ -583,6 +612,9 @@ func (s *Server) startListSync(ctx context.Context, l db.DNSList, user string, r
 	s.features.listsRunning[l.ID] = true
 	s.features.mu.Unlock()
 
+	if opts.only != nil {
+		l.RouterIDs = opts.only
+	}
 	go func() {
 		defer func() {
 			s.features.mu.Lock()
@@ -606,7 +638,7 @@ func (s *Server) startListSync(ctx context.Context, l db.DNSList, user string, r
 		}
 		var lines []string
 		clean := true
-		for _, p := range s.planDNSListFleet(ctx, l, domains) {
+		for _, p := range s.planDNSListFleet(ctx, l, domains, opts.purge) {
 			if p.Error != "" {
 				lines = append(lines, p.Label+": "+p.Error)
 				clean = false
@@ -619,6 +651,12 @@ func (s *Server) startListSync(ctx context.Context, l db.DNSList, user string, r
 			text, ok := s.runListJob(ctx, user, p, rec)
 			lines = append(lines, p.Label+": "+text)
 			clean = clean && ok
+		}
+		if opts.purge && opts.only != nil {
+			if !clean {
+				mark("entries are still on a router taken off the list: "+strings.Join(lines, " · "), -1)
+			}
+			return
 		}
 		if opts.purge && clean {
 			_ = s.auditDB.DeleteDNSList(l.ID)

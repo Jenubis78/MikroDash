@@ -170,11 +170,13 @@ export function initDnsLists(): void {
       intervalHours: Number(el<HTMLInputElement>('dnsListEvery')?.value) || 0,
       routerIds: picker ? picker.get().items : [],
     };
-    call('/api/dns/lists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      .then(() => {
+    call<{ dropped: number; purging: boolean }>('/api/dns/lists', { method: 'POST',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then((d) => {
         const f = el('dnsListForm');
         if (f) { f.style.display = 'none'; f.innerHTML = ''; }
-        note('saved');
+        note(!d.dropped ? 'saved' : d.purging ? 'saved; removing its entries from the ' + d.dropped + ' router(s) taken off'
+          : 'saved, but its entries on the ' + d.dropped + ' router(s) taken off stay: the list is being synced');
         load();
       })
       .catch((e: Error) => note('not saved: ' + e.message));

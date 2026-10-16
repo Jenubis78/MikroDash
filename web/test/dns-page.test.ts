@@ -176,6 +176,7 @@ function boot() {
   assert.strictEqual(rscValue('^a\\.b$'), '"^a\\\\.b\\$"', 'a regexp keeps its backslash and dollar through the script');
   assert.strictEqual(rscValue('v=spf1\nadd name=evil'), '"v=spf1\\nadd name=evil"', 'a line break stays in its value');
   assert.strictEqual(rscValue('a\r\tb'), '"a\\r\\tb"');
+  assert.strictEqual(rscValue('a\x00b\x1fc\x7fd'), '"a\\00b\\1Fc\\7Fd"', 'the other control characters are \\XX');
   const line = rscLine({ name: 'x.example', type: 'TXT', text: 'one\n/system reset-configuration', comment: 'a\nb' });
   assert.ok(!line.includes('\n') && !line.includes('\r'), 'an export line is more than one line: ' + JSON.stringify(line));
   assert.strictEqual(

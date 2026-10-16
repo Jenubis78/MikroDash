@@ -108,12 +108,14 @@ const RSC_ESCAPE: Record<string, string> = { '\n': '\\n', '\r': '\\r', '\t': '\\
 
 /**
  * A value as RouterOS script writes it: bare when it can be, quoted otherwise.
- * A line break or a tab is written as its escape: left in, it ends the line the
- * `add` is on, and what follows it runs as a command of its own on `/import`.
+ * A control character is written as its escape, `\n`, `\r`, `\t` or `\XX`:
+ * left in, a line break ends the line the `add` is on, and what follows it runs
+ * as a command of its own on `/import`.
  */
 export function rscValue(v: string): string {
   if (/^[A-Za-z0-9._:/@+*-]+$/.test(v)) return v;
-  return '"' + v.replace(/[\\"$?\n\r\t]/g, (c) => RSC_ESCAPE[c] ?? '\\' + c) + '"';
+  return '"' + v.replace(/[\\"$?\x00-\x1f\x7f]/g, (c) => RSC_ESCAPE[c] ?? (c < ' ' || c === '\x7f'
+    ? '\\' + c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0') : '\\' + c)) + '"';
 }
 
 /** One entry's `add` line, from the resource's own view of the row. */

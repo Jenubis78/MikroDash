@@ -181,3 +181,19 @@ func TestForgettingAListRemovesOnlyWhatItMade(t *testing.T) {
 		t.Errorf("add %v set %+v remove %v; want *1 and *2 removed and *3 left", in.Add, in.Set, in.Remove)
 	}
 }
+
+// TestAPurgeReportsARouterItCannotReach. A sync leaves out a router that is
+// disabled or gone, and visits it when it is back; a purge, which forgets or
+// narrows a list, reports it as not clean, so nothing is dropped while its
+// entries are still there.
+func TestAPurgeReportsARouterItCannotReach(t *testing.T) {
+	s := gateServer(t, `{}`, "")
+	l := db.DNSList{ID: 4, Name: "vpn", AddressList: "to_vpn", RouterIDs: []string{"gone"}}
+	if got := s.planDNSListFleet(context.Background(), l, []string{"a.example"}, false); len(got) != 0 {
+		t.Errorf("a sync planned %+v for a router that is gone", got)
+	}
+	got := s.planDNSListFleet(context.Background(), l, nil, true)
+	if len(got) != 1 || got[0].RouterID != "gone" || got[0].Error == "" {
+		t.Errorf("a purge planned %+v; want the router reported with an error", got)
+	}
+}
