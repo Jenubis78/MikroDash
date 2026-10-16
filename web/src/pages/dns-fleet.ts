@@ -127,6 +127,37 @@ function rowKeys(routers: FleetRouter[]): { keyOf: (e: FleetEntry) => string; va
   };
 }
 
+/** The field each record type keeps its value in, as the form names it. */
+const VALUE_FIELD: Record<string, string> = {
+  A: 'address', AAAA: 'address', CNAME: 'cname', FWD: 'forwardTo',
+  MX: 'mxExchange', NS: 'ns', SRV: 'srvTarget', TXT: 'text',
+};
+
+/** A record as the Add or Edit dialog describes it. */
+interface FormRecord { name: string; regexp: string; type: string; value: string }
+
+/**
+ * Where else a record already is, by the last comparison read: the routers
+ * holding it with the same value, and the ones holding its name and type with
+ * another. The names line up as the comparison table does, without case; a
+ * value is compared exactly, so a TXT record in another case is another value.
+ */
+export function heldElsewhere(routers: FleetRouter[], except: string,
+                              rec: FormRecord): { same: string[]; differ: string[] } {
+  const out = { same: [] as string[], differ: [] as string[] };
+  if (!rec.name && !rec.regexp) return out;
+  const field = VALUE_FIELD[rec.type];
+  routers.forEach((r) => {
+    if (!r.ok || r.id === except) return;
+    const hits = r.entries.filter((e) => e.type === rec.type && (rec.regexp
+      ? e.regexp === rec.regexp : e.name.toLowerCase() === rec.name.toLowerCase()));
+    if (!hits.length) return;
+    const same = !field || hits.some((e) => String(e.values[field] ?? '') === rec.value);
+    (same ? out.same : out.differ).push(r.id);
+  });
+  return out;
+}
+
 export function buildRows(routers: FleetRouter[]): FleetRow[] {
   const by = new Map<string, FleetRow>();
   const { keyOf, valued } = rowKeys(routers.filter((r) => r.ok));
@@ -484,6 +515,7 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
       // and the dialog no longer makes that decision on an extra's behalf.
       if (ctx.readOnly || scope !== 'fleet' || !rest.length) return '';
       return '<div class="dns-extra">' +
+        '<div class="muted-note" data-dnsalso-on style="display:none"></div>' +
         '<div class="dns-extra-title">Also add it to</div>' +
         '<div class="dp" data-dnsalso-host="1"></div>' +
         '<div class="muted-note">Written after this router accepts it, one at a ' +
@@ -493,6 +525,7 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
     wire() {
       // THE SHARED PICKER over the routers the comparison has picked, less this
       // one. Mounted fresh each time the dialog renders, and cleared with it.
+      showHeld();
       const host = el('res_extra')?.querySelector<HTMLElement>('[data-dnsalso-host]');
       if (!host) return;
       const also = mountPicker(host, {
@@ -509,6 +542,30 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
       void push(to, values).then((o) => { notice = describe(o); load(); });
     },
   });
+
+  /** The dialog's record, read from its fields. */
+  function formRecord(): FormRecord {
+    const v = (name: string): string => (el<HTMLInputElement>('resf_' + name)?.value || '').trim();
+    const type = v('type') || 'A';
+    const field = VALUE_FIELD[type];
+    return { name: v('name'), regexp: v('regexp'), type, value: field ? v(field) : '' };
+  }
+
+  /** Which compared routers already hold the record in the dialog, as it is typed. */
+  function showHeld(): void {
+    const box = el('res_extra')?.querySelector<HTMLElement>('[data-dnsalso-on]');
+    if (!box) return;
+    const held = heldElsewhere(data, activeID, formRecord());
+    const names = (ids: string[]): string => ids.map((id) => esc(named(id).label)).join(', ');
+    box.innerHTML = [
+      held.same.length ? 'Already on ' + names(held.same) + '.' : '',
+      held.differ.length ? 'With another value on ' + names(held.differ) + '.' : '',
+    ].filter(Boolean).join(' ');
+    box.style.display = box.innerHTML ? '' : 'none';
+  }
+  ['input', 'change'].forEach((ev) => document.addEventListener(ev, (e) => {
+    if (el('res_fields')?.contains(e.target as Node)) showHeld();
+  }));
 
   el('dnsFleetAddBtn')?.addEventListener('click', () => {
     openResource(socket, 'dnsStatic', null);

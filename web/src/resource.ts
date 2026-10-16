@@ -216,7 +216,10 @@ function fieldHtml(f: SchemaField, value: unknown, choices?: string[]): string {
     body = '<input class="sform-input" id="' + id + '" type="text" list="' + listId + '"' +
       ' value="' + esc(v) + '" placeholder="' + esc(f.placeholder || '') + '" autocomplete="off">' +
       '<datalist id="' + listId + '">' +
-      choices.map((o) => '<option value="' + esc(o) + '"></option>').join('') + '</datalist>';
+      choices.map((o) => {
+        const name = f.suggestLabels[o];
+        return '<option value="' + esc(o) + '"' + (name ? ' label="' + esc(name) + '"' : '') + '></option>';
+      }).join('') + '</datalist>';
   } else if (choices && choices.length) {
     // THE ROUTER TOLD US WHAT THIS FIELD MAY BE, so offer that rather than a
     // blank box - even for a field whose declared type is free text. That is

@@ -191,3 +191,27 @@ func TestASaveOnARouterWithoutMDNSRepeatNamesNoneOfIt(t *testing.T) {
 		t.Errorf("a cleared box left mdns-repeat-ifaces set: %s", got)
 	}
 }
+
+// TestTheServerFieldsOfferThePublicResolvers. Each suggestion carries its
+// provider's name, and the list is a suggestion rather than a select: a server
+// that is not in it is still accepted.
+func TestTheServerFieldsOfferThePublicResolvers(t *testing.T) {
+	for _, c := range []struct {
+		res   *Resource
+		field string
+	}{{DNSSettings, "servers"}, {DNSSettings, "useDohServer"}, {DNSForwarder, "dnsServers"}, {DNSForwarder, "dohServers"}} {
+		f := c.res.FieldByName(c.field)
+		if f == nil || f.OptionsFrom == nil || !f.OptionsFrom.Suggest || len(f.OptionsFrom.Values) == 0 {
+			t.Errorf("%s.%s offers no public resolvers", c.res.Key, c.field)
+			continue
+		}
+		for _, v := range f.OptionsFrom.Values {
+			if f.OptionsFrom.Labels[v] == "" {
+				t.Errorf("%s.%s offers %s without its provider's name", c.res.Key, c.field, v)
+			}
+		}
+	}
+	if _, errs := DNSSettings.Validate(map[string]string{"servers": "198.51.100.53,198.51.100.54"}, true); len(errs) > 0 {
+		t.Errorf("a server not in the suggestions was refused: %v", errs)
+	}
+}

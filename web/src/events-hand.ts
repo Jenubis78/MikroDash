@@ -66,6 +66,8 @@ export interface ResSchemaField {
   negatable: boolean;
   /** The router's list is offered under a text box rather than as a select. */
   suggest: boolean;
+  /** The name shown beside a suggested value: a public resolver's provider. */
+  suggestLabels: Record<string, string>;
 }
 
 /**

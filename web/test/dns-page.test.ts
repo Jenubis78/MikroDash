@@ -19,7 +19,8 @@ const ROOT = process.env.MIKRODASH_ROOT || path.join(__dirname, '..', '..');
 
 const ENTRY = path.join(ROOT, 'testdata', '.dnspage-entry.ts');
 fs.writeFileSync(ENTRY, "export { initDnsPage } from '../web/src/pages/dns.js';\n" +
-  "export { buildRows } from '../web/src/pages/dns-fleet.js';\n");
+  "export { buildRows } from '../web/src/pages/dns-fleet.js';\n" +
+  "export { heldElsewhere } from '../web/src/pages/dns-fleet.js';\n");
 const OUT = path.join(ROOT, 'testdata', '.dnspage.cjs');
 execFileSync(path.join(ROOT, 'web', 'node_modules', '.bin', 'esbuild'),
   [ENTRY, '--bundle', '--format=cjs', '--platform=node', '--outfile=' + OUT, '--log-level=warning'],
@@ -128,6 +129,31 @@ function boot() {
     'a file adlist carries no identity, or a disabled one is not marked:\n' + ads);
   assert.strictEqual((heads.match(/th-sort/g) || []).length, 10, 'a column of the two tables does not sort:\n' + heads);
   say('ok  forwarders and adlists render where the router has them, and only there');
+}
+
+// ── 3. the Add dialog says which compared routers already hold the record
+{
+  const { heldElsewhere } = require(OUT);
+  const fwd = (name, forwardTo) => ({ name, regexp: '', type: 'FWD', values: { name, type: 'FWD', forwardTo } });
+  const routers = [
+    { id: 'here', label: 'here', ok: true, error: '', entries: [fwd('example.com', 'zfwdentry')] },
+    { id: 'b', label: 'b', ok: true, error: '', entries: [fwd('Example.com', 'zfwdentry')] },
+    { id: 'c', label: 'c', ok: true, error: '', entries: [fwd('example.com', 'yandex')] },
+    { id: 'd', label: 'd', ok: true, error: '', entries: [fwd('other.com', 'zfwdentry')] },
+    { id: 'e', label: 'e', ok: false, error: 'unreachable', entries: [] },
+  ];
+  const held = heldElsewhere(routers, 'here', { name: 'example.com', regexp: '', type: 'FWD', value: 'zfwdentry' });
+  assert.deepStrictEqual(held, { same: ['b'], differ: ['c'] },
+    'the record is on b, on c with another forwarder, and nowhere else: ' + JSON.stringify(held));
+  assert.deepStrictEqual(heldElsewhere(routers, 'here', { name: '', regexp: '', type: 'FWD', value: '' }),
+    { same: [], differ: [] }, 'an empty form matched records');
+  const txt = (id, text) => ({ id, label: id, ok: true, error: '',
+    entries: [{ name: 'v.example', regexp: '', type: 'TXT', values: { text } }] });
+  assert.deepStrictEqual(
+    heldElsewhere([txt('x', 'Token-AbC'), txt('y', 'token-abc')], 'here',
+      { name: 'v.example', regexp: '', type: 'TXT', value: 'Token-AbC' }),
+    { same: ['x'], differ: ['y'] }, 'a TXT value in another case is the same value');
+  say('ok  the dialog names the routers that already hold the record, and those with another value');
 }
 
 // ── the comparison lines a name up without case, and a round-robin pair by value
