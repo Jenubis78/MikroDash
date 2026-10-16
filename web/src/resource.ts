@@ -340,6 +340,20 @@ function countTabs(schema: Schema): void {
   });
 }
 
+/**
+ * What a field shows when the form opens: the row's value on Edit, and on Add
+ * RouterOS's own default.
+ *
+ * A checkbox with nothing to read is unticked, and an unticked box is SENT as
+ * `no`: a new DHCP server went out with `conflict-detection=no` and a new adlist
+ * with `ssl-verify=no`, both defaulting to yes on the router. A display field
+ * shows a row's state, and a new row has none.
+ */
+export function initialValue(f: SchemaField, values: Record<string, unknown> | null): unknown {
+  if (values) return values[f.name];
+  return f.default && !f.display ? f.default : undefined;
+}
+
 /** How a field renders differs between Add and Edit; `values` says which. */
 function decorate(f: SchemaField, values: Record<string, unknown> | null): SchemaField {
   if (values) return f.createOnly ? { ...f, display: true } : f;
@@ -359,7 +373,7 @@ function buildForm(schema: Schema, values: Record<string, unknown> | null,
   // server refuses it either way - this is the label agreeing with the refusal
   // rather than the operator finding out on save.
   const draw = (f: SchemaField): string => fieldHtml(decorate(f, values),
-    values ? values[f.name] : undefined, options ? options[f.name] : undefined);
+    initialValue(f, values), options ? options[f.name] : undefined);
   const tabs = formTabs(schema.fields, values !== null);
   host.innerHTML = tabs.length
     ? '<div class="modal-tabs" id="res_tabs"><div class="stab-bar" role="tablist">' +

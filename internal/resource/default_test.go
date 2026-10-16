@@ -20,3 +20,21 @@ func TestAnOmittedPropertyReadsAsItsDocumentedDefault(t *testing.T) {
 		t.Errorf("a reported conflict-detection=false reads %v; the router's word must win", got)
 	}
 }
+
+// THE FORM IS TOLD THE DEFAULT. An Add form has no row to read it from, so
+// Describe carries it; without it a checkbox opened unticked and a new DHCP
+// server went out with `conflict-detection=no`. The browser half, that an Add
+// starts from it, is web/test/resource-add-defaults.test.ts.
+func TestTheSchemaCarriesEachFieldsDefault(t *testing.T) {
+	got := map[string]any{}
+	for _, f := range DHCPServer.Describe()["fields"].([]map[string]any) {
+		got[f["name"].(string)] = f["default"]
+	}
+	if got["conflictDetection"] != "yes" || got["addArp"] != "no" {
+		t.Errorf("schema defaults conflictDetection=%v addArp=%v, want yes and no",
+			got["conflictDetection"], got["addArp"])
+	}
+	if got["comment"] != "" {
+		t.Errorf("a field with no default sends %v, want empty", got["comment"])
+	}
+}

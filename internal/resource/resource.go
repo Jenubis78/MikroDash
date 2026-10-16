@@ -943,6 +943,7 @@ func (r *Resource) Describe() map[string]any {
 			"help": f.Help, "showIf": showIf, "min": minv, "max": maxv, "display": f.Display,
 			"createOnly": f.CreateOnly, "tab": f.Tab, "negatable": f.Negatable,
 			"suggest": f.OptionsFrom != nil && f.OptionsFrom.Suggest, "suggestLabels": labels,
+			"default": f.Default,
 		})
 	}
 	actions := make([]map[string]any, 0, len(r.Actions))

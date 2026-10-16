@@ -68,6 +68,8 @@ export interface ResSchemaField {
   suggest: boolean;
   /** The name shown beside a suggested value: a public resolver's provider. */
   suggestLabels: Record<string, string>;
+  /** What RouterOS holds when the property is not set; an Add form starts from it. */
+  default: string;
 }
 
 /**
