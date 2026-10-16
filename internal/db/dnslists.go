@@ -21,12 +21,13 @@ type DNSList struct {
 	LastSyncAt     int64    `json:"lastSyncAt"`
 	LastResult     string   `json:"lastResult"`
 	LastCount      int      `json:"lastCount"`
+	Dropped        []string `json:"dropped"`
 }
 
 // DNSLists is every list, by name.
 func (d *DB) DNSLists() ([]DNSList, error) {
 	rows, err := d.sql.Query(`SELECT id, name, source_url, domains, address_list, forward_to,
-	        match_subdomain, router_ids, interval_hours, last_sync_at, last_result, last_count
+	        match_subdomain, router_ids, interval_hours, last_sync_at, last_result, last_count, dropped_routers
 	   FROM dns_lists ORDER BY name`)
 	if err != nil {
 		return nil, err
@@ -35,13 +36,17 @@ func (d *DB) DNSLists() ([]DNSList, error) {
 	out := []DNSList{}
 	for rows.Next() {
 		var l DNSList
-		var routers string
+		var routers, dropped string
 		if err := rows.Scan(&l.ID, &l.Name, &l.SourceURL, &l.Domains, &l.AddressList, &l.ForwardTo,
-			&l.MatchSubdomain, &routers, &l.IntervalHours, &l.LastSyncAt, &l.LastResult, &l.LastCount); err != nil {
+			&l.MatchSubdomain, &routers, &l.IntervalHours, &l.LastSyncAt, &l.LastResult, &l.LastCount,
+			&dropped); err != nil {
 			return nil, err
 		}
 		if json.Unmarshal([]byte(routers), &l.RouterIDs) != nil || l.RouterIDs == nil {
 			l.RouterIDs = []string{}
+		}
+		if json.Unmarshal([]byte(dropped), &l.Dropped) != nil || l.Dropped == nil {
+			l.Dropped = []string{}
 		}
 		out = append(out, l)
 	}
@@ -52,20 +57,22 @@ func (d *DB) DNSLists() ([]DNSList, error) {
 // sync record alone, and returns the id.
 func (d *DB) SaveDNSList(l DNSList) (int64, error) {
 	routers, _ := json.Marshal(l.RouterIDs)
+	dropped, _ := json.Marshal(append([]string{}, l.Dropped...))
 	if l.ID == 0 {
 		res, err := d.sql.Exec(`INSERT INTO dns_lists (name, source_url, domains, address_list, forward_to,
-		        match_subdomain, router_ids, interval_hours) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		        match_subdomain, router_ids, interval_hours, dropped_routers) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			l.Name, l.SourceURL, l.Domains, l.AddressList, l.ForwardTo, l.MatchSubdomain,
-			string(routers), l.IntervalHours)
+			string(routers), l.IntervalHours, string(dropped))
 		if err != nil {
 			return 0, err
 		}
 		return res.LastInsertId()
 	}
 	res, err := d.sql.Exec(`UPDATE dns_lists SET name = ?, source_url = ?, domains = ?, address_list = ?,
-	        forward_to = ?, match_subdomain = ?, router_ids = ?, interval_hours = ? WHERE id = ?`,
+	        forward_to = ?, match_subdomain = ?, router_ids = ?, interval_hours = ?, dropped_routers = ?
+	   WHERE id = ?`,
 		l.Name, l.SourceURL, l.Domains, l.AddressList, l.ForwardTo, l.MatchSubdomain,
-		string(routers), l.IntervalHours, l.ID)
+		string(routers), l.IntervalHours, string(dropped), l.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -73,6 +80,14 @@ func (d *DB) SaveDNSList(l DNSList) (int64, error) {
 		return 0, sql.ErrNoRows
 	}
 	return l.ID, nil
+}
+
+// SetDNSListDropped records the routers a list was taken off whose entries are
+// still to be removed.
+func (d *DB) SetDNSListDropped(id int64, routers []string) error {
+	b, _ := json.Marshal(append([]string{}, routers...))
+	_, err := d.sql.Exec(`UPDATE dns_lists SET dropped_routers = ? WHERE id = ?`, string(b), id)
+	return err
 }
 
 // DeleteDNSList forgets a list. The entries it made stay on the routers.

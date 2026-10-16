@@ -429,6 +429,10 @@ func (s *Server) dnsListSave(w http.ResponseWriter, r *http.Request) {
 		l.RouterIDs = append(l.RouterIDs, t.ID)
 	}
 	was, existed := s.dnsListByID(l.ID)
+	l.Dropped = []string{}
+	if existed {
+		l.Dropped = pendingAfterSave(was, l.RouterIDs)
+	}
 	id, err := s.auditDB.SaveDNSList(l)
 	if err != nil {
 		writeJSONErr(w, http.StatusBadRequest, "the list could not be saved; is the name taken?")
@@ -437,22 +441,15 @@ func (s *Server) dnsListSave(w http.ResponseWriter, r *http.Request) {
 	rec := s.httpRecorder(r, sess)
 	rec.Record(audit.Event{Action: "dnsList.save", TargetType: "dnsList",
 		TargetID: strconv.FormatInt(id, 10), TargetName: l.Name})
-	dropped := []string{}
-	if existed {
-		for _, rid := range was.RouterIDs {
-			if !slices.Contains(l.RouterIDs, rid) {
-				dropped = append(dropped, rid)
-			}
-		}
-	}
 	purging := false
-	if len(dropped) > 0 {
+	if len(l.Dropped) > 0 {
 		// Nothing visits a router that is no longer on the list, so the entries
-		// it made there go now, as a forgotten list's do.
+		// it made there go now; one that cannot be reached stays pending, and
+		// each sync tries it again.
 		l.ID = id
-		purging = s.startListSync(s.features.ctx, l, sess.Username, rec, listSyncOpts{purge: true, only: dropped})
+		purging = s.startListSync(s.features.ctx, l, sess.Username, rec, listSyncOpts{pending: true})
 	}
-	writeJSON(w, map[string]any{"ok": true, "id": id, "dropped": len(dropped), "purging": purging})
+	writeJSON(w, map[string]any{"ok": true, "id": id, "dropped": len(l.Dropped), "purging": purging})
 }
 
 func httpURL(raw string) bool {
@@ -509,15 +506,20 @@ func (s *Server) dnsListByID(id int64) (db.DNSList, bool) {
 }
 
 // planDNSListFleet plans every enabled router the list names for these domains.
-// A router that is disabled or gone is left out of a sync, which visits it when
-// it is back; a purge, whose point is that nothing is left behind, reports it as
-// a plan that failed.
+// A disabled router is left out of a sync, which visits it when it is enabled;
+// a purge, whose point is that nothing is left behind, reports it as a plan that
+// failed. A router that is no longer in MikroDash has nothing left to clean and
+// is left out of both.
 func (s *Server) planDNSListFleet(ctx context.Context, l db.DNSList, domains []string, purge bool) []DNSListPlan {
 	labels := map[string]string{}
+	disabled := map[string]string{}
 	if all, _ := s.store.Routers(); all != nil {
 		for _, r := range all {
-			if !r.Disabled {
-				labels[r.ID] = firstNonEmpty(r.Label, firstNonEmpty(r.Host, r.ID))
+			label := firstNonEmpty(r.Label, firstNonEmpty(r.Host, r.ID))
+			if r.Disabled {
+				disabled[r.ID] = label
+			} else {
+				labels[r.ID] = label
 			}
 		}
 	}
@@ -527,8 +529,8 @@ func (s *Server) planDNSListFleet(ctx context.Context, l db.DNSList, domains []s
 		switch {
 		case labels[id] != "":
 			targets = append(targets, fleetTarget{ID: id, Label: labels[id]})
-		case purge:
-			unavailable = append(unavailable, DNSListPlan{RouterID: id, Label: id, Error: "disabled or removed"})
+		case purge && disabled[id] != "":
+			unavailable = append(unavailable, DNSListPlan{RouterID: id, Label: disabled[id], Error: "disabled"})
 		}
 	}
 	return append(unavailable, fleetEach(ctx, targets, func(ctx context.Context, t fleetTarget) DNSListPlan {
@@ -593,12 +595,9 @@ func (s *Server) dnsListSync(w http.ResponseWriter, r *http.Request) {
 // listSyncOpts says how a sync differs from the usual one. `force` accepts a
 // fetch that shrank, and only an administrator's own Sync passes it. `purge`
 // holds no domains at all, so every entry the list made goes, and forgets the
-// list once every router has done it. `only` narrows a purge to those routers
-// and keeps the list: the ones a save took off it.
-type listSyncOpts struct {
-	force, purge bool
-	only         []string
-}
+// list once every router has done it. `pending` runs only the removal of the
+// entries on the routers a save took off the list, and keeps the list.
+type listSyncOpts struct{ force, purge, pending bool }
 
 // startListSync runs one list's sync in the background and records how it
 // went on the list. False when it is already running.
@@ -612,9 +611,6 @@ func (s *Server) startListSync(ctx context.Context, l db.DNSList, user string, r
 	s.features.listsRunning[l.ID] = true
 	s.features.mu.Unlock()
 
-	if opts.only != nil {
-		l.RouterIDs = opts.only
-	}
 	go func() {
 		defer func() {
 			s.features.mu.Lock()
@@ -624,51 +620,129 @@ func (s *Server) startListSync(ctx context.Context, l db.DNSList, user string, r
 		mark := func(result string, count int) {
 			_ = s.auditDB.MarkDNSListSynced(l.ID, time.Now().UnixMilli(), result, count)
 		}
-		var domains []string
-		if !opts.purge {
-			var err error
-			if domains, err = listDomains(ctx, l); err != nil {
-				mark("failed: "+safe.Message(err.Error()), -1)
-				return
+		if opts.purge {
+			still, lines := s.purgeRouters(ctx, l, unionIDs(l.RouterIDs, l.Dropped), user, rec)
+			s.finishForget(l, still, lines)
+			return
+		}
+		leftover := s.settleDropped(ctx, l, user, rec)
+		if opts.pending {
+			if leftover != "" {
+				mark(leftover, -1)
 			}
-			if why := ListShrank(len(domains), l.LastCount); why != "" && (!opts.force || len(domains) == 0) {
-				mark("refused: "+why, -1)
-				return
-			}
+			return
+		}
+		if leftover != "" {
+			leftover = " · " + leftover
+		}
+		domains, err := listDomains(ctx, l)
+		if err != nil {
+			mark("failed: "+safe.Message(err.Error())+leftover, -1)
+			return
+		}
+		if why := ListShrank(len(domains), l.LastCount); why != "" && (!opts.force || len(domains) == 0) {
+			mark("refused: "+why+leftover, -1)
+			return
 		}
 		var lines []string
-		clean := true
-		for _, p := range s.planDNSListFleet(ctx, l, domains, opts.purge) {
+		for _, p := range s.planDNSListFleet(ctx, l, domains, false) {
 			if p.Error != "" {
 				lines = append(lines, p.Label+": "+p.Error)
-				clean = false
 				continue
 			}
 			if p.Add+p.Change+p.Remove == 0 {
 				lines = append(lines, p.Label+": in step")
 				continue
 			}
-			text, ok := s.runListJob(ctx, user, p, rec)
+			text, _ := s.runListJob(ctx, user, p, rec)
 			lines = append(lines, p.Label+": "+text)
-			clean = clean && ok
 		}
-		if opts.purge && opts.only != nil {
-			if !clean {
-				mark("entries are still on a router taken off the list: "+strings.Join(lines, " · "), -1)
-			}
-			return
-		}
-		if opts.purge && clean {
-			_ = s.auditDB.DeleteDNSList(l.ID)
-			return
-		}
-		if opts.purge {
-			mark("not forgotten, its entries are still on a router: "+strings.Join(lines, " · "), -1)
-			return
-		}
-		mark(strings.Join(lines, " · "), len(domains))
+		mark(strings.Join(lines, " · ")+leftover, len(domains))
 	}()
 	return true
+}
+
+// purgeRouters removes every entry the list made from these routers and says
+// which of them still hold some: one that is disabled, unreachable, or whose
+// removal failed. A router that is no longer in MikroDash has nothing to clean.
+func (s *Server) purgeRouters(ctx context.Context, l db.DNSList, ids []string, user string,
+	rec *audit.Recorder) (still, lines []string) {
+
+	l.RouterIDs = ids
+	for _, p := range s.planDNSListFleet(ctx, l, nil, true) {
+		if p.Error != "" {
+			lines = append(lines, p.Label+": "+p.Error)
+			still = append(still, p.RouterID)
+			continue
+		}
+		if p.Add+p.Change+p.Remove == 0 {
+			continue
+		}
+		text, ok := s.runListJob(ctx, user, p, rec)
+		lines = append(lines, p.Label+": "+text)
+		if !ok {
+			still = append(still, p.RouterID)
+		}
+	}
+	return still, lines
+}
+
+// settleDropped retries the removal of the entries on the routers a save took
+// off the list, and keeps the ones that are not clean for the next sync. It
+// returns what is left to say, or "".
+func (s *Server) settleDropped(ctx context.Context, l db.DNSList, user string, rec *audit.Recorder) string {
+	if len(l.Dropped) == 0 {
+		return ""
+	}
+	still, lines := s.purgeRouters(ctx, l, l.Dropped, user, rec)
+	unclean := len(still) > 0
+	// A save while this ran may have added routers the list in hand does not know.
+	if now, ok := s.dnsListByID(l.ID); ok {
+		for _, id := range now.Dropped {
+			if !slices.Contains(l.Dropped, id) {
+				still = append(still, id)
+			}
+		}
+	}
+	_ = s.auditDB.SetDNSListDropped(l.ID, still)
+	if !unclean {
+		return ""
+	}
+	return "entries are still on a router taken off the list: " + strings.Join(lines, " · ")
+}
+
+// finishForget drops a list once none of its routers holds an entry of it, and
+// otherwise keeps it with what is left.
+func (s *Server) finishForget(l db.DNSList, still, lines []string) {
+	if len(still) == 0 {
+		_ = s.auditDB.DeleteDNSList(l.ID)
+		return
+	}
+	_ = s.auditDB.MarkDNSListSynced(l.ID, time.Now().UnixMilli(),
+		"not forgotten, its entries are still on a router: "+strings.Join(lines, " · "), -1)
+}
+
+// pendingAfterSave is the routers whose entries are still to be removed once a
+// list is saved with these routers: the ones it had, or was waiting on, and no
+// longer names.
+func pendingAfterSave(was db.DNSList, now []string) []string {
+	out := []string{}
+	for _, id := range unionIDs(was.Dropped, was.RouterIDs) {
+		if !slices.Contains(now, id) {
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+func unionIDs(a, b []string) []string {
+	out := append([]string{}, a...)
+	for _, id := range b {
+		if !slices.Contains(out, id) {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 // runListJob runs one router's share of a list's sync to the end and says how

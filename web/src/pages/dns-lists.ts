@@ -176,7 +176,7 @@ export function initDnsLists(): void {
         const f = el('dnsListForm');
         if (f) { f.style.display = 'none'; f.innerHTML = ''; }
         note(!d.dropped ? 'saved' : d.purging ? 'saved; removing its entries from the ' + d.dropped + ' router(s) taken off'
-          : 'saved, but its entries on the ' + d.dropped + ' router(s) taken off stay: the list is being synced');
+          : 'saved; its entries on the ' + d.dropped + ' router(s) taken off are removed by the next sync');
         load();
       })
       .catch((e: Error) => note('not saved: ' + e.message));

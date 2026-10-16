@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -182,18 +183,88 @@ func TestForgettingAListRemovesOnlyWhatItMade(t *testing.T) {
 	}
 }
 
-// TestAPurgeReportsARouterItCannotReach. A sync leaves out a router that is
-// disabled or gone, and visits it when it is back; a purge, which forgets or
-// narrows a list, reports it as not clean, so nothing is dropped while its
-// entries are still there.
-func TestAPurgeReportsARouterItCannotReach(t *testing.T) {
-	s := gateServer(t, `{}`, "")
-	l := db.DNSList{ID: 4, Name: "vpn", AddressList: "to_vpn", RouterIDs: []string{"gone"}}
+const listsDDL = `CREATE TABLE dns_lists (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE,
+  source_url TEXT NOT NULL DEFAULT '', domains TEXT NOT NULL DEFAULT '', address_list TEXT NOT NULL DEFAULT '',
+  forward_to TEXT NOT NULL DEFAULT '', match_subdomain INTEGER NOT NULL DEFAULT 1,
+  router_ids TEXT NOT NULL DEFAULT '[]', interval_hours INTEGER NOT NULL DEFAULT 0,
+  last_sync_at INTEGER NOT NULL DEFAULT 0, last_result TEXT NOT NULL DEFAULT '',
+  last_count INTEGER NOT NULL DEFAULT 0, dropped_routers TEXT NOT NULL DEFAULT '[]');`
+
+const listRouters = `[{"id":"r-off","label":"Off","host":"h1","disabled":true},{"id":"r-on","label":"On","host":"h2"}]`
+
+// TestAPurgeBlocksOnADisabledRouterAndNotOnAGoneOne. A sync leaves a disabled
+// router out and visits it when it is enabled. A purge, whose point is that no
+// entry is left behind, reports a disabled router as failed, and counts one
+// that MikroDash no longer has as done: there is nothing left to clean.
+func TestAPurgeBlocksOnADisabledRouterAndNotOnAGoneOne(t *testing.T) {
+	s := gateServerWith(t, `{}`, "", listRouters)
+	l := db.DNSList{ID: 4, Name: "vpn", AddressList: "to_vpn", RouterIDs: []string{"r-off", "gone"}}
 	if got := s.planDNSListFleet(context.Background(), l, []string{"a.example"}, false); len(got) != 0 {
-		t.Errorf("a sync planned %+v for a router that is gone", got)
+		t.Errorf("a sync planned %+v for a disabled and a gone router", got)
 	}
 	got := s.planDNSListFleet(context.Background(), l, nil, true)
-	if len(got) != 1 || got[0].RouterID != "gone" || got[0].Error == "" {
-		t.Errorf("a purge planned %+v; want the router reported with an error", got)
+	if len(got) != 1 || got[0].RouterID != "r-off" || got[0].Error == "" {
+		t.Errorf("a purge planned %+v; want only the disabled router, with an error", got)
+	}
+}
+
+// TestTheRoutersASaveDropsStayPendingUntilClean. The routers a save takes off a
+// list are kept with it until their entries are confirmed removed, and a
+// narrowed purge never forgets the list, however clean it is.
+func TestTheRoutersASaveDropsStayPendingUntilClean(t *testing.T) {
+	s := gateServerWith(t, `{}`, listsDDL, listRouters)
+	id, err := s.auditDB.SaveDNSList(db.DNSList{Name: "vpn", AddressList: "to_vpn", Domains: "a.example",
+		RouterIDs: []string{"r-on"}, Dropped: []string{"gone"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	l, _ := s.dnsListByID(id)
+	if got := s.settleDropped(context.Background(), l, "someone", nil); got != "" {
+		t.Errorf("a gone router left %q behind", got)
+	}
+	l, ok := s.dnsListByID(id)
+	if !ok || len(l.Dropped) != 0 {
+		t.Fatalf("list %v, kept %v; want it kept with nothing pending", l.Dropped, ok)
+	}
+
+	l.Dropped = []string{"r-off"}
+	if got := s.settleDropped(context.Background(), l, "someone", nil); got == "" {
+		t.Error("a disabled router was counted clean")
+	}
+	if l, _ = s.dnsListByID(id); !slices.Equal(l.Dropped, []string{"r-off"}) {
+		t.Errorf("pending = %v after a failed purge, want r-off kept for the next sync", l.Dropped)
+	}
+}
+
+// TestForgettingAListNeedsEveryRouterClean.
+func TestForgettingAListNeedsEveryRouterClean(t *testing.T) {
+	s := gateServerWith(t, `{}`, listsDDL, listRouters)
+	id, err := s.auditDB.SaveDNSList(db.DNSList{Name: "vpn", AddressList: "to_vpn", Domains: "a.example",
+		RouterIDs: []string{"gone"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	l, _ := s.dnsListByID(id)
+	s.finishForget(l, []string{"r-off"}, []string{"Off: disabled"})
+	if l, ok := s.dnsListByID(id); !ok || !strings.Contains(l.LastResult, "not forgotten") {
+		t.Errorf("list kept %v with result %q after an unclean purge", ok, l.LastResult)
+	}
+	s.finishForget(l, nil, nil)
+	if _, ok := s.dnsListByID(id); ok {
+		t.Error("a clean purge left the list")
+	}
+}
+
+// TestASaveKeepsWhatIsStillPending.
+func TestASaveKeepsWhatIsStillPending(t *testing.T) {
+	was := db.DNSList{RouterIDs: []string{"a", "b"}, Dropped: []string{"c"}}
+	if got := pendingAfterSave(was, []string{"a"}); !slices.Equal(got, []string{"c", "b"}) {
+		t.Errorf("pending = %v, want c kept and b added", got)
+	}
+	if got := pendingAfterSave(was, []string{"a", "b", "c"}); len(got) != 0 {
+		t.Errorf("pending = %v; a router put back on the list is not pending", got)
+	}
+	if got := pendingAfterSave(db.DNSList{}, []string{"a"}); got == nil || len(got) != 0 {
+		t.Errorf("pending = %#v for a new list, want an empty slice", got)
 	}
 }
