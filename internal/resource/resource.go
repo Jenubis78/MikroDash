@@ -97,6 +97,19 @@ type OptionsFrom struct {
 	// select: the value may also be something the list does not hold. A FWD
 	// entry forwards to a named forwarder or to any address.
 	Suggest bool
+	// Labels names some of Values in the suggestions: the provider a public
+	// resolver's addresses belong to.
+	Labels map[string]string
+}
+
+// namedSuggestions is a suggestion list of fixed values, each with its name.
+func namedSuggestions(pairs ...[2]string) *OptionsFrom {
+	o := &OptionsFrom{Suggest: true, Labels: map[string]string{}}
+	for _, p := range pairs {
+		o.Values = append(o.Values, p[1])
+		o.Labels[p[1]] = p[0]
+	}
+	return o
 }
 
 // ShowIf makes a field conditional on another's value.
@@ -916,6 +929,10 @@ func (r *Resource) Describe() map[string]any {
 		if f.Min != nil {
 			minv = *f.Min
 		}
+		labels := map[string]string{}
+		if f.OptionsFrom != nil && f.OptionsFrom.Labels != nil {
+			labels = f.OptionsFrom.Labels
+		}
 		if f.Max != nil {
 			maxv = *f.Max
 		}
@@ -925,7 +942,7 @@ func (r *Resource) Describe() map[string]any {
 			"options": opts, "placeholder": f.Placeholder,
 			"help": f.Help, "showIf": showIf, "min": minv, "max": maxv, "display": f.Display,
 			"createOnly": f.CreateOnly, "tab": f.Tab, "negatable": f.Negatable,
-			"suggest": f.OptionsFrom != nil && f.OptionsFrom.Suggest,
+			"suggest": f.OptionsFrom != nil && f.OptionsFrom.Suggest, "suggestLabels": labels,
 		})
 	}
 	actions := make([]map[string]any, 0, len(r.Actions))
@@ -1042,11 +1059,11 @@ var DNSForwarder = &Resource{
 		{Name: "name", ROS: "name", Label: "Name", Type: TypeText, Required: true, Placeholder: "corp",
 			Help: "What a FWD entry writes in Forward To."},
 		{Name: "dnsServers", ROS: "dns-servers", Label: "DNS Servers", Type: TypeText, Clearable: true,
-			Placeholder: "198.51.100.53,198.51.100.54",
-			Help:        "Addresses or host names, comma separated. Queries go to these and the DoH servers in turn, one each."},
+			OptionsFrom: publicDNS, Placeholder: "198.51.100.53,198.51.100.54",
+			Help: "Addresses or host names, comma separated. Queries go to these and the DoH servers in turn, one each."},
 		{Name: "dohServers", ROS: "doh-servers", Label: "DoH Servers", Type: TypeText, Clearable: true,
-			Placeholder: "https://dns.example/dns-query",
-			Help:        "DNS over HTTPS URLs, comma separated. Their host names resolve through the resolver's own servers."},
+			OptionsFrom: publicDoH, Placeholder: "https://dns.example/dns-query",
+			Help: "DNS over HTTPS URLs, comma separated. Their host names resolve through the resolver's own servers."},
 		{Name: "verifyDohCert", ROS: "verify-doh-cert", Label: "Verify DoH Certificate", Type: TypeBool,
 			Clearable: true, Default: "yes"},
 		{Name: "comment", ROS: "comment", Label: "Comment", Type: TypeText, Clearable: true},
@@ -1393,6 +1410,28 @@ var Certificate = &Resource{
 	},
 }
 
+// publicDNS and publicDoH are the public resolvers most often typed into a
+// resolver's server fields, offered by name under the text box. Plain DNS is
+// RouterOS's comma list of the provider's two IPv4 addresses, DoH its URL.
+var (
+	publicDNS = namedSuggestions(
+		[2]string{"Cloudflare", "1.1.1.1,1.0.0.1"},
+		[2]string{"Google", "8.8.8.8,8.8.4.4"},
+		[2]string{"Quad9", "9.9.9.9,149.112.112.112"},
+		[2]string{"AdGuard", "94.140.14.14,94.140.15.15"},
+		[2]string{"OpenDNS", "208.67.222.222,208.67.220.220"},
+		[2]string{"Yandex", "77.88.8.8,77.88.8.1"},
+	)
+	publicDoH = namedSuggestions(
+		[2]string{"Cloudflare", "https://cloudflare-dns.com/dns-query"},
+		[2]string{"Google", "https://dns.google/dns-query"},
+		[2]string{"Quad9", "https://dns.quad9.net/dns-query"},
+		[2]string{"AdGuard", "https://dns.adguard-dns.com/dns-query"},
+		[2]string{"OpenDNS", "https://doh.opendns.com/dns-query"},
+		[2]string{"Yandex", "https://common.dot.dns.yandex.net/dns-query"},
+	)
+)
+
 // DNSSettings is /ip/dns: the router's own resolver (MikroMCP parity,
 // 2026-09-21). The DNS page showed these read-only from its collector; this
 // makes them editable there and gives the assistant list_ and change_row.
@@ -1413,7 +1452,7 @@ var DNSSettings = &Resource{
 	},
 	Fields: []Field{
 		{Name: "servers", ROS: "servers", Label: "Servers", Type: TypeText, Clearable: true, Tab: "General",
-			Placeholder: "1.1.1.1,9.9.9.9", Help: "Upstream resolvers, comma separated."},
+			OptionsFrom: publicDNS, Placeholder: "1.1.1.1,9.9.9.9", Help: "Upstream resolvers, comma separated."},
 		{Name: "dynamicServers", ROS: "dynamic-servers", Label: "Dynamic Servers", Type: TypeText,
 			Display: true, Tab: "General"},
 		{Name: "allowRemoteRequests", ROS: "allow-remote-requests", Label: "Allow Remote Requests",
@@ -1428,8 +1467,9 @@ var DNSSettings = &Resource{
 			Type: TypeText, Placeholder: "0s", Tab: "General",
 			Help: "How long an address a static entry put on an address list outlives the answer's TTL."},
 		{Name: "useDohServer", ROS: "use-doh-server", Label: "DoH Server", Type: TypeText, Clearable: true, Tab: "DoH",
-			Placeholder: "https://cloudflare-dns.com/dns-query",
-			Help:        "DNS over HTTPS. Empty uses plain DNS. There is no fallback to plain DNS while it is set."},
+			OptionsFrom: publicDoH, Placeholder: "https://cloudflare-dns.com/dns-query",
+			Help: "DNS over HTTPS. Empty uses plain DNS. There is no fallback to plain DNS while it is set; " +
+				"its host name is looked up through Servers, or a static entry for it."},
 		{Name: "verifyDohCert", ROS: "verify-doh-cert", Label: "Verify DoH Certificate", Type: TypeBool,
 			Clearable: true, Tab: "DoH"},
 		{Name: "dohMaxServerConnections", ROS: "doh-max-server-connections", Label: "Max Server Connections",
