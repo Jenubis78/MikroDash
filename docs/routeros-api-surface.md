@@ -450,14 +450,20 @@ RouterOS 7.24.4 on the lab CHR, 2026-09-22. What the call-home script depends on
 
 Added by hand, and kept out of the counts above, like the sections before it.
 Each command runs only while its feature is switched on, and only when somebody
-asks. Paths are from the RouterOS manual's CLI reference (v7.26). The trace reads
+asks or a domain list's interval comes round. Every write command a job sends
+spends one of the user's twenty job writes a minute on that router, apart from
+the thirty a minute the forms have (#97), and a job that runs out waits for the
+next minute. Paths are from the RouterOS manual's CLI reference (v7.26). The trace reads
 the address list, mangle and route menus only for a viewer granted the Address
 Lists, Firewall and Routing pages on that router, and follows IPv4 only.
 
 | Command | Proplist or arguments | Used by |
 |---|---|---|
+| `/ip/dns/static/set` | `=.id=*1,*2,...` (up to 100) and the changed properties | bulk edit, fleet sync, domain lists (`internal/server/dnsbulk_api.go`) |
+| `/ip/dns/static/remove` | `=.id=*1,*2,...` (up to 100) | the same |
+| `/ip/dns/static/add` | one entry a command | the same |
 | `/ip/dns/cache/print` | `=.proplist=name,type,data,ttl`, and `?name=<name>` for a trace | cache browser (administrators), route trace (`internal/server/dnstools_api.go`) |
-| `/ip/dns/static/print` | the dnsStatic resource's fields | route trace |
+| `/ip/dns/static/print` | the dnsStatic resource's fields | route trace; before a bulk job, a fleet sync (`dnsfleetsync_api.go`) or a domain list's sync (`dnslists_api.go`), and once after a job to confirm it |
 | `/ip/firewall/address-list/print` | `=.proplist=.id,list,address,timeout,dynamic,disabled,comment` `?list=<list>` `?address=<addr>` | route trace |
 | `/ip/firewall/mangle/print` | `=.proplist=.id,chain,action,dst-address-list,new-routing-mark,passthrough,packets,bytes,disabled,comment` `?dst-address-list=<list>` | route trace |
 | `/ip/route/print` | `=.proplist=.id,dst-address,gateway,distance,active,disabled,routing-table` `?routing-table=<mark>` | route trace |

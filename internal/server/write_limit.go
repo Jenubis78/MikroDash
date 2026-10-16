@@ -18,6 +18,13 @@ import (
 // low enough that a script cannot hammer a router.
 const routerWritesPerMinute = 30
 
+// jobWritesPerMinute bounds how fast a bulk job may change one router for one
+// user. A job is a long run of writes, and drawing them from the allowance above
+// would refuse every form save the same user makes on that router for as long as
+// it ran, an hour or more for a list of thousands. So a job has its own, lower,
+// allowance, and the most a router can be asked for is the two together.
+const jobWritesPerMinute = 20
+
 var errWriteRateLimited = errors.New("too many changes to this router in the last minute; wait a moment and try again")
 
 // writeLimitKey is one user on one router. Per user rather than per socket, so a
@@ -67,4 +74,8 @@ func (cn *conn) inWriteQueueOn(sc connScope, fn func() error) error {
 
 func newWriteLimiter() *rateLimiter {
 	return newRateLimiter(routerWritesPerMinute, time.Minute)
+}
+
+func newJobLimiter() *rateLimiter {
+	return newRateLimiter(jobWritesPerMinute, time.Minute)
 }

@@ -10,6 +10,9 @@ import type { Socket } from '../socket';
 import { mountAdds, mountRows, openResource } from '../resource';
 import { initDnsFleet } from './dns-fleet';
 import { initDnsTools } from './dns-tools';
+import { initDnsBulk } from './dns-bulk';
+import { initDnsLists } from './dns-lists';
+import { onFeatures } from '../caps';
 import type { DNSStaticEntry, DNSPayload } from '../gen/payloads';
 
 const COLS_S: SortCol[] = [
@@ -43,6 +46,11 @@ export function initDnsPage(socket: Socket, isVisible: (page: string) => boolean
 
   let data: DNSPayload | null = null;
   const sortS: SortState = { col: 'name', dir: 'asc' };
+  let activeRouter = '';
+  socket.on('router:active', (d) => { activeRouter = (d && d.activeId) || activeRouter; });
+  socket.on('router:switched', (d) => { activeRouter = (d && d.activeId) || ''; });
+  const bulk = initDnsBulk(() => activeRouter, () => renderStatic());
+  initDnsLists();
   const sortF: SortState = { col: 'name', dir: 'asc' };
   const sortA: SortState = { col: 'source', dir: 'asc' };
 
@@ -96,15 +104,26 @@ export function initDnsPage(socket: Socket, isVisible: (page: string) => boolean
       return [e.name || e.regexp, e.address, e.addressList, e.comment].join(' ')
         .toLowerCase().indexOf(q) !== -1;
     });
-    renderSortHeader('dnsStaticThead', COLS_S, sortS, () => render());
+    const picking = bulk.on();
+    const order = sorted(list, sortS);
+    bulk.setRows(order);
+    renderSortHeader('dnsStaticThead', picking ? [{ label: bulk.headCell() }, ...COLS_S] : COLS_S,
+      sortS, () => render());
+    const cols = el('dnsStaticCols');
+    if (cols) {
+      cols.innerHTML = (picking ? '<col style="width:34px">' : '') +
+        '<col style="width:28%"><col style="width:20%"><col style="width:8%"><col style="width:14%">' +
+        '<col style="width:8%"><col style="width:22%">';
+    }
     const badge = el('dnsStaticBadge');
     if (badge) badge.textContent = String(rows.length);
     const table = el('dnsStaticTable');
     if (!table) return;
     // A regexp entry has no name, and its regexp is what identifies it: the
     // server finds the row by it and audits the write under it.
-    table.innerHTML = list.length ? sorted(list, sortS).map((e) =>
+    table.innerHTML = list.length ? order.map((e) =>
       '<tr' + (e.disabled ? ' style="opacity:.55"' : '') + resRow(e.id, e.name || e.regexp) + '>' +
+      (picking ? bulk.cell(e) : '') +
       '<td>' + esc(e.name || e.regexp) +
         (e.regexp ? ' ' + pill('regexp', 'alt') : '') +
         (e.matchSubdomain ? ' ' + pill('+sub', 'rx') : '') +
@@ -116,7 +135,7 @@ export function initDnsPage(socket: Socket, isVisible: (page: string) => boolean
       '<td>' + esc(e.ttl || '-') + '</td>' +
       '<td style="color:var(--text-muted)">' + esc(e.comment || '') + '</td>' +
       '</tr>').join('')
-      : '<tr><td colspan="6" class="empty-state">' +
+      : '<tr><td colspan="' + (picking ? 7 : 6) + '" class="empty-state">' +
         (q ? 'No entries match that search.' : 'No static DNS entries.') + '</td></tr>';
   }
 
@@ -204,6 +223,7 @@ export function initDnsPage(socket: Socket, isVisible: (page: string) => boolean
   document.addEventListener('mikrodash:pagechange', (e) => {
     if ((e as CustomEvent).detail === 'dns' && data) render();
   });
+  onFeatures(() => { if (data && isVisible('dns')) render(); });
 
   const ss = el<HTMLInputElement>('dnsStaticSearch');
   if (ss) ss.addEventListener('input', debounce(renderStatic, 150));

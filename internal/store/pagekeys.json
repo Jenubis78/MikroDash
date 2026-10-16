@@ -30,5 +30,8 @@
   "aiReady",
   "hiddenAreas",
   "dnsCacheEnabled",
-  "dnsTraceEnabled"
+  "dnsTraceEnabled",
+  "dnsBulkEnabled",
+  "dnsFleetSyncEnabled",
+  "dnsListsEnabled"
 ]

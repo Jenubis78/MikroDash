@@ -25,6 +25,7 @@ import (
 	"mikrodash/internal/guard"
 	"net"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -732,6 +733,48 @@ func (r *Resource) BuildArgs(v Validated) []string {
 		}
 	}
 	return args
+}
+
+// PartialArgs is the `=key=value` words for a change to some fields of many
+// rows at once: only the named fields, each checked as Validate checks it, and
+// an empty value clears a Clearable field the way BuildArgs clears it on an
+// edit. A required, display or create-only field cannot be named. Whether the
+// change leaves each row valid is the caller's to check, row by row.
+func (r *Resource) PartialArgs(values map[string]string) ([]string, []Error) {
+	var args []string
+	var errs []Error
+	for _, f := range r.Fields {
+		raw, named := values[f.Name]
+		if !named {
+			continue
+		}
+		switch {
+		case f.Display || f.CreateOnly || f.Type == TypeSecret || f.Type == TypeFlag ||
+			slices.Contains(r.Identity, f.Name):
+			errs = append(errs, Error{f.Name, f.Label + " cannot be changed on many rows at once"})
+		case strings.TrimSpace(raw) == "" && f.Type != TypeBool:
+			if !f.Clearable || f.Required {
+				errs = append(errs, Error{f.Name, f.Label + " cannot be cleared"})
+			} else if f.ClearBang {
+				args = append(args, "=!"+f.ROS+"=")
+			} else {
+				args = append(args, "="+f.ROS+"="+f.ClearAs)
+			}
+		default:
+			v, msg := f.check(raw)
+			if msg != "" {
+				errs = append(errs, Error{f.Name, f.Label + " " + msg})
+				continue
+			}
+			args = append(args, "="+f.ROS+"="+v)
+		}
+	}
+	for name := range values {
+		if r.FieldByName(name) == nil {
+			errs = append(errs, Error{name, name + " is not a field of " + r.Label})
+		}
+	}
+	return args, errs
 }
 
 // negateUnset writes every option, the ones not in `chosen` prefixed `!`.

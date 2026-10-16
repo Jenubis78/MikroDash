@@ -2249,6 +2249,8 @@
 .dns-fleet-yes{color:rgb(from var(--accent-tx) r g b / .9);font-weight:700}
 .dns-fleet-yes.is-odd{color:var(--accent-warn)}
 #dnsFleetTable tr.is-partial td:first-child{border-left:2px solid var(--accent-warn)}
+.dns-bulk-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;padding:.45rem .85rem;
+  border-bottom:1px solid var(--border);background:var(--bg-deep)}
 .dns-extra{margin-top:.7rem;padding:.55rem .7rem;border:1px solid var(--border);
   border-radius:6px;background:rgb(from var(--border) r g b / .05)}
 .dns-extra-title{font-size:.72rem;font-weight:600;color:var(--text-main);margin-bottom:.4rem}
