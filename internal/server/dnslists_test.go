@@ -219,7 +219,7 @@ func TestTheRoutersASaveDropsStayPendingUntilClean(t *testing.T) {
 		t.Fatal(err)
 	}
 	l, _ := s.dnsListByID(id)
-	if got := s.settleDropped(context.Background(), l, "someone", nil); got != "" {
+	if got, _ := s.settleDropped(context.Background(), l, "someone", nil); got != "" {
 		t.Errorf("a gone router left %q behind", got)
 	}
 	l, ok := s.dnsListByID(id)
@@ -228,11 +228,35 @@ func TestTheRoutersASaveDropsStayPendingUntilClean(t *testing.T) {
 	}
 
 	l.Dropped = []string{"r-off"}
-	if got := s.settleDropped(context.Background(), l, "someone", nil); got == "" {
+	if got, _ := s.settleDropped(context.Background(), l, "someone", nil); got == "" {
 		t.Error("a disabled router was counted clean")
 	}
 	if l, _ = s.dnsListByID(id); !slices.Equal(l.Dropped, []string{"r-off"}) {
 		t.Errorf("pending = %v after a failed purge, want r-off kept for the next sync", l.Dropped)
+	}
+}
+
+// TestARouterReturnedWhileItsRemovalRunsIsSyncedAgain. The first save starts
+// removing both routers; the second puts CHR back before that run finishes.
+// CHR must not stay pending after the old purge, while AC2 still is, and the
+// changed target set needs the normal sync that restores CHR's entries.
+func TestARouterReturnedWhileItsRemovalRunsIsSyncedAgain(t *testing.T) {
+	before := db.DNSList{RouterIDs: []string{}, Dropped: []string{"chr", "ac2"}}
+	now := db.DNSList{RouterIDs: []string{"chr"}, Dropped: []string{"ac2"}}
+	dropped, resync := settledDropped(before, now, []string{"ac2"})
+	if !resync {
+		t.Fatal("putting CHR back on the list did not schedule its normal sync")
+	}
+	if !slices.Equal(dropped, []string{"ac2"}) {
+		t.Errorf("pending = %v, want only AC2", dropped)
+	}
+
+	// A router put back cannot stay pending even when it was unclean or when
+	// the re-read still had it in Dropped.
+	nowBoth := db.DNSList{RouterIDs: []string{"ac2"}, Dropped: []string{"ac2"}}
+	droppedBoth, resyncBoth := settledDropped(before, nowBoth, []string{"ac2"})
+	if !resyncBoth || slices.Contains(droppedBoth, "ac2") {
+		t.Errorf("ac2 put back ended up in pending: %v (resync=%v)", droppedBoth, resyncBoth)
 	}
 }
 

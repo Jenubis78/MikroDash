@@ -625,10 +625,19 @@ func (s *Server) startListSync(ctx context.Context, l db.DNSList, user string, r
 			s.finishForget(l, still, lines)
 			return
 		}
-		leftover := s.settleDropped(ctx, l, user, rec)
-		if opts.pending {
+		leftover, resync := s.settleDropped(ctx, l, user, rec)
+		if resync {
+			if now, ok := s.dnsListByID(l.ID); ok {
+				l = now
+			} else {
+				return
+			}
+		}
+		if opts.pending && !resync {
 			if leftover != "" {
 				mark(leftover, -1)
+			} else {
+				mark("the entries on the routers taken off the list are gone", -1)
 			}
 			return
 		}
@@ -688,27 +697,49 @@ func (s *Server) purgeRouters(ctx context.Context, l db.DNSList, ids []string, u
 }
 
 // settleDropped retries the removal of the entries on the routers a save took
-// off the list, and keeps the ones that are not clean for the next sync. It
-// returns what is left to say, or "".
-func (s *Server) settleDropped(ctx context.Context, l db.DNSList, user string, rec *audit.Recorder) string {
+// off the list, and keeps the ones that are not clean for the next sync. A
+// save that put a router back waits for this removal to finish, then returns
+// true so the current list is synced instead of leaving that router empty.
+func (s *Server) settleDropped(ctx context.Context, l db.DNSList, user string, rec *audit.Recorder) (string, bool) {
 	if len(l.Dropped) == 0 {
-		return ""
+		return "", false
 	}
 	still, lines := s.purgeRouters(ctx, l, l.Dropped, user, rec)
-	unclean := len(still) > 0
-	// A save while this ran may have added routers the list in hand does not know.
+	resync := false
+	// A save while this ran may have changed which routers are pending, or put
+	// one back on the list that the old purge has just emptied.
 	if now, ok := s.dnsListByID(l.ID); ok {
-		for _, id := range now.Dropped {
-			if !slices.Contains(l.Dropped, id) {
-				still = append(still, id)
-			}
-		}
+		still, resync = settledDropped(l, now, still)
 	}
 	_ = s.auditDB.SetDNSListDropped(l.ID, still)
-	if !unclean {
-		return ""
+	if len(still) == 0 {
+		return "", resync
 	}
-	return "entries are still on a router taken off the list: " + strings.Join(lines, " · ")
+	return "entries are still on a router taken off the list: " + strings.Join(lines, " · "), resync
+}
+
+// settledDropped reconciles one purge's result with a save that arrived while
+// it ran. Routers that could not be cleaned stay pending unless a save put
+// them back on the list; new pending routers from a save are kept for the next
+// pass; and any router put back on the list triggers a resync.
+func settledDropped(before, now db.DNSList, still []string) (dropped []string, resync bool) {
+	resync = !slices.Equal(before.RouterIDs, now.RouterIDs)
+	for _, id := range still {
+		if !slices.Contains(now.RouterIDs, id) && !slices.Contains(dropped, id) {
+			dropped = append(dropped, id)
+		}
+	}
+	for _, id := range now.Dropped {
+		if !slices.Contains(before.Dropped, id) && !slices.Contains(now.RouterIDs, id) && !slices.Contains(dropped, id) {
+			dropped = append(dropped, id)
+		}
+	}
+	for _, id := range before.Dropped {
+		if slices.Contains(now.RouterIDs, id) {
+			resync = true
+		}
+	}
+	return dropped, resync
 }
 
 // finishForget drops a list once none of its routers holds an entry of it, and
