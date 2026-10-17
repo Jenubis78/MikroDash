@@ -845,6 +845,8 @@ func TestRemovingARouterPurgesWhatOnlyMadeSenseWithIt(t *testing.T) {
 		// AND ITS MONITORING COVERAGE: meaningless without the connectivity rows
 		// it qualifies, which go too.
 		"monitor_runs": "router_id",
+		// AND ITS WI-FI HISTORY AND WATCHED DEVICES.
+		"wifi_samples": "router_id", "watch_devices": "router_id", "wifi_history_routers": "router_id",
 	} {
 		if n := countRows(t, s, name, table, "r1"); n != 0 {
 			t.Errorf("%s still has %d rows for the removed router", name, n)
@@ -955,11 +957,23 @@ func seedPurgeables(t *testing.T, s *Server) {
 		`CREATE TABLE IF NOT EXISTS monitor_runs (id INTEGER PRIMARY KEY,
 		   router_id TEXT NOT NULL, started_at INTEGER NOT NULL,
 		   last_seen_at INTEGER NOT NULL)`,
+		// WI-FI HISTORY AND WATCHED DEVICES, for the same reason.
+		`CREATE TABLE IF NOT EXISTS wifi_samples (router_id TEXT NOT NULL,
+		   ts INTEGER NOT NULL, mac TEXT NOT NULL, iface TEXT NOT NULL DEFAULT '',
+		   ap TEXT NOT NULL DEFAULT '', ssid TEXT NOT NULL DEFAULT '', signal INTEGER,
+		   tx_rate TEXT NOT NULL DEFAULT '')`,
+		`CREATE TABLE IF NOT EXISTS wifi_history_routers (router_id TEXT PRIMARY KEY)`,
+		`CREATE TABLE IF NOT EXISTS watch_devices (id INTEGER PRIMARY KEY,
+		   router_id TEXT NOT NULL, mac TEXT NOT NULL, label TEXT NOT NULL DEFAULT '',
+		   grace_minutes INTEGER NOT NULL DEFAULT 10, UNIQUE(router_id, mac))`,
 	}
 	for _, rid := range []string{"r1", "r2"} {
 		stmts = append(stmts,
 			`INSERT INTO monitor_runs (router_id, started_at, last_seen_at)
 			   VALUES ('`+rid+`', 1, 2)`,
+			`INSERT INTO wifi_samples (router_id, ts, mac) VALUES ('`+rid+`', 1, '02:00:00:00:00:01')`,
+			`INSERT INTO watch_devices (router_id, mac) VALUES ('`+rid+`', '02:00:00:00:00:01')`,
+			`INSERT INTO wifi_history_routers (router_id) VALUES ('`+rid+`')`,
 			`INSERT INTO ping_samples (router_id, target, loss_pct, ts)
 			   VALUES ('`+rid+`', '1.1.1.1', 0, 1)`,
 			`INSERT OR IGNORE INTO cred_profile_links (profile_id, router_id, linked_by, linked_at)

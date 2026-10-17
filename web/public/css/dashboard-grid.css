@@ -587,6 +587,11 @@ html[data-theme="light"] #dc-logs {
 }
 
 /* ── Mobile: single-column stacked layout ────────────────────────────────── */
+/* Domain Routing (Settings -> Features) */
+.dc-dr-body{display:flex;flex-direction:column;gap:.45rem;overflow:auto}
+.dc-dr-row{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.2rem 0;
+  border-bottom:1px solid var(--border)}
+
 @media (max-width: 767px) {
   #page-dashboard {
     height: auto !important;

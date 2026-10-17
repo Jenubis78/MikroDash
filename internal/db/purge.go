@@ -74,6 +74,10 @@ var routerDataTablesPortAdded = []string{
 	// When this router was being watched (2026-10-01). Meaningless without the
 	// connectivity rows it qualifies, which go with the router too.
 	"monitor_runs",
+	// Its Wi-Fi clients' history, whether they are recorded, and its watched devices.
+	"wifi_samples",
+	"wifi_history_routers",
+	"watch_devices",
 }
 
 // routerPurgeExcluded is what a router purge must NEVER touch, with the reason.

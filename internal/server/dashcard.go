@@ -133,6 +133,11 @@ func (cn *conn) dashCardFocus(key string) {
 	if key == "secscore" {
 		cn.secScoreFocus()
 	}
+	// THE FOURTH: Domain Routing, read by the feature loop once a minute and
+	// sent to each viewer as their grants allow.
+	if key == "domainroute" {
+		cn.domainRouteFocus()
+	}
 }
 
 func (cn *conn) dashCardBlur(key string) {

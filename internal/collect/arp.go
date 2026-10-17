@@ -2,7 +2,7 @@ package collect
 
 // ARP collector — the port of src/collectors/arp.js.
 //
-//	/ip/arp/print   address, mac-address, interface
+//	/ip/arp/print   address, mac-address, interface, status, dynamic, dhcp
 //
 // ── IT EMITS NOTHING, AND THAT IS THE WHOLE SHAPE ───────────────────────────
 //
@@ -46,7 +46,7 @@ import (
 )
 
 var arpCmd = routeros.Cmd{Path: "/ip/arp/print", Args: []string{
-	"=.proplist=address,mac-address,interface",
+	"=.proplist=address,mac-address,interface,status,dynamic,dhcp",
 }}
 
 // ARPEntry is one row, reduced to the join it exists for.
@@ -54,6 +54,14 @@ type ARPEntry struct {
 	IP    string
 	MAC   string
 	Iface string
+	// Live is whether the router heard from the device lately: a dynamic entry
+	// that no DHCP server made and whose status is reachable, stale, delay or
+	// probe.
+	Live bool
+	// Fixed is an entry that stays however the device is: a static one, or one
+	// a DHCP server made. RouterOS reports both as "permanent" and never
+	// probes them (measured on 7.x), so they say nothing about the device.
+	Fixed bool
 }
 
 // ARPIndex is the derivation: the table as its two lookups.
@@ -98,11 +106,30 @@ func BuildARP(rows []routeros.Reply) *ARPIndex {
 		if ip == "" || mac == "" {
 			continue
 		}
-		e := ARPEntry{IP: ip, MAC: mac, Iface: r["interface"]}
+		e := ARPEntry{IP: ip, MAC: mac, Iface: r["interface"], Live: arpLive(r), Fixed: arpFixed(r)}
 		ix.ByIP[ip] = e
+		if prev, ok := ix.ByMAC[mac]; ok {
+			e.Live = e.Live || prev.Live
+			e.Fixed = e.Fixed || prev.Fixed
+		}
 		ix.ByMAC[mac] = e
 	}
 	return ix
+}
+
+func arpFixed(r routeros.Reply) bool {
+	return r["dynamic"] != "true" || r["dhcp"] == "true"
+}
+
+func arpLive(r routeros.Reply) bool {
+	if arpFixed(r) {
+		return false
+	}
+	switch r["status"] {
+	case "reachable", "stale", "delay", "probe":
+		return true
+	}
+	return false
 }
 
 // ARPByIP answers "which MAC is behind this address". Consumed by `connections`

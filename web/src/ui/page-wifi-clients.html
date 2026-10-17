@@ -76,5 +76,57 @@
           </table>
         </div>
       </div>
+
+      <!-- Settings -> Features: whether this router's clients are recorded, and a client's history
+           (wifi-clients-features.ts). -->
+      <div class="card" id="wlRecCard" style="margin-top:.85rem;display:none">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <h3 class="card-title mb-0">Client history</h3>
+          <div class="hdr-actions">
+            <span class="muted-note" id="wlRecNote"></span>
+            <button class="sbtn sbtn-outline is-sm" id="wlRecToggle" type="button"
+                    title="Write this router's clients to the history once a minute, and keep reading its Wi-Fi while nobody has it open">Record this router</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="wlHistCard" style="margin-top:.85rem;display:none">
+        <div class="card-header d-flex align-items-center justify-content-between gap-2">
+          <h3 class="card-title mb-0" id="wlHistTitle">History</h3>
+          <div class="hdr-actions">
+            <select class="sform-input sform-sm" id="wlHistRange" style="width:120px;flex:0 0 auto" aria-label="Range">
+              <option value="6">6 hours</option>
+              <option value="24" selected>24 hours</option>
+              <option value="168">7 days</option>
+            </select>
+            <button class="sbtn sbtn-outline is-sm" id="wlHistClose" type="button">Close</button>
+          </div>
+        </div>
+        <div class="card-body" id="wlHistBody"></div>
+      </div>
+
+      <!-- Settings -> Features: the watch list (internal/server/clients_api.go). -->
+      <div class="card" id="wlWatchCard" style="margin-top:.85rem;display:none">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <h3 class="card-title mb-0">Watch list</h3>
+            <span id="wlWatchBadge" class="card-badge active-blue">0</span>
+          </div>
+          <div class="hdr-actions">
+            <span class="muted-note" id="wlWatchNote"></span>
+            <input class="sform-input sform-sm" id="wlWatchMac" placeholder="AA:BB:CC:DD:EE:FF" style="width:150px;flex:0 0 auto" autocomplete="off" aria-label="MAC address">
+            <input class="sform-input sform-sm" id="wlWatchLabel" placeholder="label" style="width:130px;flex:0 0 auto" autocomplete="off" aria-label="Label">
+            <input class="sform-input sform-sm" id="wlWatchGrace" type="number" min="1" max="1440" value="10"
+                   title="Minutes it may be gone before the alert" style="width:80px;flex:0 0 auto" aria-label="Grace minutes">
+            <button class="sbtn sbtn-outline is-sm" id="wlWatchAdd" type="button" title="Watch a device by its MAC, Wi-Fi or wired">Watch</button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-vcenter mb-0" style="width:100%">
+            <thead><tr id="wlWatchThead"></tr></thead>
+            <tbody id="wlWatchTable"><tr><td colspan="5" class="empty-state">Nothing watched.</td></tr></tbody>
+          </table>
+          <div class="muted-note" id="wlWatchHint" style="display:none;padding:.5rem .85rem"></div>
+        </div>
+      </div>
     </div>
   </div>

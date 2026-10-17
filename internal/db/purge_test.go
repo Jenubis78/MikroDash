@@ -168,6 +168,12 @@ var portAddedRouterPurgeTables = map[string]string{
 	"monitor_runs": "when this router was being watched (2026-10-01), for the Devices page's " +
 		"connectivity strip. Live had no such record. It goes with the router because it only " +
 		"qualifies that router's connectivity rows, which are purged too",
+	"wifi_samples": "a Wi-Fi client history this router recorded, an optional feature live never " +
+		"had. Samples of a router that is gone describe nothing anyone can look at",
+	"wifi_history_routers": "whether this router's Wi-Fi clients are recorded. The choice is about a " +
+		"router, and a router that left the fleet would be held for it for ever",
+	"watch_devices": "the devices watched on this router. A watch on a router that left the fleet " +
+		"could never see its device again and would alert for ever",
 }
 
 // TestPortAddedRouterPurgeTablesAreRecorded — BOTH DIRECTIONS.
@@ -242,6 +248,9 @@ var purgeInsert = map[string]string{
 	   (profile_id, router_id, linked_by, linked_at) VALUES ('cp1', ?, 'u-1', 1)`,
 	"monitor_runs": `INSERT INTO monitor_runs (router_id, started_at, last_seen_at)
 	   VALUES (?, 1, 2)`,
+	"wifi_samples":         `INSERT INTO wifi_samples (router_id, ts, mac) VALUES (?, 1, '02:00:00:00:00:01')`,
+	"wifi_history_routers": `INSERT INTO wifi_history_routers (router_id) VALUES (?)`,
+	"watch_devices":        `INSERT INTO watch_devices (router_id, mac) VALUES (?, '02:00:00:00:00:01')`,
 }
 
 func purgeDB(t *testing.T) *DB {
@@ -251,7 +260,7 @@ func purgeDB(t *testing.T) *DB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := h.Exec(alertEventsDDL + purgeDDL + monitorRunsDDL); err != nil {
+	if _, err := h.Exec(alertEventsDDL + purgeDDL + monitorRunsDDL + clientWatchDDL); err != nil {
 		t.Fatal(err)
 	}
 	for _, table := range append([]string{"ping_samples", "traffic_samples", "bandwidth_usage",
@@ -424,5 +433,44 @@ func TestAnEmptyRouterIDIsRefused(t *testing.T) {
 	}
 	if n := countIn(t, d, "ping_samples", "r1"); n == 0 {
 		t.Error("the refused purge still cleared rows")
+	}
+}
+
+// TestTheWifiHistoryChoiceIsPerRouterAndTheWatchLookupIsExact. Recording is
+// switched on for the routers it names and nothing else, and a device is on the
+// watch list under the MAC it was saved with, in either case.
+func TestTheWifiHistoryChoiceIsPerRouterAndTheWatchLookupIsExact(t *testing.T) {
+	d := purgeDB(t)
+	if err := d.SetWifiHistory("r8", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.SetWifiHistory("r8", true); err != nil {
+		t.Fatalf("switching on twice: %v", err)
+	}
+	on, err := d.WifiHistoryRouters()
+	if err != nil || !on["r8"] || on["r9"] {
+		t.Fatalf("recorded = %v, %v; want r8 only", on, err)
+	}
+	if err := d.SetWifiHistory("r8", false); err != nil {
+		t.Fatal(err)
+	}
+	if on, _ = d.WifiHistoryRouters(); on["r8"] {
+		t.Errorf("recorded = %v after switching off", on)
+	}
+
+	if err := d.SaveWatchDevice(WatchDevice{RouterID: "r8", MAC: "aa:bb:cc:dd:ee:ff"}); err != nil {
+		t.Fatal(err)
+	}
+	if !d.HasWatchDevice("r8", "AA:BB:CC:DD:EE:FF") || !d.HasWatchDevice("r8", "aa:bb:cc:dd:ee:ff") {
+		t.Error("a watched device was not found")
+	}
+	if d.HasWatchDevice("r9", "AA:BB:CC:DD:EE:FF") {
+		t.Error("a device is watched on another router")
+	}
+	if err := d.DeleteWatchDevice("r8", "AA:BB:CC:DD:EE:FF"); err != nil {
+		t.Fatal(err)
+	}
+	if d.HasWatchDevice("r8", "AA:BB:CC:DD:EE:FF") {
+		t.Error("a deleted device is still watched")
 	}
 }

@@ -17,6 +17,7 @@ import { esc, el, bandBadge, standardBadge, bandRank, ssidColours, installWifiGl
   renderSortHeader, lsGet, lsSet, type SortState } from '../dom';
 import type { Socket } from '../socket';
 import { initFrequencyAnalyser } from './wireless-fa';
+import { initClientFeatures } from './wifi-clients-features';
 import type { WirelessClient, WirelessPayload } from '../gen/payloads';
 
 /** The signal column's four bars, from app.js's `signalBars`. */
@@ -208,6 +209,9 @@ export function initWirelessPage(socket: Socket, isVisible: (page: string) => bo
   // BOTH CONTROLS DRIVE ONE OBJECT, so whichever you use, the other reflects it.
   const sort: SortState = { col: 'signal', dir: WL_DEFAULT_DIR.signal };
 
+  // The watch star and the history link (Settings -> Features); empty when off.
+  const extras = initClientFeatures(socket, () => renderWireless());
+
   /**
    * The button bar, showing which column is sorted AND which way.
    *
@@ -252,7 +256,8 @@ export function initWirelessPage(socket: Socket, isVisible: (page: string) => bo
       ? '<div style="font-size:.62rem;color:var(--text-muted)">' + esc(c.name) + '</div>' : '';
     return '<tr>' +
       '<td>' +
-        '<div style="font-weight:600;font-size:.78rem">' + esc(clientTitle(c)) + '</div>' +
+        '<div style="font-weight:600;font-size:.78rem"' + extras.nameAttrs(c) + '>' + esc(clientTitle(c)) +
+          extras.watchCell(c) + '</div>' +
         hostStr + ipStr + macStr +
       '</td>' +
       '<td class="wl-col-iface" style="color:var(--text-muted)">' +

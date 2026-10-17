@@ -253,5 +253,6 @@ func (s *Server) retentionPolicy() db.PruneDays {
 		Alert:  get("dbAlertRetentionDays"),
 		Audit:  get("dbAuditRetentionDays"),
 		AI:     get("dbAiRetentionDays"),
+		Wifi:   get("dbWifiHistoryRetentionDays"),
 	}
 }

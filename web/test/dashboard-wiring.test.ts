@@ -91,6 +91,9 @@ const CARDS = {
   // its own, or the assistant's), per router, so it also owns the router switch
   // that drops a frame about the router just left.
   'dashboard-card-secscore': { event: 'secscore:state', also: ['router:switched'] },
+  // Domain Routing (Settings -> Features): fed by the server's feature loop,
+  // per router, and so it owns the router switch too.
+  'dashboard-card-domainroute': { event: 'dnsrouting:state', also: ['router:switched'] },
   // WAN Flow: the WAN page's Sankey on the Dashboard, fed by the WAN collector
   // through the card's own room, and cleared on a router switch.
   'dashboard-card-wanflow': { event: 'wan:update', also: ['router:switched'] },
@@ -320,6 +323,9 @@ const PROBE = {
       rxMbps: 1, txMbps: 1, rxBytes: null, txBytes: null, dhcp: null }] },
   'secscore:state': { routerId: '', has: true, score: 72, issues: 3, critical: 0, high: 1, medium: 2, low: 0,
     passed: 30, checks: 46, scannedAt: 1, running: false, done: 0, total: 37, code: '', message: '' },
+  'dnsrouting:state': { routerId: '', list: 'to_vpn', feeding: 2, entries: 3, ok: true, why: '', error: '', ts: 1,
+    withheld: [], rules: [{ id: '*1', chain: 'prerouting', mark: 'vpn', packets: '7', disabled: false, comment: '' }],
+    routes: [{ table: 'vpn', dst: '0.0.0.0/0', gateway: 'wg0', active: true }] },
 };
 for (const [m, entry] of Object.entries(CARDS)) {
   const event = cardEvent(entry);

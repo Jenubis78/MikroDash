@@ -152,6 +152,10 @@
     "ztpListenPort": [
       1,
       65535
+    ],
+    "dbWifiHistoryRetentionDays": [
+      1,
+      90
     ]
   },
   "strFields": [
@@ -159,7 +163,8 @@
     "notifTitle",
     "aiBaseUrl",
     "aiModel",
-    "ztpEndpoint"
+    "ztpEndpoint",
+    "domainRoutingList"
   ],
   "boolFields": [
     "pageAudit",
@@ -198,7 +203,12 @@
     "dnsTraceEnabled",
     "dnsBulkEnabled",
     "dnsFleetSyncEnabled",
-    "dnsListsEnabled"
+    "dnsListsEnabled",
+    "domainRoutingEnabled",
+    "watchListEnabled",
+    "wifiHistoryEnabled",
+    "wifiWeakSpotsEnabled",
+    "capVersionsEnabled"
   ],
   "credFields": [
     "aiApiKey"

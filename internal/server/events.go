@@ -50,6 +50,9 @@ var (
 	EvWgShowConfig      = hub.Declare[WgShowConfigPayload]("wireguard:showconfig")
 	EvFilesFetch        = hub.Declare[FilesFetchPayload]("files:fetched")
 	EvFilesContent      = hub.Declare[FilesContentPayload]("files:content")
+	// The Domain Routing card (Settings -> Features), sent to each viewer
+	// filtered by their grants; see dnsrouting_api.go.
+	EvDNSRouting = hub.Declare[DomainRoutingStatus]("dnsrouting:state")
 )
 
 // Map payloads, whose browser types are hand-written in web/src/events-hand.ts.

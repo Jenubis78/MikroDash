@@ -28,6 +28,7 @@ import type {
   CapsClient, Cap, CapsProvisioning, CapsConfigProfile, CapsSecurityProfile,
   CapsChannelProfile, CapsDatapathProfile, CapsTotals, CapsmanPayload,
 } from '../gen/payloads';
+import { initCapVersions } from './caps-versions';
 
 const COLS: SortCol[] = [
   { key: 'identity', label: 'Identity' },
@@ -89,6 +90,8 @@ export function initCapsmanPage(socket: Socket, isVisible: (page: string) => boo
   // absent without the other.
   const hasTable = !!tbodyEl && !!theadEl;
   if (!hasTable && !bar) return;
+  // Behind the manager, and Upgrade (Settings -> Features); empty when off.
+  const versions = initCapVersions(socket, () => render());
 
   let data: CapsmanPayload | null = null;
   const sort: SortState = { col: 'identity', dir: 'asc' };
@@ -185,7 +188,7 @@ export function initCapsmanPage(socket: Socket, isVisible: (page: string) => boo
           '<td>' + (opens ? (isOpen ? '▾ ' : '▸ ') : '') + esc(c.identity) +
             v1(c.legacy) + '</td>' +
           '<td>' + esc(c.boardName) + '</td>' +
-          '<td>' + esc(c.version) + '</td>' +
+          '<td>' + esc(c.version) + versions.cell(c) + '</td>' +
           '<td>' + esc(c.serial) + '</td>' +
           '<td>' + stateBadge(c.state) + '</td>' +
           // A dash, not a blank. The legacy tree reports no connected time at

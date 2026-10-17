@@ -650,6 +650,8 @@ func (s *Server) Handler() http.Handler {
 	s.registerDNSBulk(mux)
 	s.registerDNSFleetSync(mux)
 	s.registerDNSLists(mux)
+	s.registerClientFeatures(mux)
+	s.registerCapVersions(mux)
 	s.registerTopologyFleet(mux)
 	s.registerAlerts(mux)
 	s.registerRouters(mux)

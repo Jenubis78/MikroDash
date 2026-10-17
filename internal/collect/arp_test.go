@@ -296,3 +296,36 @@ func TestTopologyFillsTheARPIPSeam(t *testing.T) {
 		t.Fatalf("the neighbour is not in the payload at all (%d nodes)", len(got.Nodes))
 	}
 }
+
+// TestBuildARPSaysWhichEntriesAreLive. A watched device is judged present by its
+// ARP entry only when the router heard from it: a dynamic entry in a state that
+// says so. A static or DHCP-made entry stays however the device is, and a
+// failed or incomplete resolution never was one. A MAC with any live row is
+// live, and with any static or DHCP row it is fixed.
+func TestBuildARPSaysWhichEntriesAreLive(t *testing.T) {
+	ix := BuildARP([]routeros.Reply{
+		{"address": "10.0.0.1", "mac-address": "AA:00:00:00:00:01", "dynamic": "true", "status": "reachable"},
+		{"address": "10.0.0.2", "mac-address": "AA:00:00:00:00:02", "dynamic": "true", "status": "stale"},
+		{"address": "10.0.0.3", "mac-address": "AA:00:00:00:00:03", "dynamic": "true", "dhcp": "true", "status": "reachable"},
+		{"address": "10.0.0.4", "mac-address": "AA:00:00:00:00:04", "status": "reachable"},
+		{"address": "10.0.0.5", "mac-address": "AA:00:00:00:00:05", "dynamic": "true", "status": "failed"},
+		{"address": "10.0.0.6", "mac-address": "AA:00:00:00:00:06", "dynamic": "true", "status": "reachable"},
+		{"address": "10.0.0.7", "mac-address": "AA:00:00:00:00:06", "dhcp": "true", "status": "reachable"},
+	})
+	for mac, want := range map[string]bool{
+		"AA:00:00:00:00:01": true, "AA:00:00:00:00:02": true, "AA:00:00:00:00:03": false,
+		"AA:00:00:00:00:04": false, "AA:00:00:00:00:05": false, "AA:00:00:00:00:06": true,
+	} {
+		if got := ix.ByMAC[mac].Live; got != want {
+			t.Errorf("%s: live = %v, want %v", mac, got, want)
+		}
+	}
+	for mac, want := range map[string]bool{
+		"AA:00:00:00:00:01": false, "AA:00:00:00:00:03": true, "AA:00:00:00:00:04": true,
+		"AA:00:00:00:00:05": false, "AA:00:00:00:00:06": true,
+	} {
+		if got := ix.ByMAC[mac].Fixed; got != want {
+			t.Errorf("%s: fixed = %v, want %v", mac, got, want)
+		}
+	}
+}

@@ -73,6 +73,7 @@ type PruneDays struct {
 	Alert  int
 	Audit  int
 	AI     int
+	Wifi   int
 }
 
 // orDefault is the live `x || fallback`: zero and negative both take the default.
@@ -104,6 +105,11 @@ func (p PruneDays) AuditDays() int  { return orDefault(p.Audit, 365) }
 // rather than "keep nothing" — the trap the file header describes, and the one
 // that is unrecoverable on a delete path.
 func (p PruneDays) AIDays() int { return orDefault(p.AI, 30) }
+
+// WifiDays is the Wi-Fi client history (Settings -> Features). A week by
+// default: a sample a minute per client is ten thousand rows a client a week,
+// and the question it answers is "what happened to this device lately".
+func (p PruneDays) WifiDays() int { return orDefault(p.Wifi, 7) }
 
 // RawMinuteDays is how long the MINUTE rows of the traffic and bandwidth series
 // are kept (#59). Beyond it the same series is read from the hourly rollups,
@@ -196,6 +202,9 @@ var pruneRules = []pruneRule{
 	// Keyed on `last_seen_at`, the run's END: a run is old once it stopped, not
 	// once it started, or a long-lived run would be pruned while still open.
 	{"monitor_runs", "last_seen_at", PruneDays.AlertDays, true},
+
+	// ── WI-FI CLIENT HISTORY, ITS OWN POLICY ────────────────────────────────
+	{"wifi_samples", "ts", PruneDays.WifiDays, true},
 }
 
 const msPerDay = 86400000
