@@ -135,6 +135,7 @@ A worked deployment on a separate Docker host is in [`docs/deploy-r5s.md`](docs/
 | 🤖 **AI Agent** | An optional assistant that answers questions from live router data and makes changes through the same checks, audit trail and undo as the forms: one row, or several as a plan you approve once. It can reboot, upgrade, sign a certificate, set the clock, run a script, read a file or an export, and undo its own change, always with your confirmation. Works with any OpenAI-compatible endpoint, including local models. |
 | 📦 **Containers** | RouterOS containers with their env lists, mounts and interfaces, plus an **Apps** tab that browses RouterOS's app store and installs an app in one click. |
 | 🧾 **Audit trail** | Every write, allowed or refused, with who, where, what changed and the outcome. Filterable and exportable to CSV. Credential values are never stored. |
+| 🧪 **Optional features** | Extras that stay off until you switch them on in Settings -> Features: DNS bulk edit and export, a DNS fleet sync to a reference router, domain list subscriptions kept as FWD entries, a DNS cache browser and domain route trace, a Domain Routing card and alert, a device watch list that alerts when a device goes missing, Wi-Fi client history, Wi-Fi map weak spots and CAP version checks. Switched off, a feature reads nothing from your routers. |
 | 🎨 **Make it yours** | 26 colour palettes, 26 self-hosted fonts, contrast and brightness controls, visible-page presets, a grouped sidebar, and custom branding (name and icon). |
 
 ### Pages
