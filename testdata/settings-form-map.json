@@ -17,7 +17,12 @@
       "dnsTraceEnabled",
       "dnsBulkEnabled",
       "dnsFleetSyncEnabled",
-      "dnsListsEnabled"
+      "dnsListsEnabled",
+      "domainRoutingEnabled",
+      "watchListEnabled",
+      "wifiHistoryEnabled",
+      "wifiWeakSpotsEnabled",
+      "capVersionsEnabled"
     ],
     "checkOn": [
       "pageAudit",
@@ -82,7 +87,9 @@
       "ztpEndpoint",
       "ztpLanUrl",
       "ztpListenPort",
-      "ztpSubnet"
+      "ztpSubnet",
+      "domainRoutingList",
+      "dbWifiHistoryRetentionDays"
     ],
     "checkGuarded": []
   },

@@ -154,6 +154,11 @@ func (s *Server) holdOne(r store.Router) {
 		// the single tick its poll-mode start had managed before it was
 		// suspended.
 		{"devices", !r.Disabled && s.devicesWatched()},
+		// THE OPTIONAL FEATURES' CLIENT READS, ONLY WHERE THEY ARE USED: a
+		// router with a watched device, and one whose Wi-Fi clients have been
+		// recorded. See featureHoldWanted.
+		{"watch", !r.Disabled && s.featureHoldWanted(store.FeatureWatchList, r.ID)},
+		{"wifi-history", !r.Disabled && s.featureHoldWanted(store.FeatureWifiHistory, r.ID)},
 	} {
 		if !h.want {
 			s.sessions.Drop(r.ID, h.reason)
@@ -196,4 +201,49 @@ func (s *Server) activeRouterID() string {
 	}
 	id, _ := cfg["activeRouterId"].(string)
 	return id
+}
+
+// featureHoldWanted is whether a client feature needs this router's Wi-Fi,
+// lease and ARP reads while nobody is looking at it (Settings -> Features).
+//
+// The watch list wants it on a router with a device watched there. The Wi-Fi
+// history wants the Wi-Fi reads on a router it was switched on for, on the
+// Wifi Clients page: recording is a choice per router, and the others are not
+// held on the chance they have clients.
+func (s *Server) featureHoldWanted(feature, routerID string) bool {
+	if s.auditDB == nil || !s.featureOn(feature) {
+		return false
+	}
+	switch feature {
+	case store.FeatureWatchList:
+		devs, err := s.auditDB.WatchDevices(routerID)
+		return err == nil && len(devs) > 0
+	case store.FeatureWifiHistory:
+		recorded, err := s.auditDB.WifiHistoryRouters()
+		return err == nil && recorded[routerID]
+	}
+	return false
+}
+
+// syncFeatureHolds re-applies the two feature holds to every router: after a
+// settings save, a watch list or recording change, and on the feature loop's
+// pass.
+func (s *Server) syncFeatureHolds() {
+	if !s.holdFleet || s.store == nil || s.sessions == nil {
+		return
+	}
+	all, _ := s.store.Routers()
+	for _, r := range all {
+		for _, h := range []struct {
+			reason, feature string
+		}{{"watch", store.FeatureWatchList}, {"wifi-history", store.FeatureWifiHistory}} {
+			if r.Disabled || !s.featureHoldWanted(h.feature, r.ID) {
+				s.sessions.Drop(r.ID, h.reason)
+				continue
+			}
+			if _, err := s.sessions.Retain(r.ID, h.reason); err != nil {
+				log.Printf("[holds] %q for %s: %v", h.reason, r.Label, err)
+			}
+		}
+	}
 }

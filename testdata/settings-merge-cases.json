@@ -112,7 +112,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -229,7 +236,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -346,7 +360,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -464,7 +485,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -582,7 +610,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -700,7 +735,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -818,7 +860,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -936,7 +985,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -1052,7 +1108,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -1168,7 +1231,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -1284,7 +1354,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -1402,7 +1479,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -1518,7 +1602,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -1634,7 +1725,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -1750,7 +1848,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -1866,7 +1971,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -1983,7 +2095,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -2100,7 +2219,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -2216,7 +2342,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -2332,7 +2465,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -2448,7 +2588,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     },
     {
@@ -2564,7 +2711,14 @@
         "dnsTraceEnabled": false,
         "dnsBulkEnabled": false,
         "dnsFleetSyncEnabled": false,
-        "dnsListsEnabled": false
+        "dnsListsEnabled": false,
+        "domainRoutingEnabled": false,
+        "watchListEnabled": false,
+        "wifiHistoryEnabled": false,
+        "wifiWeakSpotsEnabled": false,
+        "capVersionsEnabled": false,
+        "domainRoutingList": "",
+        "dbWifiHistoryRetentionDays": 7
       }
     }
   ]

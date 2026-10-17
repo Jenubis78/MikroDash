@@ -141,7 +141,9 @@ export interface PageSettings {
   displayTimezone: string;
   /** The optional features, Settings -> Features; see store.FeatureOn. */
   dnsBulkEnabled: boolean; dnsCacheEnabled: boolean; dnsFleetSyncEnabled: boolean;
-  dnsListsEnabled: boolean; dnsTraceEnabled: boolean;
+  dnsListsEnabled: boolean; dnsTraceEnabled: boolean; domainRoutingEnabled: boolean;
+  watchListEnabled: boolean; wifiHistoryEnabled: boolean; wifiWeakSpotsEnabled: boolean;
+  capVersionsEnabled: boolean;
 }
 
 export interface HandEvents {

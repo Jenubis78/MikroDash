@@ -1596,6 +1596,51 @@
             </div>
           </div>
         </div>
+        <div class="scard">
+          <div class="scard-header">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:var(--accent-rx);stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+            <span class="scard-title">Monitoring and Wi-Fi</span>
+          </div>
+          <div class="scard-body">
+            <div class="ff-grid">
+              <div class="ff">
+                <label class="sform-label" for="s_domainRoutingEnabled">Domain routing card</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_domainRoutingEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">A Dashboard card for the address list your FWD entries feed: its size, the mangle rules that use it and the route they mark for, with an alert when that route stays down for three minutes. Only routers whose static entries feed the list are read, a few filtered prints a minute.</div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="s_domainRoutingList">Address list to watch</label>
+                <input type="text" id="s_domainRoutingList" class="sform-input" placeholder="to_vpn_FWD" autocomplete="off">
+                <div class="ff-help">The list the card and the alert are about. Nothing is read until it is named.</div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="s_watchListEnabled">Watch list</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_watchListEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Alert when a device you mark as watched is gone from Wi-Fi and from the router&#39;s ARP table for longer than its grace time. Those two are read on a router only while a device on it is watched.</div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="s_wifiHistoryEnabled">Wi-Fi client history</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_wifiHistoryEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Record each Wi-Fi client&#39;s signal and access point once a minute, so a client&#39;s name on Wifi Clients opens its history. Recording is switched on per router, on that page; only those routers have their Wi-Fi clients read while nobody has them open.</div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="s_dbWifiHistoryRetentionDays">Keep Wi-Fi history (days)</label>
+                <input type="number" id="s_dbWifiHistoryRetentionDays" class="sform-input" min="1" max="90" placeholder="7">
+                <div class="ff-help"></div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="s_wifiWeakSpotsEnabled">Wi-Fi map weak spots</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_wifiWeakSpotsEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Colour each access point on the Wi-Fi map by its clients&#39; average signal and list the clients below -75 dBm. Reads nothing new.</div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="s_capVersionsEnabled">CAP versions</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_capVersionsEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Compare every CAP&#39;s RouterOS version with the manager&#39;s on the CAPsMAN page, and upgrade the ones behind from the manager.</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="stab-panel" id="stab-about">

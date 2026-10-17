@@ -89,6 +89,17 @@ var types = []Type{
 		Key: "bgp_hold_timer_warning", Down: "BGP Hold Timer Warning", Up: "BGP Hold Timer OK", Label: "BGP hold timer",
 		Desc: "A BGP session's hold timer ran close to expiry",
 	},
+	// The two optional features that alert (Settings -> Features). Raised only
+	// while the feature is on, and closed without a message when it is
+	// switched off or the watched device is removed.
+	{
+		Key: "device_absent", Down: "Device Absent", Up: "Device Back", Label: "Watched device",
+		Desc: "A watched device left the network for longer than its grace time, or came back",
+	},
+	{
+		Key: "domain_routing_down", Down: "Domain Routing Down", Up: "Domain Routing Restored",
+		Label: "Domain routing", Desc: "The route the domain-routed address list is marked for went down, or came back",
+	},
 
 	// ── NOT ALERTS ─────────────────────────────────────────────────────────
 	//

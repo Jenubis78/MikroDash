@@ -42,6 +42,9 @@ const IDS = [
   'wlSigCntE', 'wlSigCntG', 'wlSigCntF', 'wlSigCntP',
   'wlBandNum24', 'wlBandNum5', 'wlBandNum6', 'wlBandRow6',
   'wlSigNoData', 'wlCount', 'wlSearch', 'wlFaBtn',
+  // Settings -> Features: the watch list and a client's history.
+  'wlWatchCard', 'wlWatchThead', 'wlWatchTable', 'wlWatchAdd', 'wlWatchMac', 'wlWatchLabel', 'wlWatchGrace',
+  'wlWatchBadge', 'wlWatchNote', 'wlWatchHint', 'wlRecCard', 'wlRecNote', 'wlRecToggle', 'wlHistCard', 'wlHistBody', 'wlHistTitle', 'wlHistRange', 'wlHistClose',
 ];
 
 function client(over) {

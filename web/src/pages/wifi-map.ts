@@ -47,6 +47,7 @@ import { paletteCss, type PaletteToken } from '../palette';
 import { fieldHtml } from '../form';
 import type { Socket } from '../socket';
 import type { WifiPayload, WirelessPayload, WirelessClient } from '../gen/payloads';
+import { featureOn, onFeatures } from '../caps';
 
 // ── the stored document ─────────────────────────────────────────────────────
 //
@@ -213,6 +214,25 @@ const LABEL_DEFAULT: LabelFields =
 // estimate in metres, and a distance that changes when you zoom is not one.
 const FONT = { obj: 13, sub: 10, ap: 10, count: 11, client: 9 };
 
+// ── weak spots (Settings -> Features) ───────────────────────────────────────
+//
+// An access point is coloured by its clients' AVERAGE signal, and a client below
+// WEAK_DBM is listed under the map: the threshold where a phone starts dropping
+// to low rates and roaming badly, which is what an operator moving an AP is
+// trying to fix.
+export const WEAK_DBM = -75;
+const FAIR_DBM = -65;
+
+export function apSignal(clients: WirelessClient[]): { avg: number; weak: number; tone: PaletteToken } | null {
+  const sig = clients.map((c) => Number(c.signal)).filter((v) => Number.isFinite(v) && v < 0);
+  if (!sig.length) return null;
+  const avg = Math.round(sig.reduce((a, b) => a + b, 0) / sig.length);
+  return {
+    avg, weak: sig.filter((v) => v < WEAK_DBM).length,
+    tone: avg < WEAK_DBM ? '--accent-err' : avg < FAIR_DBM ? '--accent-warn' : '--accent-ok',
+  };
+}
+
 /** 9px monospace, near enough. Nothing here needs a text measurement pass. */
 const CHAR_W = 5.4;
 const LINE_H = 10;
@@ -292,6 +312,7 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
   let loaded = false;
   /** Clients whose access point is not on the map, from the last render. */
   let unplacedCount = 0;
+  let weakClients: Array<{ c: WirelessClient; ap: string }> = [];
 
   /** What to multiply a drawn size by. 1 when the marks scale with the plan. */
   function mk(): number {
@@ -531,20 +552,32 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
     });
   }
 
-  function renderAps(counts: Record<string, number>): void {
+  function renderAps(counts: Record<string, number>,
+                     signal: Record<string, ReturnType<typeof apSignal>>): void {
     clear(gAps);
     if (!gAps) return;
     const k = mk();
+    const weakSpots = featureOn('wifiWeakSpotsEnabled');
     doc.aps.forEach((a) => {
       if (floor !== 0 && a.floor !== floor) return;
       const key = pinKey(a);
       const n = counts[key] || 0;
       const g = svgEl('g', { class: 'wm-ap', 'data-ap': key });
+      const sig = weakSpots ? signal[key] : null;
       g.appendChild(svgEl('circle', {
         cx: a.x, cy: a.y, r: 13 * k,
         style: paint(n ? paletteCss('--accent-rx', 0.18) : paletteCss('--text-muted', 0.15),
-          n ? 'var(--accent-rx)' : paletteCss('--text-muted', 0.6)), 'stroke-width': 2 * k,
+          sig ? paletteCss(sig.tone) : n ? 'var(--accent-rx)' : paletteCss('--text-muted', 0.6)),
+        'stroke-width': (sig ? 3 : 2) * k,
       }));
+      if (sig) {
+        const avg = svgEl('text', {
+          x: a.x, y: a.y + 42 * k, class: 'wm-ap-label', style: paint(paletteCss(sig.tone)),
+          'font-size': (FONT.client * k).toFixed(1) + 'px',
+        });
+        text(avg, 'avg ' + sig.avg + ' dBm' + (sig.weak ? ' · ' + sig.weak + ' weak' : ''));
+        g.appendChild(avg);
+      }
       const lbl = svgEl('text', {
         x: a.x, y: a.y + 30 * k, class: 'wm-ap-label',
         'font-size': (FONT.ap * k).toFixed(1) + 'px',
@@ -709,8 +742,18 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
       grp.clients.push(c);
     });
 
+    const signal: Record<string, ReturnType<typeof apSignal>> = {};
+    weakClients = [];
+    groups.forEach((grp, key) => {
+      signal[key] = apSignal(grp.clients);
+      grp.clients.forEach((c) => {
+        if (Number(c.signal) < WEAK_DBM) weakClients.push({ c, ap: grp.pin.label || grp.pin.ap || key });
+      });
+    });
+    weakClients.sort((a, b) => Number(a.c.signal) - Number(b.c.signal));
+
     renderObjects();
-    renderAps(counts);
+    renderAps(counts, signal);
     renderClients(groups);
     renderPanel();
     unplacedCount = unplaced;
@@ -758,6 +801,11 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
       if (clientMode === 'ring' && doc.metresPerUnit > 0) {
         bits.push('Radius is a distance ESTIMATE from the signal. The direction ' +
           'is arbitrary: a router reports one reading per client, never three.');
+      }
+      if (featureOn('wifiWeakSpotsEnabled') && weakClients.length) {
+        bits.push(weakClients.length + ' below ' + WEAK_DBM + ' dBm: ' + weakClients.slice(0, 5).map((w) =>
+          (w.c.comment || w.c.name || w.c.mac) + ' on ' + w.ap + ' ' + w.c.signal).join(', ') +
+          (weakClients.length > 5 ? ', …' : ''));
       }
       foot.innerHTML = esc(bits.join('  ·  '));
     }
@@ -1266,7 +1314,7 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
         const a = doc.aps.find((x) => pinKey(x) === drag!.id);
         if (a) { a.x = drag.ox + (p.x - drag.px); a.y = drag.oy + (p.y - drag.py); }
       }
-      frame(() => { renderObjects(); renderAps({}); });
+      frame(() => { renderObjects(); renderAps({}, {}); });
     });
 
     const end = (e: PointerEvent): void => {
@@ -1414,6 +1462,7 @@ export function initWifiMapPage(socket: Socket, isVisible: (page: string) => boo
     wifi = d || null;
     if (isVisible('wifi-map')) render();
   });
+  onFeatures(() => { if (isVisible('wifi-map')) render(); });
   socket.on('wireless:update', (d) => {
     wireless = d || null;
     if (isVisible('wifi-map')) render();

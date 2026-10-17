@@ -33,5 +33,10 @@
   "dnsTraceEnabled",
   "dnsBulkEnabled",
   "dnsFleetSyncEnabled",
-  "dnsListsEnabled"
+  "dnsListsEnabled",
+  "domainRoutingEnabled",
+  "watchListEnabled",
+  "wifiHistoryEnabled",
+  "wifiWeakSpotsEnabled",
+  "capVersionsEnabled"
 ]

@@ -146,6 +146,13 @@ var All = []Card{
 	// the rates), and gated on the WAN page, whose data it draws. 12 by 5 is the
 	// operator's default (2026-09-22).
 	{ID: "dc-card-wanflow", Label: "WAN Flow", Room: "wan", Page: "wan", X: 1, Y: 1, W: 12, H: 5},
+	// Domain Routing (Settings -> Features): the address list the static DNS
+	// entries feed, its mangle rules and their routes. Fed by the server's
+	// feature loop, and gated on the DNS page, whose entries it is about; the
+	// parts that belong to the Address Lists, Firewall and Routing pages are
+	// sent only to a viewer granted them (internal/server/dnsrouting_api.go).
+	{ID: "dc-card-domainroute", Label: "Domain Routing", Room: "domainroute", Page: "dns",
+		X: 1, Y: 1, W: 8, H: 6},
 }
 
 // PageFor is the page a card room borrows its data from, and therefore the

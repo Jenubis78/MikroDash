@@ -70,6 +70,7 @@ var commandSources = map[string]string{
 	"dnsbulk_api.go":      "Pages",
 	"dnsfleetsync_api.go": "Pages",
 	"dnslists_api.go":     "Domain lists",
+	"capversions_api.go":  "Pages",
 	"topofleet_api.go":    "Pages",
 	"packages.go":         "Packages",
 	"files.go":            "Files",

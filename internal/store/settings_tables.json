@@ -107,7 +107,14 @@
     "dnsTraceEnabled": false,
     "dnsBulkEnabled": false,
     "dnsFleetSyncEnabled": false,
-    "dnsListsEnabled": false
+    "dnsListsEnabled": false,
+    "domainRoutingEnabled": false,
+    "watchListEnabled": false,
+    "wifiHistoryEnabled": false,
+    "wifiWeakSpotsEnabled": false,
+    "capVersionsEnabled": false,
+    "domainRoutingList": "",
+    "dbWifiHistoryRetentionDays": 7
   },
   "defaultsOrder": [
     "routerHost",
@@ -216,7 +223,14 @@
     "dnsTraceEnabled",
     "dnsBulkEnabled",
     "dnsFleetSyncEnabled",
-    "dnsListsEnabled"
+    "dnsListsEnabled",
+    "domainRoutingEnabled",
+    "watchListEnabled",
+    "wifiHistoryEnabled",
+    "wifiWeakSpotsEnabled",
+    "capVersionsEnabled",
+    "domainRoutingList",
+    "dbWifiHistoryRetentionDays"
   ],
   "encrypted": [
     "routerPass",

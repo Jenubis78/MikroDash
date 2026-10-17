@@ -691,6 +691,36 @@ export interface DNSPayload {
   adlistsAvailable: boolean;
 }
 
+export interface DomainRoutingRule {
+  id: string;
+  chain: string;
+  mark: string;
+  packets: string;
+  disabled: boolean;
+  comment: string;
+}
+
+export interface DomainRoutingRoute {
+  table: string;
+  dst: string;
+  gateway: string;
+  active: boolean;
+}
+
+export interface DomainRoutingStatus {
+  routerId: string;
+  list: string;
+  feeding: number;
+  entries: number;
+  rules: DomainRoutingRule[];
+  routes: DomainRoutingRoute[];
+  ok: boolean;
+  why: string;
+  error: string;
+  withheld: string[];
+  ts: number;
+}
+
 export interface FilesContentPayload {
   name: string;
   text: string;
@@ -2136,6 +2166,7 @@ export interface Events {
   'device:live': Live;
   'diagnostics:update': Diagnostics;
   'dns:update': DNSPayload;
+  'dnsrouting:state': DomainRoutingStatus;
   'files:content': FilesContentPayload;
   'files:fetched': FilesFetchPayload;
   'firewall:update': FirewallPayload;

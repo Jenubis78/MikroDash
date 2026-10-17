@@ -94,7 +94,10 @@ func TestEveryCardRoomIsEmittedTo(t *testing.T) {
 		// `secscore` joined 2026-09-19: the Security Score card is fed by the
 		// scans internal/server/secscan.go runs (runClaimedScan broadcasts to its
 		// room), not by a collector.
-		if k == "diagnostics" || k == "agent" || k == "secscore" {
+		//
+		// `domainroute`: the feature loop reads it and sends it to each viewer
+		// in the card, filtered by their grants (dnsrouting_api.go).
+		if k == "diagnostics" || k == "agent" || k == "secscore" || k == "domainroute" {
 			continue
 		}
 		if room := dashcards.EmitRoom(k); !emitted[room] {

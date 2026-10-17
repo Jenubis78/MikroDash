@@ -43,6 +43,7 @@ func alertSourceTypes(t *testing.T, root string) map[string]bool {
 	for _, rel := range []string{
 		filepath.Join("internal", "alert", "eval.go"),
 		filepath.Join("internal", "alert", "routerstatus.go"),
+		filepath.Join("internal", "alert", "features.go"),
 	} {
 		b, err := os.ReadFile(filepath.Join(root, rel))
 		if err != nil {

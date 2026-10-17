@@ -34,7 +34,12 @@ export const FORM_FIELDS: Record<FieldKind, readonly string[]> = {
     "dnsTraceEnabled",
     "dnsBulkEnabled",
     "dnsFleetSyncEnabled",
-    "dnsListsEnabled"
+    "dnsListsEnabled",
+    "domainRoutingEnabled",
+    "watchListEnabled",
+    "wifiHistoryEnabled",
+    "wifiWeakSpotsEnabled",
+    "capVersionsEnabled"
   ],
   "checkOn": [
     "pageAudit",
@@ -99,7 +104,9 @@ export const FORM_FIELDS: Record<FieldKind, readonly string[]> = {
     "ztpEndpoint",
     "ztpLanUrl",
     "ztpListenPort",
-    "ztpSubnet"
+    "ztpSubnet",
+    "domainRoutingList",
+    "dbWifiHistoryRetentionDays"
   ],
   "checkGuarded": []
 };

@@ -45,8 +45,10 @@ func TestNoServerPayloadSendsANullArray(t *testing.T) {
 			}
 		},
 		"diagnostics:update": func() any { return session.NewForTest(hub.New(), "r1").Diagnostics(0) },
-		"routers:stats":      func() any { return routers.BuildStats(routers.StatsSources{}) },
-		"sites:update":       func() any { return sites },
+		// Domain routing as a viewer granted none of the pages behind it sees it.
+		"dnsrouting:state": func() any { return newDomainRoutingStatus("r1", "").For(false, false, false) },
+		"routers:stats":    func() any { return routers.BuildStats(routers.StatsSources{}) },
+		"sites:update":     func() any { return sites },
 		"term:output": func() any {
 			return TermOutputPayload{Entry: TermEntry{Lines: []string{}}}
 		},

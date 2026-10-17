@@ -138,6 +138,9 @@ var portAddedPrunes = map[string]string{
 		"so the recording has no counterpart. It ages on the same policy as traffic_samples: " +
 		"the rollups exist to keep the history at lower resolution, not to keep it longer",
 	"bandwidth_hourly": "the hourly volume rollup (#59), the same arrangement as traffic_hourly",
+	"wifi_samples": "the Wi-Fi client history, an optional feature live never had. It ages on its " +
+		"own setting, a week by default, because a sample a minute per client is the largest table " +
+		"here for its age and only recent history answers its question",
 	"monitor_runs": "when each router was being observed (2026-10-01), so the Devices page's " +
 		"connectivity strip can draw time nobody was watching as not-monitored. Live had no such " +
 		"record. It ages on the connectivity policy because a run only means anything beside the " +
@@ -217,7 +220,7 @@ func TestPruneDeletesOnlyWhatIsOlderThanItsOwnPolicy(t *testing.T) {
 	d := openTestDB(t)
 	const now int64 = 1_800_000_000_000
 	day := int64(msPerDay)
-	p := PruneDays{Metric: 10, Alert: 100, Audit: 200, AI: 300}
+	p := PruneDays{Metric: 10, Alert: 100, Audit: 200, AI: 300, Wifi: 400}
 
 	// Each table with the column the sweep ages it on, the policy that governs
 	// it, and a full INSERT — the real schema has NOT NULL columns, so a
@@ -258,6 +261,9 @@ func TestPruneDeletesOnlyWhatIsOlderThanItsOwnPolicy(t *testing.T) {
 		// fail the one-left count below.
 		{"monitor_runs", 100,
 			`INSERT INTO monitor_runs (router_id, started_at, last_seen_at) VALUES ('r1', 0, ?)`, nil},
+		// Wi-Fi client history ages on its own setting.
+		{"wifi_samples", 400,
+			`INSERT INTO wifi_samples (router_id, ts, mac) VALUES ('r1', ?, '02:00:00:00:00:01')`, nil},
 	}
 
 	for _, s := range seeds {
@@ -318,7 +324,7 @@ func openTestDB(t *testing.T) *DB {
 	}
 	// AND THE REAL `monitorRunsDDL`, the constant itself rather than a retyped
 	// copy, for the same reason as the line above.
-	if _, err := h.Exec(historyDDL + monitorRunsDDL); err != nil {
+	if _, err := h.Exec(historyDDL + monitorRunsDDL + clientWatchDDL); err != nil {
 		t.Fatal(err)
 	}
 	_ = h.Close()

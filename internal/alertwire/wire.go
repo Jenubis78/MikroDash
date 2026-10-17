@@ -206,6 +206,49 @@ func (w *Wire) RouterStatus(r alert.Router, up bool) []alert.Fired {
 	return fired
 }
 
+// DeviceAbsent and DomainRouting feed the two optional features' verdicts to
+// the rules, under the router's lock and clock, as RouterStatus does and for
+// its reason: neither has a payload to switch on.
+func (w *Wire) DeviceAbsent(r alert.Router, subject, label string, present bool) []alert.Fired {
+	if w == nil || r.ID == "" {
+		return nil
+	}
+	ev, lock, st := w.forRouter(r.ID)
+	lock.Lock()
+	defer lock.Unlock()
+	st.setNow(w.now())
+	return ev.DeviceAbsent(r, subject, label, present)
+}
+
+func (w *Wire) DomainRouting(r alert.Router, ok bool, why string) []alert.Fired {
+	if w == nil || r.ID == "" {
+		return nil
+	}
+	ev, lock, st := w.forRouter(r.ID)
+	lock.Lock()
+	defer lock.Unlock()
+	st.setNow(w.now())
+	return ev.DomainRouting(r, ok, why)
+}
+
+// Withdraw closes an open alert without a message, through the same store and
+// lock the rules use: the feature that raised it was switched off, or the
+// device it was about is no longer watched. Nothing recovered, so nothing is
+// sent.
+func (w *Wire) Withdraw(routerID, alertType, subject string) {
+	if w == nil || routerID == "" {
+		return
+	}
+	_, lock, st := w.forRouter(routerID)
+	lock.Lock()
+	defer lock.Unlock()
+	if !st.HasOpen(routerID, alertType, subject) {
+		return
+	}
+	st.setNow(w.now())
+	st.Resolve(routerID, alertType, subject)
+}
+
 // Evaluate feeds one collector payload to the rules and returns what fired.
 //
 // ── AN UNRECOGNISED EVENT IS THE COMMON CASE, NOT AN ERROR ─────────────────
