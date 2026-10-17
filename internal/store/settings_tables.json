@@ -104,7 +104,10 @@
     "ztpInstanceId": "",
     "hiddenAreas": [],
     "dnsCacheEnabled": false,
-    "dnsTraceEnabled": false
+    "dnsTraceEnabled": false,
+    "dnsBulkEnabled": false,
+    "dnsFleetSyncEnabled": false,
+    "dnsListsEnabled": false
   },
   "defaultsOrder": [
     "routerHost",
@@ -210,7 +213,10 @@
     "ztpInstanceId",
     "hiddenAreas",
     "dnsCacheEnabled",
-    "dnsTraceEnabled"
+    "dnsTraceEnabled",
+    "dnsBulkEnabled",
+    "dnsFleetSyncEnabled",
+    "dnsListsEnabled"
   ],
   "encrypted": [
     "routerPass",

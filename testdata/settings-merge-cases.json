@@ -109,7 +109,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -223,7 +226,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -337,7 +343,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -452,7 +461,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -567,7 +579,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -682,7 +697,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -797,7 +815,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -912,7 +933,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -1025,7 +1049,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -1138,7 +1165,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -1251,7 +1281,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -1366,7 +1399,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -1479,7 +1515,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -1592,7 +1631,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -1705,7 +1747,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -1818,7 +1863,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -1932,7 +1980,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -2046,7 +2097,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -2159,7 +2213,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -2272,7 +2329,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -2385,7 +2445,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     },
     {
@@ -2498,7 +2561,10 @@
         "ztpInstanceId": "",
         "hiddenAreas": [],
         "dnsCacheEnabled": false,
-        "dnsTraceEnabled": false
+        "dnsTraceEnabled": false,
+        "dnsBulkEnabled": false,
+        "dnsFleetSyncEnabled": false,
+        "dnsListsEnabled": false
       }
     }
   ]

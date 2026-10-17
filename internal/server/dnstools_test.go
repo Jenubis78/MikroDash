@@ -278,9 +278,15 @@ func TestTheTraceReadsOnlyWhatItsViewerMaySee(t *testing.T) {
 // refusal that must come before one is asked for.
 func gateServer(t *testing.T, settings, extra string) *Server {
 	t.Helper()
+	return gateServerWith(t, settings, extra, `[]`)
+}
+
+// gateServerWith is gateServer with the routers file given.
+func gateServerWith(t *testing.T, settings, extra, routers string) *Server {
+	t.Helper()
 	dir := t.TempDir()
 	for name, body := range map[string]string{
-		"routers.json":  `[]`,
+		"routers.json":  routers,
 		"settings.json": settings,
 		".secret":       "test-secret",
 		"users.json":    `[{"id":"u-1","username":"someone","passwordHash":"x","salt":"y","role":"viewer"}]`,

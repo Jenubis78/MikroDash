@@ -155,6 +155,12 @@ type Server struct {
 	originPatterns []string
 	// writeLimit bounds router writes per user per router (#97). See write_limit.go.
 	writeLimit *rateLimiter
+	// jobLimit bounds the writes of a bulk job, apart from writeLimit. See write_limit.go.
+	jobLimit *rateLimiter
+	// dnsBulk is the static-DNS jobs, running and recently finished. See dnsbulk_api.go.
+	dnsBulk dnsBulkJobs
+	// features is the optional features' background loop. See features_loop.go.
+	features *featureLoop
 	// aiLimit bounds questions to the model, per user per router (#98).
 	//
 	// EVERY ASK IS AN OUTBOUND REQUEST to an endpoint the operator named, which
@@ -370,6 +376,8 @@ func New(st *store.Store, opts Options) (*Server, error) {
 		web:            http.FileServer(http.Dir(opts.WebDir)),
 		originPatterns: opts.OriginPatterns,
 		writeLimit:     newWriteLimiter(),
+		jobLimit:       newJobLimiter(),
+		dnsBulk:        dnsBulkJobs{jobs: map[string]*DNSBulkJob{}, busy: map[string]bool{}},
 		aiLimit:        newRateLimiter(20, time.Minute),
 	}
 	// Installed AFTER construction because it closes over the server. It is the
@@ -539,6 +547,7 @@ func New(st *store.Store, opts Options) (*Server, error) {
 	// It also carries the hourly roll-up, which only writes and so rides with
 	// `-history` instead (#59); the comment on the builder has the split.
 	srv.pruneSched = srv.buildPruneScheduler(opts.Retention, opts.History)
+	srv.features = srv.buildFeatureLoop()
 	// The traffic and ping recorder, off the session's emit seam. CONNECTIVITY
 	// is no longer part of it — that is the tracker's, attached at the top of
 	// New, where the ordering is correct.
@@ -638,6 +647,9 @@ func (s *Server) Handler() http.Handler {
 	s.registerRouterDocs(mux)
 	s.registerDNSFleet(mux)
 	s.registerDNSTools(mux)
+	s.registerDNSBulk(mux)
+	s.registerDNSFleetSync(mux)
+	s.registerDNSLists(mux)
 	s.registerTopologyFleet(mux)
 	s.registerAlerts(mux)
 	s.registerRouters(mux)
@@ -860,6 +872,9 @@ func (s *Server) Shutdown() {
 	// 24-hour ticker.
 	if s.pruneSched != nil {
 		s.pruneSched.Stop()
+	}
+	if s.features != nil {
+		s.features.Stop()
 	}
 	// AND THE RECONCILER, for that same reason: its loop holds a ticker and
 	// would outlive every Server a test builds.

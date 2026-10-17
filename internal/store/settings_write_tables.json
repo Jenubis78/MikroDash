@@ -195,7 +195,10 @@
     "aiAllowRawCommands",
     "ztpEnabled",
     "dnsCacheEnabled",
-    "dnsTraceEnabled"
+    "dnsTraceEnabled",
+    "dnsBulkEnabled",
+    "dnsFleetSyncEnabled",
+    "dnsListsEnabled"
   ],
   "credFields": [
     "aiApiKey"

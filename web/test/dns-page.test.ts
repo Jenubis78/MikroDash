@@ -20,7 +20,8 @@ const ROOT = process.env.MIKRODASH_ROOT || path.join(__dirname, '..', '..');
 const ENTRY = path.join(ROOT, 'testdata', '.dnspage-entry.ts');
 fs.writeFileSync(ENTRY, "export { initDnsPage } from '../web/src/pages/dns.js';\n" +
   "export { buildRows } from '../web/src/pages/dns-fleet.js';\n" +
-  "export { heldElsewhere } from '../web/src/pages/dns-fleet.js';\n");
+  "export { heldElsewhere } from '../web/src/pages/dns-fleet.js';\n" +
+  "export { rscLine, rscValue, csvCell, jobProgress } from '../web/src/pages/dns-bulk.js';\n");
 const OUT = path.join(ROOT, 'testdata', '.dnspage.cjs');
 execFileSync(path.join(ROOT, 'web', 'node_modules', '.bin', 'esbuild'),
   [ENTRY, '--bundle', '--format=cjs', '--platform=node', '--outfile=' + OUT, '--log-level=warning'],
@@ -37,6 +38,11 @@ const IDS = [
   // Settings -> Features: the cache browser and the route trace.
   'dnsCacheCard', 'dnsCacheBadge', 'dnsCacheNote', 'dnsCacheSearch', 'dnsCacheRead', 'dnsCacheThead',
   'dnsCacheTable', 'dnsTraceCard', 'dnsTraceName', 'dnsTraceGo', 'dnsTraceOut',
+  // Bulk edit and export, the fleet sync and the domain lists.
+  'dnsStaticCols', 'dnsBulkBar', 'dnsBulkCount', 'dnsBulkField', 'dnsBulkValue', 'dnsBulkApply',
+  'dnsBulkEnable', 'dnsBulkDisable', 'dnsBulkRemove', 'dnsBulkClear', 'dnsBulkNote', 'dnsExportTools',
+  'dnsExportRsc', 'dnsExportCsv', 'dnsFleetSyncTools', 'dnsFleetRef', 'dnsFleetRemoveExtra', 'dnsFleetSyncRef',
+  'dnsListsCard', 'dnsListsBadge', 'dnsListsNote', 'dnsListAdd', 'dnsListForm', 'dnsListsThead', 'dnsListsTable',
 ];
 
 const SETTINGS = {
@@ -160,6 +166,30 @@ function boot() {
       { name: 'v.example', regexp: '', type: 'TXT', value: 'Token-AbC' }),
     { same: ['x'], differ: ['y'] }, 'a TXT value in another case is the same value');
   say('ok  the dialog names the routers that already hold the record, and those with another value');
+}
+
+// ── 4. an export is what /ip dns static add takes, and a CSV cell never runs as a formula
+{
+  const { rscLine, rscValue, csvCell, jobProgress } = require(OUT);
+  assert.strictEqual(rscValue('to_vpn_FWD'), 'to_vpn_FWD');
+  assert.strictEqual(rscValue('two words'), '"two words"');
+  assert.strictEqual(rscValue('^a\\.b$'), '"^a\\\\.b\\$"', 'a regexp keeps its backslash and dollar through the script');
+  assert.strictEqual(rscValue('v=spf1\nadd name=evil'), '"v=spf1\\nadd name=evil"', 'a line break stays in its value');
+  assert.strictEqual(rscValue('a\r\tb'), '"a\\r\\tb"');
+  assert.strictEqual(rscValue('a\x00b\x1fc\x7fd'), '"a\\00b\\1Fc\\7Fd"', 'the other control characters are \\XX');
+  const line = rscLine({ name: 'x.example', type: 'TXT', text: 'one\n/system reset-configuration', comment: 'a\nb' });
+  assert.ok(!line.includes('\n') && !line.includes('\r'), 'an export line is more than one line: ' + JSON.stringify(line));
+  assert.strictEqual(
+    rscLine({ name: 'example.com', type: 'FWD', forwardTo: 'zfwdentry', addressList: 'to_vpn_FWD',
+      matchSubdomain: true, ttl: '1d', disabled: false, comment: 'by hand' }),
+    'add name=example.com type=FWD forward-to=zfwdentry address-list=to_vpn_FWD match-subdomain=yes comment="by hand"');
+  for (const [raw, want] of [['=HYPERLINK("x")', '"\'=HYPERLINK(""x"")"'], ['+1', "'+1"], ['-1', "'-1"],
+    ['@SUM(A1)', "'@SUM(A1)"], ['plain, text', '"plain, text"'], ['v=spf1 -all', 'v=spf1 -all']]) {
+    assert.strictEqual(csvCell(raw), want, 'csvCell(' + raw + ')');
+  }
+  assert.ok(jobProgress({ done: 3, total: 9, waitingUntil: 10_000 }, 1_000).includes('waiting 9 s for the write limit'),
+    'a job held by the write limit does not say so');
+  say('ok  an export line is what add takes, a CSV cell never starts a formula, and a waiting job says why');
 }
 
 // ── the comparison lines a name up without case, and a round-robin pair by value

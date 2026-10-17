@@ -31,7 +31,10 @@ export const FORM_FIELDS: Record<FieldKind, readonly string[]> = {
     "routerTlsInsecure",
     "userNotifyEnabled",
     "dnsCacheEnabled",
-    "dnsTraceEnabled"
+    "dnsTraceEnabled",
+    "dnsBulkEnabled",
+    "dnsFleetSyncEnabled",
+    "dnsListsEnabled"
   ],
   "checkOn": [
     "pageAudit",

@@ -142,7 +142,8 @@ export interface PageSettings {
   vpnDashTopN: number;
   displayTimezone: string;
   /** The optional features, Settings -> Features; see store.FeatureOn. */
-  dnsCacheEnabled: boolean; dnsTraceEnabled: boolean;
+  dnsBulkEnabled: boolean; dnsCacheEnabled: boolean; dnsFleetSyncEnabled: boolean;
+  dnsListsEnabled: boolean; dnsTraceEnabled: boolean;
 }
 
 export interface HandEvents {

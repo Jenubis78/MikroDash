@@ -28,6 +28,8 @@ import { esc, el, lsGet, lsSet } from '../dom';
 import { openResource, registerExtra } from '../resource';
 import type { Socket } from '../socket';
 import type { RouterRecord } from '../events-hand';
+import { featureOn, onFeatures } from '../caps';
+import { followJob, jobProgress, jobSummary } from './dns-bulk';
 
 /** One record as the fleet endpoint reports it. */
 interface FleetEntry {
@@ -357,6 +359,7 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
   }
 
   function render(): void {
+    syncTools();
     const tb = el('dnsFleetTable');
     const badge = el('dnsFleetBadge');
     const note = el('dnsFleetNote');
@@ -572,6 +575,65 @@ export function initDnsFleet(socket: Socket, isVisible: (page: string) => boolea
   });
 
   el('dnsFleetReload')?.addEventListener('click', load);
+  // ── fleet sync to a reference router (Settings -> Features) ─────────────
+  //
+  // The server plans it from tables it reads itself (dnsfleetsync_api.go):
+  // this asks for the counts first, shows them, and only then for the writes.
+
+  let removeExtra = false;
+
+  function syncTools(): void {
+    const tools = el('dnsFleetSyncTools');
+    if (tools) tools.style.display = featureOn('dnsFleetSyncEnabled') ? '' : 'none';
+    const sel = el<HTMLSelectElement>('dnsFleetRef');
+    if (!sel) return;
+    const live = data.filter((r) => r.ok);
+    const cur = sel.value || activeID;
+    sel.innerHTML = live.map((r) => '<option value="' + esc(r.id) + '"' + (r.id === cur ? ' selected' : '') + '>' +
+      esc(r.label) + '</option>').join('');
+  }
+
+  el('dnsFleetRemoveExtra')?.addEventListener('click', (ev) => {
+    removeExtra = !removeExtra;
+    const b = ev.currentTarget as HTMLElement;
+    b.classList.toggle('is-on', removeExtra);
+    b.setAttribute('aria-pressed', String(removeExtra));
+  });
+
+  el('dnsFleetSyncRef')?.addEventListener('click', () => {
+    const refId = el<HTMLSelectElement>('dnsFleetRef')?.value || '';
+    const routerIds = data.filter((r) => r.ok && r.id !== refId).map((r) => r.id);
+    if (busy || !refId || !routerIds.length) return;
+    interface Planned { routerId: string; label: string; add: number; change: number; remove: number; code: string; jobId: string }
+    const ask = (dryRun: boolean): Promise<Planned[]> => fetch('/api/dns/fleet-sync', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refId, routerIds, removeExtra, dryRun }),
+    }).then((r) => r.json().then((d) => (r.ok && d.ok ? d.routers as Planned[]
+      : Promise.reject(new Error((d && d.error) || r.statusText)))));
+    busy = 'sync';
+    notice = 'planning…';
+    render();
+    ask(true)
+      .then((plans) => {
+        const todo = plans.filter((p) => p.add + p.change + p.remove > 0);
+        if (!todo.length) { notice = 'every router already matches ' + named(refId).label; return; }
+        const lines = plans.map((p) => p.label + ': ' + (p.code || 'add ' + p.add + ', change ' + p.change +
+          (removeExtra ? ', remove ' + p.remove : '')));
+        if (!window.confirm('Make these routers match ' + named(refId).label + '?\n\n' + lines.join('\n'))) {
+          notice = '';
+          return;
+        }
+        return ask(false).then((started) => Promise.all(started.map((p) => (p.jobId
+          ? followJob(p.jobId, (j) => { notice = p.label + ': ' + jobProgress(j); render(); })
+            .then((j) => p.label + ': ' + jobSummary(j))
+          : Promise.resolve(p.label + ': ' + (p.code || 'nothing to do'))))))
+          .then((results) => { notice = results.join(' · '); });
+      })
+      .catch((e: Error) => { notice = 'not synced: ' + e.message; })
+      .then(() => { busy = ''; load(); });
+  });
+  onFeatures(syncTools);
+
   el('dnsFleetSyncAll')?.addEventListener('click', () => {
     // EVERY MISSING PAIR, ONE RECORD AT A TIME. The server is idempotent - a
     // record already present answers `already-present` rather than adding a

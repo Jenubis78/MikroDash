@@ -14,7 +14,10 @@
       "routerTlsInsecure",
       "userNotifyEnabled",
       "dnsCacheEnabled",
-      "dnsTraceEnabled"
+      "dnsTraceEnabled",
+      "dnsBulkEnabled",
+      "dnsFleetSyncEnabled",
+      "dnsListsEnabled"
     ],
     "checkOn": [
       "pageAudit",

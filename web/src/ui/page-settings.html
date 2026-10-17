@@ -1569,6 +1569,11 @@
             <p style="font-size:.74rem;color:var(--text-muted);margin-bottom:.8rem">Each is off until you switch it on, and off it draws nothing and reads nothing.</p>
             <div class="ff-grid">
               <div class="ff">
+                <label class="sform-label" for="s_dnsBulkEnabled">Bulk edit and export</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_dnsBulkEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Tick static entries on the DNS page to change their address list, forwarder or state, or remove them, in one job paced by the write limit; export the table as a RouterOS script or CSV.</div>
+              </div>
+              <div class="ff">
                 <label class="sform-label" for="s_dnsCacheEnabled">DNS cache browser</label>
                 <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_dnsCacheEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
                 <div class="ff-help">Administrators: a Cache card on the DNS page that reads the resolver&#39;s cache when you press Read, searchable. The cache lists every name the network has looked up, so DNS read access alone does not open it. Nothing is read in the background.</div>
@@ -1577,6 +1582,16 @@
                 <label class="sform-label" for="s_dnsTraceEnabled">Domain route trace</label>
                 <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_dnsTraceEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
                 <div class="ff-help">Why a domain does or does not take its route: the static entry that catches it, what it resolved to, whether the address reached the list, and the mangle rule and route behind it.</div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="s_dnsFleetSyncEnabled">Fleet sync to a reference router</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_dnsFleetSyncEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">In the fleet comparison, make the other routers&#39; static entries match one router: add and change, and remove only if you choose to, after the counts are shown. Dynamic entries are never touched.</div>
+              </div>
+              <div class="ff">
+                <label class="sform-label" for="s_dnsListsEnabled">Domain list subscriptions</label>
+                <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="s_dnsListsEnabled"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                <div class="ff-help">Administrators: keep FWD entries in step with a list of domains, pasted or fetched from a public URL, on the routers you pick. Only entries the list created are changed, and a fetch that comes back empty or under half its last size changes nothing on its own.</div>
               </div>
             </div>
           </div>
