@@ -204,6 +204,8 @@
       margin-top: 1rem;
       line-height: 1.5;
     }
+    .login-note code { font-family: var(--font-mono); color: var(--text-main); }
+    #setupCode { font-family: var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
 
     #loadingView {
       text-align: center;
@@ -264,7 +266,12 @@
         <h2>Create Admin Account</h2>
         <p class="login-note" style="margin-top:0;margin-bottom:1rem">
           No users exist yet. Create the first admin account to get started.
+          The setup code is in MikroDash's log, e.g. <code>docker compose logs mikrodash</code>.
         </p>
+        <div class="form-group">
+          <label class="login-label" for="setupCode">Setup Code</label>
+          <input class="form-input" id="setupCode" type="text" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX">
+        </div>
         <div class="form-group">
           <label class="login-label" for="setupUser">Username</label>
           <input class="form-input" id="setupUser" type="text" autocomplete="username" placeholder="admin">

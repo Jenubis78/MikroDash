@@ -206,7 +206,7 @@ function main(): void {
       if (loadingView) loadingView.style.display = 'none';
       if (d.firstRun) {
         if (firstRunView) firstRunView.style.display = '';
-        byId('setupUser')?.focus();
+        byId('setupCode')?.focus();
       } else {
         if (loginView) loginView.style.display = '';
         // ── BACK FROM A PROVIDER ────────────────────────────────────────
@@ -290,9 +290,11 @@ function main(): void {
   // ── First-run setup ───────────────────────────────────────────────────────
   function doSetup(): void {
     clearError('setupError');
+    const setupCode = (byId('setupCode') as HTMLInputElement | null)?.value.trim() || '';
     const username = (byId('setupUser') as HTMLInputElement | null)?.value.trim() || '';
     const password = (byId('setupPass') as HTMLInputElement | null)?.value || '';
     const confirm = (byId('setupPass2') as HTMLInputElement | null)?.value || '';
+    if (!setupCode) { showError('setupError', 'Enter the setup code from MikroDash\'s log.'); return; }
     if (!username) { showError('setupError', 'Username is required.'); return; }
     // FOUR, not eight. Reproduced rather than improved: the server enforces its
     // own rule and this is only the early message, so raising it here would
@@ -310,7 +312,7 @@ function main(): void {
     void fetch('/api/users/setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, setupCode }),
     })
       .then((r) => r.json())
       .then((d: { ok?: boolean; error?: string }) => {

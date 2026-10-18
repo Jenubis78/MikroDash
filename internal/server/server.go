@@ -141,6 +141,9 @@ type Options struct {
 
 // Server is the whole thing.
 type Server struct {
+	// setupCode is the first-run setup code, empty until an install with no
+	// account needs one (setup_api.go). Guarded by setupMu.
+	setupCode string
 	// cfg is Config Management's one deploy job (cfgjob.go).
 	cfg cfgJob
 	// ztp is zero-touch provisioning's tunnel engine and its enrolment

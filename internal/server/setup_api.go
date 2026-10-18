@@ -9,8 +9,18 @@ package server
 // below, and each is load-bearing:
 //
 //	zero users   the route closes for ever once one exists
+//	the code     a one-time setup code, printed to the server log only
 //	the latch    two concurrent requests must not both pass "zero users"
 //	the limiter  five a minute, because every attempt is a guess at ownership
+//
+// ── THE SETUP CODE ──────────────────────────────────────────────────────────
+//
+// The first three gates decide WHEN the route works, not WHO may use it: on an
+// install reachable from the internet, whoever found the page first became its
+// administrator, and the operator who deployed it was then told "Setup already
+// complete". Reading the log needs access to the host or the hosting panel,
+// which a stranger who found the URL does not have. The code lives in memory
+// only, so a restart before setup prints a new one.
 //
 // The live comment on the latch is exact: "createUser is async, so two
 // concurrent requests could both pass the userCount()===0 check before either
@@ -31,10 +41,14 @@ package server
 // instrument for a runtime branch, so a Go test pins it instead.
 
 import (
+	"crypto/rand"
+	"crypto/subtle"
 	"encoding/json"
 	"log"
+	"math/big"
 	"net/http"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -62,6 +76,44 @@ func (s *Server) registerSetup(mux *http.ServeMux) {
 	// write routes, because this one is reachable without a session.
 	lim := newRateLimiter(5, time.Minute).limit
 	mux.HandleFunc("POST /api/users/setup", lim(s.usersSetup))
+	// Printed at start, so the code is in the log before anybody opens the page.
+	if s.store != nil {
+		if n, err := s.store.UserCount(); err == nil && n == 0 {
+			setupMu.Lock()
+			s.firstRunCode()
+			setupMu.Unlock()
+		}
+	}
+}
+
+// setupAlphabet leaves out 0, O, 1, I and L, which read alike in a log.
+const setupAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+// firstRunCode is the install's setup code, made and logged on first use.
+// setupMu must be held.
+func (s *Server) firstRunCode() string {
+	if s.setupCode != "" {
+		return s.setupCode
+	}
+	b := make([]byte, 12)
+	for i := range b {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(setupAlphabet))))
+		if err != nil {
+			// No randomness is no setup, never a guessable code.
+			log.Fatalf("[setup] making the setup code: %v", err)
+		}
+		b[i] = setupAlphabet[n.Int64()]
+	}
+	s.setupCode = string(b)
+	log.Printf("[setup] no account exists yet. Setup code: %s-%s-%s (the first-run page asks for it)",
+		s.setupCode[:4], s.setupCode[4:8], s.setupCode[8:])
+	return s.setupCode
+}
+
+// setupCodeMatches compares what was typed, ignoring case, spaces and hyphens.
+func setupCodeMatches(typed, code string) bool {
+	typed = strings.ToUpper(strings.NewReplacer("-", "", " ", "").Replace(typed))
+	return subtle.ConstantTimeCompare([]byte(typed), []byte(code)) == 1
 }
 
 // setupMu replaces the live `_setupClaimed` boolean.
@@ -89,8 +141,9 @@ func (s *Server) usersSetup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
+		Username  string `json:"username"`
+		Password  string `json:"password"`
+		SetupCode string `json:"setupCode"`
 	}
 	// A malformed body reads as an empty one, exactly as `req.body || {}` does:
 	// the checks below refuse it on the username, which is the answer the live
@@ -116,6 +169,14 @@ func (s *Server) usersSetup(w http.ResponseWriter, r *http.Request) {
 		// 409, and the live wording. Not 403: nothing is forbidden to this
 		// caller, the state simply no longer exists.
 		writeJSONErr(w, http.StatusConflict, "Setup already complete")
+		return
+	}
+
+	// BEFORE the input checks, so a caller without the code learns nothing
+	// about which usernames or passwords would pass.
+	if !setupCodeMatches(body.SetupCode, s.firstRunCode()) {
+		writeJSONErr(w, http.StatusForbidden,
+			"Wrong setup code. It is in MikroDash's log.")
 		return
 	}
 

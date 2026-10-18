@@ -205,7 +205,7 @@ Then open `http://<router-lan-ip>:3081`.
 ## First run
 
 1. Open the address in a browser. The setup wizard appears.
-2. Create your administrator account.
+2. Create your administrator account. It asks for the setup code MikroDash prints to its log: `/log print where message~"Setup code"`.
 3. The add-router form opens immediately after. Enter:
    - **Host**: `172.16.10.1` (the router's address on the container bridge, not your LAN gateway)
    - **Port**: `8728`, TLS off. Use `8729` with TLS on for `api-ssl`.

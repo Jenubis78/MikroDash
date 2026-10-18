@@ -13,7 +13,9 @@ package server
 // public MikroDash repository at cutover.
 
 import (
+	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -47,10 +49,38 @@ func freshInstall(t *testing.T) (http.Handler, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return srv.Handler(), dir
+	return codedHandler{srv.Handler(), srv}, dir
 }
 
+// codedHandler is a fresh install's handler with its server, so postSetup can
+// send the setup code the way an operator who read the log would.
+type codedHandler struct {
+	http.Handler
+	srv *Server
+}
+
+func (c codedHandler) code() string {
+	setupMu.Lock()
+	defer setupMu.Unlock()
+	return c.srv.setupCode
+}
+
+// postSetup sends the install's setup code unless the body names one itself.
 func postSetup(h http.Handler, body string) *httptest.ResponseRecorder {
+	if c, ok := h.(codedHandler); ok {
+		var m map[string]string
+		if json.Unmarshal([]byte(body), &m) == nil {
+			if _, named := m["setupCode"]; !named {
+				m["setupCode"] = c.code()
+				b, _ := json.Marshal(m)
+				body = string(b)
+			}
+		}
+	}
+	return rawPostSetup(h, body)
+}
+
+func rawPostSetup(h http.Handler, body string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest("POST", "/api/users/setup", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.RemoteAddr = "10.0.0.9:1234"
@@ -357,7 +387,7 @@ func freshInstallWithDB(t *testing.T) (http.Handler, *db.DB) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return srv.Handler(), d
+	return codedHandler{srv.Handler(), srv}, d
 }
 
 // routerRbacDDL2 is the minimum this route touches: the grants table and the
@@ -582,5 +612,85 @@ func TestSetupIsRateLimited(t *testing.T) {
 		if codes[i] == http.StatusTooManyRequests {
 			t.Errorf("attempt %d was limited; the live budget is five a minute: %v", i+1, codes)
 		}
+	}
+}
+
+// TestSetupNeedsTheCodeFromTheLog. Zero users says WHEN setup is open, not WHO
+// may use it: an install reachable from the internet was claimed by whoever
+// found the page first. The code is printed to the log at start, and only a
+// request carrying it creates the administrator.
+func TestSetupNeedsTheCodeFromTheLog(t *testing.T) {
+	var logged bytes.Buffer
+	log.SetOutput(&logged)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+
+	h, dir := freshInstall(t)
+	code := h.(codedHandler).code()
+	if len(code) != 12 {
+		t.Fatalf("setup code %q, want 12 characters", code)
+	}
+	shown := code[:4] + "-" + code[4:8] + "-" + code[8:]
+	if !strings.Contains(logged.String(), "Setup code: "+shown) {
+		t.Fatalf("the code is not in the log at start, so the operator cannot find it: %q", logged.String())
+	}
+
+	for _, c := range []struct{ why, body string }{
+		{"no code", setupBody("stranger", "an-invented-password")},
+		{"a wrong code", `{"username":"stranger","password":"an-invented-password","setupCode":"AAAA-BBBB-CCCC"}`},
+		{"an empty code", `{"username":"stranger","password":"an-invented-password","setupCode":""}`},
+	} {
+		rec := rawPostSetup(h, c.body)
+		if rec.Code != http.StatusForbidden {
+			t.Errorf("%s: answered %d, want 403: %s", c.why, rec.Code, rec.Body.String())
+		}
+		if _, err := os.Stat(filepath.Join(dir, "users.json")); !os.IsNotExist(err) {
+			t.Fatalf("%s: a request without the code created users.json, claiming the install", c.why)
+		}
+	}
+
+	// The code as somebody would type it: lower case, spaced, with hyphens.
+	typed := strings.ToLower(code[:4] + " - " + code[4:8] + "-" + code[8:])
+	b, _ := json.Marshal(map[string]string{"username": "ann", "password": "an-invented-password", "setupCode": typed})
+	if rec := rawPostSetup(h, string(b)); rec.Code != http.StatusOK {
+		t.Fatalf("the right code, typed loosely, answered %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestTheSetupCodeIsNotServed. The login page asks /api/auth/status before it
+// draws anything, and a code that reached it would gate nothing.
+func TestTheSetupCodeIsNotServed(t *testing.T) {
+	h, _ := freshInstall(t)
+	code := h.(codedHandler).code()
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/auth/status", nil))
+	if !strings.Contains(rec.Body.String(), `"firstRun":true`) {
+		t.Fatalf("status = %s", rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), code) || strings.Contains(rec.Body.String(), code[:4]+"-") {
+		t.Errorf("/api/auth/status carries the setup code: %s", rec.Body.String())
+	}
+}
+
+// TestAnInstallWithAnAccountMakesNoCode. Once setup is done nothing is
+// printed, so an old code in a log never looks like it still matters.
+func TestAnInstallWithAnAccountMakesNoCode(t *testing.T) {
+	h, dir := freshInstall(t)
+	if rec := postSetup(h, setupBody("ann", "an-invented-password")); rec.Code != http.StatusOK {
+		t.Fatalf("setup answered %d: %s", rec.Code, rec.Body.String())
+	}
+	st, err := store.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := New(st, Options{WebDir: t.TempDir()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var logged bytes.Buffer
+	log.SetOutput(&logged)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	srv.Handler()
+	if srv.setupCode != "" || strings.Contains(logged.String(), "Setup code") {
+		t.Errorf("an install with an account made a setup code: %q", logged.String())
 	}
 }

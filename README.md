@@ -64,7 +64,7 @@ volumes:
 docker compose up -d
 ```
 
-Open **http://localhost:3081**. On first run MikroDash asks you to create an administrator account, then walks you through adding your first router and testing the connection. No `.env` file is needed.
+Open **http://localhost:3081**. On first run MikroDash asks you to create an administrator account, using the setup code it prints to its log (`docker compose logs mikrodash`), then walks you through adding your first router and testing the connection. No `.env` file is needed.
 
 > [!TIP]
 > Images are published for `linux/amd64`, `linux/arm64` and `linux/arm/v7` on every release tag, so `latest` always means the latest release, never unreleased work. Pin a version with `ghcr.io/secops-7/mikrodash:<version>`.
@@ -416,6 +416,7 @@ MikroDash is built for your **local network**. It serves plain HTTP; terminate T
 
 - **Turn on sign-in.** Settings, Authentication, **Require sign-in**. With it off, anyone who reaches the page can see all of your routers' data (router configuration stays read-only). With it on, access is granted as a role (which pages, read or write) over a scope (everything, a site, or one router).
 - **Zero-touch provisioning opens one UDP port** (13231, WireGuard) while it is switched on. It is the only part of MikroDash meant to face the internet: a router without a valid script cannot complete a handshake with it.
+- **First-run setup needs a code from the log.** Until an account exists, MikroDash prints a one-time setup code to its log, and the setup page will not create the administrator without it, so a stranger who reaches a fresh install cannot claim it.
 - **Never expose it directly to the internet.** For remote access use a VPN, or an authenticating proxy such as Cloudflare Access or Authelia in front of MikroDash with sign-in enabled.
 - **Credentials at rest** are encrypted with AES-256-GCM; user passwords are hashed with scrypt. Keep the `/data` volume, and `/data/.secret` in particular, private.
 - **Single sign-on is OpenID Connect**, with PKCE, a nonce, and the ID token checked against the provider's own key set. An account whose username collides with a local one is refused rather than merged, and a person whose claims map to no role cannot sign in at all.

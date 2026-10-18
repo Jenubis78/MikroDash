@@ -60,8 +60,8 @@ docker compose logs --tail=100 mikrodash
 curl -fsS http://127.0.0.1:3081/healthz
 ```
 
-4. Open `http://<R5S_IP>:3081` and complete the first-run wizard: create the
-   dashboard account, then add the `hEX S` with the API user created below.
+4. Open `http://<R5S_IP>:3081` and complete the first-run wizard: enter the setup
+   code from `docker compose logs mikrodash`, create the dashboard account, then add the `hEX S` with the API user created below.
 
 ## RouterOS setup on the hEX S
 
