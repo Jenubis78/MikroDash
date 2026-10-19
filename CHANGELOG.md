@@ -2,6 +2,32 @@
 
 All notable changes to MikroDash will be documented in this file.
 
+## [0.8.76] - First-run setup needs a code from the log, and a one-click deploy button
+
+### Changed
+
+- **Creating the first administrator now needs a setup code.** Until an account exists, MikroDash
+  prints a one-time code to its log at start, e.g.
+  `[setup] no account exists yet. Setup code: ABCD-EFGH-JKMN`, and the setup page asks for it.
+  Find it with `docker compose logs mikrodash`. On a RouterOS container started with `logging=yes`,
+  the container's output goes to the router's log, so look for "Setup code" there. A restart before
+  setup prints a new one; existing installs are not affected.
+
+### Fixed
+
+- A fresh install reachable from the network could be claimed by whoever opened it first: setup
+  created an administrator for any visitor while no account existed, and the owner was then told
+  "Setup already complete". The setup code closes that.
+
+### New
+
+- **One-click deploy** section in the README, with a RepoCloud deploy button.
+
+### Merged contributions
+
+Thanks to [@cosark](https://github.com/cosark) for
+[#156](https://github.com/SecOps-7/MikroDash/pull/156), the one-click deploy section.
+
 ## [0.8.75] - Optional DNS and monitoring features, and a device watch list
 
 ### New
