@@ -19,6 +19,7 @@
 
 <p align="center">
   <a href="#-quick-start">Quick start</a> ·
+  <a href="#-one-click-deploy">One-click deploy</a> ·
   <a href="#-features">Features</a> ·
   <a href="#-screenshots">Screenshots</a> ·
   <a href="#-routeros-setup">RouterOS setup</a> ·
@@ -112,6 +113,12 @@ docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t mikrodash
 A worked deployment on a separate Docker host is in [`docs/deploy-r5s.md`](docs/deploy-r5s.md).
 
 </details>
+
+---
+
+## 🌐 One-click deploy
+
+[![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploylobe.svg)](https://repocloud.io/details/MikroDash/)
 
 ---
 
