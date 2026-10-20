@@ -1553,6 +1553,24 @@ func (cn *conn) trafficSelect(name string) {
 	collect.EvTrafficHistory.Send(cn.srv.hub, cn.c, tr.Watch(ifName))
 }
 
+// followDefaultIf moves every viewer of this router still on the old default
+// interface to the new one, after a router edit changed it. A viewer that
+// picked another interface is left alone; one that had picked the old WAN by
+// hand is moved and its page asks for its pick back (`shouldRestorePick`).
+// Each move runs on that connection's own loop, which owns trafficIf.
+func (s *Server) followDefaultIf(routerID, old string) {
+	for _, cn := range s.connections() {
+		cn := cn
+		cn.post(func() {
+			if cn.routerID != routerID || cn.rsession == nil || cn.trafficIf != old {
+				return
+			}
+			cn.dropTraffic()
+			cn.trafficSelectDefault(defaultIfFor(cn.rsession))
+		})
+	}
+}
+
 // dropTraffic detaches this viewer from whatever it was watching. Called when
 // the router changes and when the connection goes away, because the refcount is
 // what keeps the stream honest.

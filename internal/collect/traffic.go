@@ -277,7 +277,33 @@ func TrafficSub(ifName string) string { return "traffic-" + ifName }
 // what `traffic.js:bindSocket` subscribes a socket to on connect, and the
 // Bandwidth and Dashboard charts show nothing at all without it — see
 // `(*conn).attachRouter`.
-func (t *Traffic) DefaultIf() string { return t.defaultIf }
+func (t *Traffic) DefaultIf() string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.defaultIf
+}
+
+// SetDefaultIf moves the WAN interface of a running collector, and says
+// whether it moved. A router edit naming a new WAN reaches the live session
+// here; without it the badge and the default graph stayed on the old
+// interface until the session was rebuilt, which for a router held for
+// alerting or recording meant a restart (issue #158).
+//
+// The badge's last value is cleared rather than kept: it describes the old
+// interface, and a page opening before the new one's first sample would be
+// shown it. The stream is re-synced so the new name joins it.
+func (t *Traffic) SetDefaultIf(name string) bool {
+	t.mu.Lock()
+	if name == "" || name == t.defaultIf {
+		t.mu.Unlock()
+		return false
+	}
+	t.defaultIf = name
+	t.lastWan = nil
+	t.mu.Unlock()
+	t.syncStream()
+	return true
+}
 
 func NewTraffic(ros Reader, emit Emit, defaultIf string, historyMinutes int) *Traffic {
 	points := historyMinutes * 60

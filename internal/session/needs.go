@@ -224,6 +224,14 @@ func (s *Session) SetWatchForTest(connected bool, wifi *collect.Wireless, arp *c
 	s.arp = arp
 }
 
+// SetTrafficForTest gives a test session a traffic collector, so a test can
+// drive which interface a viewer is subscribed to.
+func (s *Session) SetTrafficForTest(t *collect.Traffic) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.traffic = t
+}
+
 // Wants is THE collector gate, and there is one of it.
 //
 // ── PHASE 6.3: THIS RULE WAS WRITTEN TWICE ─────────────────────────────────

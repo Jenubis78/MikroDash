@@ -25,6 +25,7 @@ import (
 	"mikrodash/internal/audit"
 	"mikrodash/internal/rbac"
 	"mikrodash/internal/routeros"
+	"mikrodash/internal/routers"
 	"mikrodash/internal/safe"
 	"mikrodash/internal/store"
 )
@@ -403,6 +404,14 @@ func (s *Server) reconfigureLiveSession(id string) {
 	// redial. A router held for alerting or recording never has its session
 	// rebuilt, so without this an edited target waited for a restart.
 	s.sessions.ApplyPingTarget(id, rec.PingTarget)
+
+	// AND THE WAN INTERFACE, resolved the way the session was built. The badge
+	// and every new viewer's default graph read it from the traffic collector,
+	// which was given it once, so a changed WAN waited for a restart (issue
+	// #158). The viewers already on the old default follow it.
+	if old, moved := s.sessions.ApplyDefaultIf(id, routers.DefaultIfFor(rec.DefaultIf, s.globalDefaultIf())); moved {
+		s.followDefaultIf(id, old)
+	}
 
 	// AND THIS ROUTER'S ALERT SWITCH, which the same dialog says takes effect on
 	// save. It was read once when the session was built, so turning alerting on

@@ -160,6 +160,21 @@ func (m *Manager) ApplyPingTarget(routerID, target string) {
 	s.ping.SetTarget(target)
 }
 
+// ApplyDefaultIf follows a router's WAN interface onto its live session, and
+// returns the interface it replaced. False when there is no session or nothing
+// changed. Same shape as ApplyPingTarget: the traffic collector is built with
+// the record's value once, in Acquire.
+func (m *Manager) ApplyDefaultIf(routerID, name string) (string, bool) {
+	m.mu.Lock()
+	s, ok := m.live[routerID]
+	m.mu.Unlock()
+	if !ok || s.traffic == nil {
+		return "", false
+	}
+	old := s.traffic.DefaultIf()
+	return old, s.traffic.SetDefaultIf(name)
+}
+
 // ApplyRecordedIfaces follows a router's recorded-interface list (#59) onto its
 // live session, so ticking an interface starts recording it now rather than at
 // the next reconnect.
