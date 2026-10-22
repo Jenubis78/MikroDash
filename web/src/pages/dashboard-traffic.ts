@@ -425,6 +425,13 @@ export function shouldRestorePick(
   return options.indexOf(picked) !== -1;
 }
 
+/**
+ * The interface the chart is drawing, which the picker falls back on when it
+ * has nothing selected: after a router switch the WAN's history can arrive
+ * before the new router's names, and is then the only record of what is shown.
+ */
+export function chartInterface(): string { return currentIf; }
+
 export function onTrafficHistory(data: TrafficHistory): void {
   currentIf = data.ifName || '';
   const sel = el<HTMLSelectElement>('ifaceSelect');

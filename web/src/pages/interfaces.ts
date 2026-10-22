@@ -28,6 +28,7 @@ import type { Socket } from '../socket';
 import { portSvg } from './port-svg';
 import type { Interface } from '../gen/payloads';
 import { initInterfaceHistory, recordLiveSamples } from './interfaces-history';
+import { chartInterface } from './dashboard-traffic';
 
 const IFACE_SPARK_LEN = 30;
 // The empty-address placeholder in a tile: U+00A0, a NON-BREAKING space. A
@@ -228,17 +229,23 @@ export function initInterfacesPage(socket: Socket, isVisible: (page: string) => 
   // Per-interface ring buffer of combined rx+tx Mbps samples for the sparkline.
   // 30 samples at ~5 s poll interval = ~2.5 min of trend history.
   const history: Record<string, number[]> = {};
+  let selectKey = '';
   forgetRouter = () => {
     lastIfaces = [];
     for (const k of Object.keys(peaks)) delete peaks[k];
     for (const k of Object.keys(history)) delete history[k];
+    // AND THE TRAFFIC PICKER. Left holding the previous router's interfaces,
+    // the next router's names found its selection missing and asked for their
+    // first one, overriding the WAN the server had just subscribed this viewer
+    // to: the graph landed on whatever interface the router lists first.
+    selectKey = '';
+    if (ifaceSelect) ifaceSelect.innerHTML = '';
   };
 
   // No sort until a header is clicked, so the default order stays the router's
   // own, matching the tile view.
   const sort = { key: '', dir: 1 };
   let iflOrder = '';
-  let selectKey = '';
 
   // ── The list view ─────────────────────────────────────────────────────────
 
@@ -536,7 +543,9 @@ export function initInterfacesPage(socket: Socket, isVisible: (page: string) => 
     const key = names.join(',');
     if (key === selectKey) return;
     selectKey = key;
-    const currentIf = ifaceSelect.value;
+    // An empty picker (a router just switched) takes the interface the chart is
+    // drawing, so the WAN's history arriving first is not overruled.
+    const currentIf = ifaceSelect.value || chartInterface();
     ifaceSelect.innerHTML = '';
     names.forEach((n) => {
       const opt = document.createElement('option');
