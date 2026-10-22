@@ -65,37 +65,118 @@ func (s *Server) dispatchFired(routerID, routerLabel string, fired []alert.Fired
 		}
 	}
 
+	// ── WHO IS SENT WHAT IS DECIDED HERE, IN EVENT ORDER ─────────────────
+	//
+	// The cooldown is claimed and a channel's breach recorded before anything
+	// goes to the network, on the caller's goroutine. `dispatchFired` is called
+	// once per evaluation in the order the router's payloads arrive, so a
+	// recovery is decided after its breach has been recorded, however slow the
+	// breach's send turns out to be. Only the sends run in the goroutine.
+	type outgoing struct {
+		r   alertdispatch.Recipient
+		key string
+		msg alertdispatch.Message
+	}
+	var sends []outgoing
+	for _, f := range fired {
+		// SILENT ALERTS ARE SHOWN, NOT SENT. The supersede resolution is the
+		// only producer; live emits it and never delivers it. See
+		// `alert.Fired.Silent`.
+		if f.Silent {
+			continue
+		}
+		msg := alertdispatch.Build(settings, routerLabel, stamp, f)
+		key := cooldownKey(f)
+		for i := range recipients {
+			if s.dispatch.Claim(&recipients[i], key) {
+				sends = append(sends, outgoing{recipients[i], key, msg})
+			}
+		}
+		// AND THE CHANNELS THAT SUBSCRIBE TO THIS EVENT, narrowed to the
+		// channels that were sent the breach when this is its recovery.
+		for _, c := range s.channelsFor(routerID, f) {
+			if !s.dispatch.Claim(&c, key) {
+				continue
+			}
+			if !f.Up {
+				s.markAlertSent(routerID, f, c.ID)
+			}
+			sends = append(sends, outgoing{c, key, msg})
+		}
+	}
+	if len(sends) == 0 {
+		return
+	}
 	go func() {
 		// A BOUND, so a hung transport cannot pin this goroutine for ever.
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		for _, f := range fired {
-			// SILENT ALERTS ARE SHOWN, NOT SENT. The supersede resolution is the
-			// only producer; live emits it and never delivers it. See
-			// `alert.Fired.Silent`.
-			if f.Silent {
-				continue
-			}
-			msg := alertdispatch.Build(settings, routerLabel, stamp, f)
-			key := cooldownKey(f)
-			for i := range recipients {
-				// PER RECIPIENT, and the result is deliberately ignored:
-				// `Deliver` logs its own failure and returns false, and one
-				// unreachable destination must not stop the others.
-				s.dispatch.Deliver(ctx, &recipients[i], key, msg)
-			}
-			// AND THE CHANNELS THAT SUBSCRIBE TO THIS EVENT.
-			//
-			// Resolved per alert rather than once per router, because which
-			// channels want it is a question about the alert: its event key and
-			// the router it came from. They are ordinary recipients from here
-			// on, so they get the same cooldown treatment and the same logging.
-			chans := s.channelRecipients(routerID, eventKeyFor(f), f.IfaceType, f.Value, f.Up)
-			for i := range chans {
-				s.dispatch.Deliver(ctx, &chans[i], key, msg)
-			}
+		for i := range sends {
+			// PER RECIPIENT, and the result is deliberately ignored: `Send`
+			// logs its own failure, and one unreachable destination must not
+			// stop the others.
+			s.dispatch.Send(ctx, &sends[i].r, sends[i].key, sends[i].msg)
 		}
 	}()
+}
+
+// channelsFor is the channels one fired alert goes to.
+//
+// ── A RECOVERY GOES ONLY WHERE ITS BREACH WENT ─────────────────────────────
+//
+// A channel narrows what it is told: its CPU and ping-loss thresholds, and its
+// cooldown. `channelRecipients` used to pass every recovery through regardless,
+// so a channel set to 90% was told "CPU back to normal" about a 71% spike it was
+// never told about (2026-10-22, twice in one day on Telegram). So a breach the
+// channel is actually sent is recorded (`alert_sent`), and the recovery goes
+// only to the channels recorded for it. A breach the cooldown held back is not
+// recorded, so it gets no recovery either.
+//
+// A NEW EPISODE STARTS CLEAN: an episode that never recovered (a router
+// removed and re-added, a restart that missed the recovery) must not leave
+// a channel marked as told about the next one.
+func (s *Server) channelsFor(routerID string, f alert.Fired) []alertdispatch.Recipient {
+	event := eventKeyFor(f)
+	chans := s.channelRecipients(routerID, event, f.IfaceType, f.Value, f.Up)
+	if s.auditDB == nil {
+		return chans
+	}
+	if !f.Up {
+		if err := s.auditDB.ClearAlertSent(routerID, event, f.Subject); err != nil {
+			log.Printf("[alert] could not reset who was sent %s on %s: %v", event, routerID, err)
+		}
+		return chans
+	}
+	sent, err := s.auditDB.AlertSentChannels(routerID, event, f.Subject)
+	if err := s.auditDB.ClearAlertSent(routerID, event, f.Subject); err != nil {
+		log.Printf("[alert] could not clear who was sent %s on %s: %v", event, routerID, err)
+	}
+	if err != nil {
+		// NOBODY, rather than everybody. Not knowing who heard the breach is
+		// the case this exists for, and guessing "everyone" is the stray
+		// all-clear it stops.
+		log.Printf("[alert] recovery of %s on %s not sent: who heard the breach is unknown: %v",
+			event, routerID, err)
+		return nil
+	}
+	out := chans[:0]
+	for _, c := range chans {
+		if sent[c.ID] {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// markAlertSent records that channel `id` was sent this breach.
+func (s *Server) markAlertSent(routerID string, f alert.Fired, id string) {
+	if s.auditDB == nil {
+		return
+	}
+	if err := s.auditDB.MarkAlertSent(routerID, eventKeyFor(f), f.Subject, id,
+		time.Now().UnixMilli()); err != nil {
+		log.Printf("[alert] could not record that %s was sent %s: %v", id, eventKeyFor(f), err)
+	}
 }
 
 // dispatchBackup sends one backup notification: a drift or a failure.

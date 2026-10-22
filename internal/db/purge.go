@@ -78,6 +78,8 @@ var routerDataTablesPortAdded = []string{
 	"wifi_samples",
 	"wifi_history_routers",
 	"watch_devices",
+	// Which channels were sent its open alerts (alertsent.go).
+	"alert_sent",
 }
 
 // routerPurgeExcluded is what a router purge must NEVER touch, with the reason.

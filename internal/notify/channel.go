@@ -270,17 +270,14 @@ func decodeTuning(raw string) Tuning {
 // comparing its zero Value against a threshold would silence every alert that is
 // not about a measurement.
 //
-// ── A RESOLUTION IS ALWAYS DELIVERED ──────────────────────────────────────
+// ── A RESOLUTION IS NOT JUDGED HERE ───────────────────────────────────────
 //
-// `up` skips the comparison, and the asymmetry is deliberate and costs
-// something. A recovery's value is BELOW the threshold by definition — that is
-// what makes it a recovery — so comparing it would suppress every all-clear and
-// leave a channel believing an alert is still open for ever.
-//
-// The cost, accepted rather than hidden: a channel whose threshold was never
-// crossed can be told an alert recovered when it was never told the alert
-// fired. A stray all-clear is noise; a missing one is somebody still worried
-// about a router that is fine.
+// `up` skips the comparison: a recovery's value is BELOW the threshold by
+// definition, so comparing it would suppress every all-clear. Which channels
+// hear a recovery is decided where it is sent instead, by who was actually sent
+// the breach (`channelsFor`, internal/server/alert_send.go). This used to pass
+// every recovery to every channel, and a channel set to 90% was told "CPU back
+// to normal" about 71% spikes it never heard about (2026-10-22).
 func (c ChannelSpec) WantsValue(event string, value float64, up bool) bool {
 	if up {
 		return true

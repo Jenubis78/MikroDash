@@ -261,12 +261,34 @@ func (d *Dispatcher) Deliver(ctx context.Context, r *Recipient, subjectKey strin
 		// finding every subject already warm.
 		return false
 	}
-	if ok, why := d.allow(r, subjectKey); !ok {
+	if !d.Claim(r, subjectKey) {
+		return false
+	}
+	return d.Send(ctx, r, subjectKey, m)
+}
+
+// Claim is Allow with the refusal logged: the whole decision, made and stamped
+// now, with nothing sent yet.
+//
+// SPLIT FROM THE SEND for the channel path (internal/server/alert_send.go),
+// which must know who was sent a breach before the recovery is decided. Making
+// that decision in event order, and leaving only the network to the goroutine,
+// is what stops a recovery overtaking its own breach while Telegram is slow.
+func (d *Dispatcher) Claim(r *Recipient, subjectKey string) bool {
+	if d == nil || !d.enabled {
+		return false
+	}
+	ok, why := d.allow(r, subjectKey)
+	if !ok {
 		// SAID OUT LOUD. Silence here is what made "the alert fired and no
 		// notification arrived" undiagnosable.
 		log.Printf("[alert] not sent to %s (%s): %s", r.ID, subjectKey, why)
-		return false
 	}
+	return ok
+}
+
+// Send delivers one message that Claim has already allowed.
+func (d *Dispatcher) Send(ctx context.Context, r *Recipient, subjectKey string, m Message) bool {
 	if err := d.sendFn(ctx, r, m.Title, m.Body); err != nil {
 		// LOGGED AND SWALLOWED, per recipient. The live `.catch` does the same:
 		// one unreachable destination must not stop the others, and it must not
