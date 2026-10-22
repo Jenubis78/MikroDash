@@ -150,8 +150,13 @@ func TestCPUCrossingTheThresholdFilesAndResolves(t *testing.T) {
 	// STILL HIGH: no second row. The dedup is the database's answer, and this is
 	// what would break if `subject IS ?` were `= ?` — see internal/db.
 	before := len(h.calls)
-	if got := w.Evaluate(router, "system:update", collect.SystemPayload{CPULoad: 95}); len(got) != 0 {
-		t.Errorf("a second high reading fired %v", got)
+	// A RISE IS AN ESCALATION (alert.Fired.Escalation), delivered and never
+	// filed; what must not happen is a second ALERT, which is what this counts.
+	got := w.Evaluate(router, "system:update", collect.SystemPayload{CPULoad: 95})
+	for _, f := range got {
+		if !f.Escalation {
+			t.Errorf("a second high reading fired %v", got)
+		}
 	}
 	for _, c := range h.calls[before:] {
 		if len(c) > 6 && c[:6] == "insert" {
@@ -160,7 +165,7 @@ func TestCPUCrossingTheThresholdFilesAndResolves(t *testing.T) {
 	}
 
 	// BACK DOWN: resolved.
-	got := w.Evaluate(router, "system:update", collect.SystemPayload{CPULoad: 10})
+	got = w.Evaluate(router, "system:update", collect.SystemPayload{CPULoad: 10})
 	if len(got) != 1 || !got[0].Up {
 		t.Errorf("coming back under the threshold produced %v", got)
 	}

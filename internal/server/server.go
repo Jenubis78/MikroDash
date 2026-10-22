@@ -837,6 +837,9 @@ func (s *Server) startConnTicker() {
 				return
 			case t := <-s.connTick.C:
 				s.connTrack.TickAll(t.UnixMilli())
+				// AND THE HELD CPU AND PING-LOSS READINGS, which a reading
+				// alone cannot judge: see alert.Evaluator.Tick.
+				s.tickAlerts()
 				// AFTER the debounce has run, so a verdict that just became
 				// known opens its run on this tick rather than the next.
 				s.coverage.Update(s.coveredRouters(), t.UnixMilli())

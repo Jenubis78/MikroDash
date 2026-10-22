@@ -27,6 +27,7 @@ import (
 	"mikrodash/internal/routeros"
 	"mikrodash/internal/routers"
 	"mikrodash/internal/safe"
+	"mikrodash/internal/session"
 	"mikrodash/internal/store"
 )
 
@@ -404,6 +405,9 @@ func (s *Server) reconfigureLiveSession(id string) {
 	// redial. A router held for alerting or recording never has its session
 	// rebuilt, so without this an edited target waited for a restart.
 	s.sessions.ApplyPingTarget(id, rec.PingTarget)
+	// AND THE OFFLINE THRESHOLD'S HOLD ON CPU AND PING-LOSS ALERTS (2026-10-22),
+	// so editing it changes how long a reading must persist on the very next one.
+	s.sessions.ApplyAlertHold(id, session.AlertHoldMs(*rec))
 
 	// AND THE WAN INTERFACE, resolved the way the session was built. The badge
 	// and every new viewer's default graph read it from the traffic collector,

@@ -117,6 +117,11 @@ type Session struct {
 	// ATOMIC because the readers are collector goroutines: the emit closure asks
 	// it for every payload.
 	alertsEnabled atomic.Bool
+	// alertHoldMs is how long a CPU or ping-loss reading must persist before it
+	// is an alert: the router's "Offline threshold", `connDownThresholdSec`
+	// (2026-10-22). Set at build, swapped on save by `Manager.ApplyAlertHold`
+	// and read on every payload, for the reason `alertsEnabled` gives above.
+	alertHoldMs atomic.Int64
 
 	h *hub.Hub
 	// fleet is the manager's fleet-wide status send; see Manager.SetFleetStatus.
@@ -773,7 +778,38 @@ func (m *Manager) AlertRouter(routerID string) (alert.Router, string, bool) {
 	if s == nil {
 		return alert.Router{}, "", false
 	}
-	return alert.Router{ID: s.RouterID, AlertsEnabled: s.alertsEnabled.Load()}, s.Label, true
+	return alert.Router{ID: s.RouterID, AlertsEnabled: s.alertsEnabled.Load(),
+		HoldMs: s.alertHoldMs.Load()}, s.Label, true
+}
+
+// AlertTick is one held router's alert identity, label and connection state,
+// for the clock tick that judges held CPU and ping-loss readings.
+type AlertTick struct {
+	Router    alert.Router
+	Label     string
+	Connected bool
+}
+
+// AlertTicks is every live session's AlertTick, read from the sessions for the
+// reason AlertRouter gives.
+func (m *Manager) AlertTicks() []AlertTick {
+	m.mu.Lock()
+	live := make([]*Session, 0, len(m.live))
+	for _, s := range m.live {
+		if s != nil {
+			live = append(live, s)
+		}
+	}
+	m.mu.Unlock()
+	out := make([]AlertTick, 0, len(live))
+	for _, s := range live {
+		out = append(out, AlertTick{
+			Router: alert.Router{ID: s.RouterID, AlertsEnabled: s.alertsEnabled.Load(),
+				HoldMs: s.alertHoldMs.Load()},
+			Label: s.Label, Connected: s.Connected(),
+		})
+	}
+	return out
 }
 
 // SetHistoryWire installs the traffic and ping recorder. Nil, or a wire built
@@ -1011,6 +1047,7 @@ func (m *Manager) Acquire(routerID string) (*Session, error) {
 		},
 	}
 	s.alertsEnabled.Store(rec.AlertsEnabled)
+	s.alertHoldMs.Store(AlertHoldMs(*rec))
 	s.eff.Store(&eff)
 	room := "router-" + s.RouterID + "-"
 	// An EMPTY sub means router-wide, the room `router:status` uses. It exists
@@ -1047,6 +1084,7 @@ func (m *Manager) Acquire(routerID string) (*Session, error) {
 
 		fired := m.alerts.Evaluate(alert.Router{
 			ID: s.RouterID, AlertsEnabled: s.alertsEnabled.Load(),
+			HoldMs: s.alertHoldMs.Load(),
 		}, event, payload)
 		if m.onFired != nil && len(fired) > 0 {
 			m.onFired(s.RouterID, s.Label, fired)

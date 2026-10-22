@@ -788,7 +788,7 @@
           <div class="ff">
             <label class="sform-label" for="rtrModalDownThresh">Offline threshold, seconds</label>
             <input class="sform-input" id="rtrModalDownThresh" type="number" min="0" max="300" step="1" value="30">
-            <div class="ff-help">Status badge and alerts only change after the router has been unreachable for this long. Set to 0 to react immediately.</div>
+            <div class="ff-help">Status badge and alerts only change after the router has been unreachable for this long. It also debounces High CPU and Ping Loss alerts: a reading must stay high this long before it alerts, and back to normal this long before it recovers. Set to 0 to react immediately.</div>
           </div>
         </div>
 

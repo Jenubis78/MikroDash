@@ -292,7 +292,12 @@ func TestEvaluatorMatchesLive(t *testing.T) {
 				// `bgpTwoPeersOneName` caught it: one routing:update carries
 				// every peer, and two peers sharing a name share an alert
 				// subject. `emit` now records inline, as the live `fire` does.
-				got = append(got, fired...)
+				// ESCALATIONS ARE LEFT OUT, deliberately (2026-10-22). A rise
+				// in the held level within an open episode is delivered to the
+				// channels that have not heard the episode yet and is never
+				// recorded; the live app has no such thing, and this corpus pins
+				// what live RECORDS and emits.
+				got = append(got, recordedOnly(fired)...)
 			}
 
 			if len(got) != len(tc.Fired) {
@@ -349,9 +354,11 @@ func TestTheCPURuleIsAnEdgeNotALevel(t *testing.T) {
 		return ev.SystemUpdate(r, &v, false, "", "")
 	}
 
+	// RECORDED alerts: a rise within the episode is a delivery-only escalation
+	// (Fired.Escalation), which is not a second alert.
 	total := 0
 	for _, v := range []float64{90, 91, 92, 93} {
-		total += len(load(v))
+		total += len(recordedOnly(load(v)))
 	}
 	if total != 1 {
 		t.Errorf("four high readings fired %d alerts, want 1 -- that is a LEVEL test, and it "+
@@ -378,9 +385,20 @@ func TestAMissingCPUReadingDoesNotResetTheEdge(t *testing.T) {
 		t.Errorf("an absent reading fired %d alerts", n)
 	}
 	again := 91.0
-	if n := len(ev.SystemUpdate(r, &again, false, "", "")); n != 0 {
+	if n := len(recordedOnly(ev.SystemUpdate(r, &again, false, "", ""))); n != 0 {
 		t.Error("the absent reading reset the edge state, so the alert re-fired")
 	}
+}
+
+// recordedOnly drops escalations, which are delivered and never recorded.
+func recordedOnly(fs []Fired) []Fired {
+	out := []Fired{}
+	for _, f := range fs {
+		if !f.Escalation {
+			out = append(out, f)
+		}
+	}
+	return out
 }
 
 func showFired(fs []Fired) string {

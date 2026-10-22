@@ -27,7 +27,10 @@ package alert
 // sent twice. `internal/notify/send.go` carries the reasoning; the port record
 // Part 25 records it.
 
-import "strconv"
+import (
+	"strconv"
+	"time"
+)
 
 // ── THE notif* GATES ARE GONE, AND SO IS `Settings` ───────────────────────
 //
@@ -50,6 +53,12 @@ import "strconv"
 type Router struct {
 	ID            string
 	AlertsEnabled bool
+	// HoldMs is how long a CPU or ping-loss reading must stay past its floor
+	// before it is an alert, and back under it before the alert recovers: the
+	// router's own "Offline threshold", `connDownThresholdSec` (2026-10-22).
+	// Read on every evaluation, so a change applies without a restart. Zero
+	// fires on the first reading, which is what the live corpus pins.
+	HoldMs int64
 }
 
 // Fired is one alert the rules decided on. It carries the DECISION, not the
@@ -106,6 +115,15 @@ type Fired struct {
 	// that notified on everything `Evaluate` returned would send an extra "up"
 	// message every time a router's available version changed.
 	Silent bool
+	// Escalation is a rise in the level held during an episode that is
+	// ALREADY OPEN: delivered, never recorded. Value is the new held level.
+	//
+	// The episode fires once, at the recording floor, and a channel compares
+	// that first level against its own threshold. Without this, CPU that crossed
+	// 70 at 72 and then sat at 95 told a channel set to 90 nothing, ever. The
+	// send path gives it only to channels that were not yet sent this episode's
+	// breach (internal/server/alert_send.go), so it is heard at most once.
+	Escalation bool
 }
 
 // Store is the alert history the rules consult. `fire` returns early when an
@@ -135,17 +153,18 @@ type Store interface {
 type Evaluator struct {
 	store Store
 
-	// prevCPUAlert is THREE-STATE: unknown, was alerting, was normal. The live
-	// value starts `null`, and that matters — a first reading above the
-	// threshold must alert. A port initialising it to `false` agrees by
-	// accident; one initialising it to `true` goes silent on exactly that case,
-	// which `firstReadingIsAlreadyHigh` pins.
-	prevCPUAlert *bool
+	// cpu is the CPU reading's run past its floor. A first reading above the
+	// floor starts a run, so a router that is already busy when the evaluator
+	// starts still alerts, which `firstReadingIsAlreadyHigh` pins.
+	cpu sustained
 
-	// prevPingAlert is PER TARGET. A port holding one flag alerts on the first
-	// lossy target and then goes quiet for the whole fleet, which
+	// pings is PER TARGET. A port holding one run alerts on the first lossy
+	// target and then goes quiet for the whole fleet, which
 	// `twoTargetsAreIndependent` pins.
-	prevPingAlert map[string]bool
+	pings map[string]*pingRun
+
+	// now is the evaluation clock in epoch ms, a field so a test can move it.
+	now func() int64
 
 	// prevNetwatchState is the STATUS STRING per host id, not a boolean — the
 	// live map stores `host.status`, and `unknown` has to be distinguishable
@@ -234,7 +253,8 @@ func capMap[V any](m map[string]V, live map[string]bool) {
 // NewEvaluator returns an evaluator with no prior verdicts.
 func NewEvaluator(store Store) *Evaluator {
 	return &Evaluator{store: store,
-		prevPingAlert:     map[string]bool{},
+		pings:             map[string]*pingRun{},
+		now:               func() int64 { return time.Now().UnixMilli() },
 		prevNetwatchState: map[string]string{},
 		prevNetwatchSince: map[string]string{},
 		prevIfState:       map[string]ifState{},
@@ -294,29 +314,55 @@ func (e *Evaluator) PingUpdate(r Router, target *string, loss, rtt *float64) []F
 	// answer. It matches the live `data.target || 'host'` and stays for that
 	// reason, not because a test defends it.
 
-	isLoss := *loss >= FloorPingLoss
-	prev, seen := e.prevPingAlert[key]
+	pr := e.pings[key]
+	if pr == nil {
+		pr = &pingRun{}
+		e.pings[key] = pr
+	}
+	pr.subject, pr.target = subject, target
+	// ONE TARGET IS PINGED AT A TIME, so a reading for this one means any other
+	// target was replaced: its readings stopped because nobody pings it now, not
+	// because it was steady. A run it had not fired is dropped, or a held 100% on
+	// a target switched away would fire on the next tick. One that fired is left
+	// open, as it always was.
+	for k, other := range e.pings {
+		if k != key && !other.run.fired {
+			delete(e.pings, k)
+		}
+	}
+	// ELAPSED TIME, NOT A COUNT OF READINGS: ping arrives on its own cadence,
+	// not system:update's, so "three lossy readings" would be a different
+	// length of time on each.
+	v, lvl := pr.run.observe(e.now(), *loss, FloorPingLoss, r.HoldMs)
+	return e.pingFired(r, pr, v, lvl, *loss)
+}
 
-	var out []Fired
-	switch {
-	case isLoss && !(seen && prev):
-		out = e.emit(r, Fired{
+// pingFired turns one ping run's verdict into what fires.
+func (e *Evaluator) pingFired(r Router, pr *pingRun, v runVerdict, lvl, loss float64) []Fired {
+	switch v {
+	case breach, escalate:
+		f := Fired{
 			AlertType: "Ping Loss",
-			Subject:   subject,
-			Detail:    "Ping loss to " + rawTarget(target) + " is " + trimNum(*loss) + "%",
-			Value:     *loss,
-		})
-	case !isLoss && seen && prev:
-		out = e.emit(r, Fired{
+			Subject:   pr.subject,
+			Detail: "Ping loss to " + rawTarget(pr.target) + " is " + trimNum(loss) + "%" +
+				heldFor(lvl, r.HoldMs),
+			Value: lvl,
+		}
+		if v == escalate {
+			f.Escalation = true
+			return []Fired{f}
+		}
+		return e.emit(r, f)
+	case recovered:
+		return e.emit(r, Fired{
 			Up:          true,
 			AlertType:   "Ping Restored",
 			ResolveType: "ping_loss",
-			Subject:     subject,
-			Detail:      "Ping to " + rawTarget(target) + " restored",
+			Subject:     pr.subject,
+			Detail:      "Ping to " + rawTarget(pr.target) + " restored",
 		})
 	}
-	e.prevPingAlert[key] = isLoss
-	return out
+	return nil
 }
 
 // VPNTunnel is one row of a vpn:update.
@@ -705,36 +751,229 @@ func (e *Evaluator) cpuRule(r Router, cpuLoad *float64) []Fired {
 	if cpuLoad == nil {
 		return nil
 	}
-	// `>=`, so exactly the threshold alerts.
-	isHigh := *cpuLoad >= FloorCPU
+	// `>=` inside `observe`, so exactly the floor counts.
+	v, lvl := e.cpu.observe(e.now(), *cpuLoad, FloorCPU, r.HoldMs)
+	return e.cpuFired(r, v, lvl, *cpuLoad)
+}
 
-	var out []Fired
-	switch {
-	case isHigh && (e.prevCPUAlert == nil || !*e.prevCPUAlert):
-		out = e.emit(r, Fired{
+// cpuFired turns the CPU run's verdict into what fires.
+func (e *Evaluator) cpuFired(r Router, v runVerdict, lvl, cpu float64) []Fired {
+	cpuLoad := &cpu
+	switch v {
+	case breach, escalate:
+		f := Fired{
 			AlertType: "High CPU",
-			// NO THRESHOLD IN THE TEXT ANY MORE. There is no single
-			// threshold to name: each channel has its own, and the one
-			// number this row could quote is the recording floor, which is
-			// not what any recipient is being alerted at.
-			Detail: "CPU at " + trimNum(*cpuLoad) + "%",
-			Value:  *cpuLoad,
-		})
-	case !isHigh && e.prevCPUAlert != nil && *e.prevCPUAlert:
-		out = e.emit(r, Fired{
+			// NO THRESHOLD IN THE TEXT. There is no single threshold to name:
+			// each channel has its own, and the one number this row could quote
+			// is the recording floor, which is not what any recipient is being
+			// alerted at. The level it held for the router's hold time is said
+			// when there is one, because that is what a channel compares.
+			Detail: "CPU at " + trimNum(*cpuLoad) + "%" + heldFor(lvl, r.HoldMs),
+			Value:  lvl,
+		}
+		if v == escalate {
+			f.Escalation = true
+			return []Fired{f}
+		}
+		return e.emit(r, f)
+	case recovered:
+		return e.emit(r, Fired{
 			Up:          true,
 			AlertType:   "CPU Normal",
 			ResolveType: "high_cpu",
 			Detail:      "CPU back to " + trimNum(*cpuLoad) + "% (below threshold)",
 		})
 	}
-	// RECORDED WHETHER OR NOT ANYTHING FIRED, and after the decision. A toggle
-	// that suppressed the alert must still advance the edge state, or switching
-	// the type back on would fire about a transition that happened while it was
-	// off.
-	v := isHigh
-	e.prevCPUAlert = &v
+	return nil
+}
+
+// Tick re-judges the CPU and ping-loss runs at the evaluation clock, with the
+// readings still in force, and returns what fires.
+//
+// ── WHY A CLOCK AS WELL AS READINGS ───────────────────────────────────────
+//
+// A rule that only ran when a reading arrived could never say "held for 30 s"
+// about a reading that does not repeat: ping is emitted only when target, RTT or
+// loss changes, so steady 100% loss, and steady 0% after it recovers, are one
+// reading each and then silence. Found live on 2026-10-22, when 55 s of total
+// loss filed nothing. Called once a second for every router whose session is
+// held (internal/server, the fleet's one-second ticker).
+//
+// DISCONNECTED, nothing is judged and a run that had not fired is over: an
+// offline router's last CPU reading is not evidence that it stayed there.
+func (e *Evaluator) Tick(r Router, connected bool) []Fired {
+	if r.ID == "" || !r.AlertsEnabled {
+		return nil
+	}
+	if !connected {
+		e.cpu.interrupt()
+		for k, pr := range e.pings {
+			pr.run.interrupt()
+			if !pr.run.fired && !pr.run.seen {
+				delete(e.pings, k)
+			}
+		}
+		return nil
+	}
+	now := e.now()
+	var out []Fired
+	if e.cpu.seen {
+		v, lvl := e.cpu.tick(now, FloorCPU, r.HoldMs)
+		out = append(out, e.cpuFired(r, v, lvl, e.cpu.lastV)...)
+	}
+	for _, pr := range e.pings {
+		v, lvl := pr.run.tick(now, FloorPingLoss, r.HoldMs)
+		out = append(out, e.pingFired(r, pr, v, lvl, pr.run.lastV)...)
+	}
 	return out
+}
+
+// heldFor says what level a reading held for the router's hold time, or
+// nothing when there is no hold: then the reading is the level.
+func heldFor(level float64, holdMs int64) string {
+	if holdMs <= 0 {
+		return ""
+	}
+	return " (at or above " + trimNum(level) + "% for " + strconv.FormatInt(holdMs/1000, 10) + " s)"
+}
+
+// SetClock replaces the evaluation clock, for tests that move time.
+func (e *Evaluator) SetClock(now func() int64) { e.now = now }
+
+// sustained is one reading's run past its floor, measured in elapsed time.
+//
+// ── WHY TIME AND NOT READINGS ─────────────────────────────────────────────
+//
+// A CPU at 71% for one second, or 72% for four, fired an alert, recorded a
+// row and rang the bell (2026-10-22): the rule fired on the first reading past
+// the floor. The reading must now stay past it for the router's hold time,
+// `connDownThresholdSec`, the setting that already decides how long "down"
+// means down. Ping arrives at a different cadence from system:update, so the
+// hold is elapsed time, never a count.
+//
+// ── THE LEVEL IS WHAT WAS HELD, NOT WHAT WAS SEEN ─────────────────────────
+//
+// What a channel compares against its own threshold is the LOWEST reading over
+// the hold time: CPU held at or above that for the whole of it. A channel set
+// to 90 is told about CPU held at 90 or more, not about one sample of 95 in a
+// run of 72s. Within an open episode, a rise in that held level is an
+// escalation (see Fired.Escalation).
+//
+// ── AND A RECOVERY IS HELD AS WELL ────────────────────────────────────────
+//
+// Back under the floor for the same hold time, or one reading of 69% in an
+// hour of 85% would end the episode and the next reading would start another:
+// a recovery and a fresh alert, each a message, about nothing that changed.
+type sustained struct {
+	// runStart is the first reading of the current run past the floor, 0 for
+	// none. samples are the run's readings that can still set the held level.
+	runStart int64
+	samples  []timedValue
+	// fired says this episode is open; level is the held level last reported.
+	fired bool
+	level float64
+	// belowSince is when readings fell back under the floor in an open
+	// episode, 0 while they are past it.
+	belowSince int64
+	// lastV is the most recent reading, and seen says there is one. A reading
+	// stays in force until the next: ping is emitted only when it CHANGES
+	// (collect.FoldPing's fingerprint), so steady 100% loss is one reading and
+	// then silence, and `Tick` re-judges the run on the clock.
+	lastV float64
+	seen  bool
+}
+
+type timedValue struct {
+	at int64
+	v  float64
+}
+
+type runVerdict int
+
+const (
+	quiet runVerdict = iota
+	breach
+	escalate
+	recovered
+)
+
+// observe takes one reading at `at` and says what it means.
+func (s *sustained) observe(at int64, v, floor float64, holdMs int64) (runVerdict, float64) {
+	if holdMs < 0 {
+		holdMs = 0
+	}
+	s.lastV, s.seen = v, true
+	if v >= floor {
+		s.belowSince = 0
+		if s.runStart == 0 {
+			s.runStart, s.samples = at, s.samples[:0]
+		}
+		s.samples = append(s.samples, timedValue{at, v})
+		// KEEP WHAT CAN STILL SET THE LEVEL: every reading inside the hold
+		// window, and the last one before it, which was in force at its start.
+		cut := 0
+		for i := 1; i < len(s.samples); i++ {
+			if s.samples[i].at <= at-holdMs {
+				cut = i
+			}
+		}
+		s.samples = s.samples[cut:]
+		if at-s.runStart < holdMs {
+			return quiet, 0
+		}
+		level := s.samples[0].v
+		for _, x := range s.samples[1:] {
+			if x.v < level {
+				level = x.v
+			}
+		}
+		switch {
+		case !s.fired:
+			s.fired, s.level = true, level
+			return breach, level
+		case level > s.level:
+			s.level = level
+			return escalate, level
+		}
+		return quiet, 0
+	}
+	// UNDER THE FLOOR: the run is over, and so is any rise it was building.
+	s.runStart, s.samples = 0, s.samples[:0]
+	if !s.fired {
+		return quiet, 0
+	}
+	if s.belowSince == 0 {
+		s.belowSince = at
+	}
+	if at-s.belowSince < holdMs {
+		return quiet, 0
+	}
+	*s = sustained{lastV: v, seen: true}
+	return recovered, 0
+}
+
+// tick re-judges the run at `at` with the reading still in force.
+func (s *sustained) tick(at int64, floor float64, holdMs int64) (runVerdict, float64) {
+	if !s.seen {
+		return quiet, 0
+	}
+	return s.observe(at, s.lastV, floor, holdMs)
+}
+
+// interrupt is a router that stopped answering: a run that has not fired is
+// over, because nothing says it was held across the gap. An open episode stays
+// open, as Router Offline leaves everything else.
+func (s *sustained) interrupt() {
+	if !s.fired {
+		*s = sustained{}
+	}
+}
+
+// pingRun is one target's run, with what its alert says about it.
+type pingRun struct {
+	run     sustained
+	subject string
+	target  *string
 }
 
 func (e *Evaluator) updateRule(r Router, available bool, latest, running string) []Fired {

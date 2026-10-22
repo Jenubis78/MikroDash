@@ -2,6 +2,7 @@ package session
 
 import (
 	"mikrodash/internal/collection"
+	"mikrodash/internal/connstate"
 	"mikrodash/internal/store"
 )
 
@@ -207,6 +208,30 @@ func (m *Manager) ApplyPollRetunes(updates, saved store.Settings) map[string][]s
 		}
 	}
 	return out
+}
+
+// AlertHoldMs is how long a router's CPU and ping-loss readings must persist
+// before they alert: its "Offline threshold", resolved exactly as the offline
+// debounce resolves it (`connstate.ThresholdMs`): 30 s when the record has none,
+// a deliberate 0 kept as 0.
+func AlertHoldMs(r store.Router) int64 {
+	if r.ConnDownThresholdSec == nil {
+		return connstate.ThresholdMs(0, false)
+	}
+	return connstate.ThresholdMs(*r.ConnDownThresholdSec, true)
+}
+
+// ApplyAlertHold follows a router's "Offline threshold" onto its live session's
+// CPU and ping-loss rules, so a change applies without a restart. Same shape as
+// ApplyPingTarget.
+func (m *Manager) ApplyAlertHold(routerID string, holdMs int64) {
+	m.mu.Lock()
+	s, ok := m.live[routerID]
+	m.mu.Unlock()
+	if !ok || s == nil {
+		return
+	}
+	s.alertHoldMs.Store(holdMs)
 }
 
 // ApplyAlerts follows a router's Alert Monitoring switch onto its live session.

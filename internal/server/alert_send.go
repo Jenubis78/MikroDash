@@ -88,6 +88,11 @@ func (s *Server) dispatchFired(routerID, routerLabel string, fired []alert.Fired
 		msg := alertdispatch.Build(settings, routerLabel, stamp, f)
 		key := cooldownKey(f)
 		for i := range recipients {
+			// AN ESCALATION IS FOR CHANNELS. These recipients have no threshold
+			// to newly cross: they were sent the breach whatever its level.
+			if f.Escalation {
+				break
+			}
 			if s.dispatch.Claim(&recipients[i], key) {
 				sends = append(sends, outgoing{recipients[i], key, msg})
 			}
@@ -120,6 +125,19 @@ func (s *Server) dispatchFired(routerID, routerLabel string, fired []alert.Fired
 	}()
 }
 
+// tickAlerts judges every held router's CPU and ping-loss runs on the clock and
+// sends what that fires, exactly as a reading's alerts are sent.
+func (s *Server) tickAlerts() {
+	if s.sessions == nil || s.alerts == nil {
+		return
+	}
+	for _, a := range s.sessions.AlertTicks() {
+		if fired := s.alerts.Tick(a.Router, a.Connected); len(fired) > 0 {
+			s.dispatchFired(a.Router.ID, a.Label, fired)
+		}
+	}
+}
+
 // channelsFor is the channels one fired alert goes to.
 //
 // ── A RECOVERY GOES ONLY WHERE ITS BREACH WENT ─────────────────────────────
@@ -140,6 +158,24 @@ func (s *Server) channelsFor(routerID string, f alert.Fired) []alertdispatch.Rec
 	chans := s.channelRecipients(routerID, event, f.IfaceType, f.Value, f.Up)
 	if s.auditDB == nil {
 		return chans
+	}
+	if f.Escalation {
+		// THE SAME EPISODE, LOUDER: only the channels it had not reached yet,
+		// whose threshold the held level now meets (`channelRecipients` has
+		// compared it). One that heard the breach is not told twice.
+		sent, err := s.auditDB.AlertSentChannels(routerID, event, f.Subject)
+		if err != nil {
+			log.Printf("[alert] escalation of %s on %s not sent: who heard the breach is unknown: %v",
+				event, routerID, err)
+			return nil
+		}
+		out := chans[:0]
+		for _, c := range chans {
+			if !sent[c.ID] {
+				out = append(out, c)
+			}
+		}
+		return out
 	}
 	if !f.Up {
 		if err := s.auditDB.ClearAlertSent(routerID, event, f.Subject); err != nil {

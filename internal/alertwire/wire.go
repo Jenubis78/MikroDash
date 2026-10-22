@@ -387,6 +387,30 @@ func (w *Wire) Evaluate(r alert.Router, event string, payload any) []alert.Fired
 	return fired
 }
 
+// Tick re-judges one router's CPU and ping-loss runs on the clock (see
+// alert.Evaluator.Tick for why readings alone cannot), under the same lock and
+// store clock as Evaluate. A router with no evaluator yet has had no reading,
+// so there is nothing to judge and none is built.
+func (w *Wire) Tick(r alert.Router, connected bool) []alert.Fired {
+	if w == nil || r.ID == "" {
+		return nil
+	}
+	w.mu.Lock()
+	ev, lock, st := w.evals[r.ID], w.locks[r.ID], w.stores[r.ID]
+	w.mu.Unlock()
+	if ev == nil {
+		return nil
+	}
+	lock.Lock()
+	st.setNow(w.now())
+	fired := ev.Tick(r, connected)
+	lock.Unlock()
+	if len(fired) > 0 {
+		log.Printf("[alert] %s tick: %d change(s)", r.ID, len(fired))
+	}
+	return fired
+}
+
 // ── the payload adapters ────────────────────────────────────────────────────
 //
 // Each maps a collector's row onto the rule's. They are separate types on
