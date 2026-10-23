@@ -2,6 +2,31 @@
 
 All notable changes to MikroDash will be documented in this file.
 
+## [0.8.77] - A changed WAN interface reaches the dashboard, and quieter CPU and ping alerts
+
+### Fixed
+
+- **Changing a router's Default WAN Interface now takes effect at once.** The setting was saved,
+  but an open dashboard kept the old interface for its WAN status and default graph until
+  MikroDash restarted. Browsers already open move to the new interface; one that picked another
+  interface by hand keeps it. Reported in
+  [#158](https://github.com/SecOps-7/MikroDash/issues/158), thanks
+  [@elpanda88](https://github.com/elpanda88).
+- **Switching routers puts the graph on the new router's WAN.** It could land on that router's
+  first running interface instead, or show one interface in the dropdown and another on the chart.
+- **A recovery is sent only to channels that were sent the alert.** A channel set to alert at 90%
+  CPU was told "CPU back to normal" about short spikes under its threshold that it never heard
+  about. A breach held back by a channel's cooldown gets no recovery either.
+
+### Changed
+
+- **High CPU and Ping Loss alerts must persist before they fire.** A reading has to stay high for
+  the router's Offline threshold (Settings, Devices, the router's "Offline threshold, seconds",
+  30 s by default), and back to normal as long before it recovers, so brief spikes no longer alert
+  or ring the bell. Set it to 0 to react at once, as before.
+- **A channel hears about CPU or ping loss that climbs past its threshold mid-alert.** An alert
+  that opened at 72% and then held at 95% now reaches a channel set to 90%.
+
 ## [0.8.76] - First-run setup needs a code from the log, and a one-click deploy button
 
 ### Changed
