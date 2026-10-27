@@ -41,7 +41,7 @@
 
           <div class="ips-panel" id="ipsPanel-flows">
             <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-              <input class="sform-input sform-sm" id="ipsFlowFilter" type="search" placeholder="Filter: address, application, host"
+              <input class="sform-input sform-sm" id="ipsFlowFilter" style="max-width:22rem" type="search" placeholder="Filter: address, application, host"
                 autocomplete="off" spellcheck="false">
               <button class="chip" type="button" id="ipsFlowMatched">Matched by a rule</button>
             </div>
@@ -211,7 +211,7 @@
               <button class="sbtn sbtn-outline is-sm" type="button" id="ipsScriptShow">Show the commands</button>
               <button class="sbtn sbtn-outline is-sm" type="button" id="ipsScriptCopy" disabled>Copy</button>
             </div>
-            <pre class="ips-script" id="ipsScript" style="display:none"></pre>
+            <pre class="ztp-script" id="ipsScript" style="display:none"></pre>
 
             <div class="sec-card-title mt-4 mb-2">2. Copy traffic to it, and drop what it lists</div>
             <div class="muted-note mb-2">One mangle rule and three raw rules, each commented "MikroDash IPS". Nothing else on the

@@ -479,6 +479,31 @@ Lists, Firewall and Routing pages on that router, and follows IPv4 only.
 | `/caps-man/remote-cap/print` | `=.proplist=.id,identity` `?identity=<cap>` | CAP upgrade, legacy tree |
 | `/caps-man/remote-cap/upgrade` | `=.id=<id>` | CAP upgrade, legacy tree |
 
+## The IPS (internal/server/ips.go, ips_api.go)
+
+Added by hand on 2026-10-27 and kept out of the counts above. Every path and
+property was checked against the RouterOS CLI reference (rosetta) before it was
+written: `sniff-tzsp`, `sniff-target`, `sniff-target-port` and
+`connection-bytes` on mangle (`N-0` is "more than N"), `cmd`, `registry-url` and
+`tmpdir` for the container script. Nothing is measured on hardware yet.
+
+The engine writes on its own: one `address-list/add` per decided address, at
+most sixty a minute a router, each judged by `guard.CheckIPSTarget`, whose two
+reads are repeated every five minutes. Everything else runs only when an
+administrator presses a button on the page.
+
+| Command | Proplist or arguments | Used by |
+|---|---|---|
+| `/ip/firewall/address-list/add` | `=list=mikrodash-ips-block` or `mikrodash-ips-quarantine`, `=address=`, `=timeout=<n>m`, `=comment=MikroDash IPS #<rule> <app>` | the engine, per decision |
+| `/ip/address/print` | `=.proplist=address` | the guard's protected set |
+| `/user/active/print` | `=.proplist=name,address` | the guard: where the router sees MikroDash from |
+| `/ip/firewall/address-list/print` | `=.proplist=.id,list,address,timeout,comment` `?list=<list>` (and `?address=<addr>` to unlist) | Read the lists, Unlist, Remove |
+| `/ip/firewall/address-list/remove` | `=.id=<id>` | Unlist, Remove |
+| `/ip/firewall/mangle/print`, `/ip/firewall/raw/print` | whole rows | Preview, Apply, Remove |
+| `/ip/firewall/filter/print` | `=.proplist=.id,action,disabled,connection-bytes` | Preview's fasttrack warning |
+| `/ip/firewall/mangle/add`, `/set`, `/remove` | the one `action=sniff-tzsp` rule, `place-before` the first foreign rule | Apply, Remove |
+| `/ip/firewall/raw/add`, `/set`, `/remove` | the three `action=drop` rules on the two lists, `place-before` the first foreign rule | Apply, Remove |
+
 ## Proplists
 
 A proplist is the only thing keeping a credential out of a payload - see
