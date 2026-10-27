@@ -1,0 +1,236 @@
+  <!-- The IPS page: what the router's nDPI sensor (dpi-sensor/) classifies, what
+       the rules made of it, the rules, and the sensor's setup. Rendered by
+       web/src/pages/ips.ts from GET /api/ips/state, asked every few seconds
+       while the page is shown (internal/server/ips_api.go). The engine runs
+       whether or not the page is open. -->
+  <div class="page-view" id="page-ips">
+    <div class="container-fluid px-0" style="width:100%">
+      <div class="card" id="ipsCard">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <h3 class="card-title mb-0">IPS</h3>
+            <span id="ipsBadge" class="card-badge" title="Flows in the window">0</span>
+            <span id="ipsTabs" class="stab-bar rttab-bar" role="tablist">
+              <button class="stab active" type="button" role="tab" aria-selected="true" data-ipstab="flows">Flows</button>
+              <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="apps">Applications</button>
+              <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="events">Decisions</button>
+              <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="rules">Rules</button>
+              <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="setup">Setup</button>
+            </span>
+          </div>
+          <div class="hdr-actions d-flex align-items-center gap-2">
+            <span id="ipsStatePill"></span>
+            <span id="ipsModePill"></span>
+          </div>
+        </div>
+        <div class="card-body" id="ipsBody">
+          <div class="muted-note mb-2" id="ipsStatus"></div>
+          <div class="tool-cards" id="ipsCards">
+            <div class="tool-card"><div class="tool-card-label">Flows classified</div>
+              <div class="tool-card-value"><span id="ipsSeenVal">-</span></div></div>
+            <div class="tool-card"><div class="tool-card-label">Listed</div>
+              <div class="tool-card-value"><span id="ipsListedVal">-</span></div>
+              <div class="tool-card-foot" id="ipsListedFoot"></div></div>
+            <div class="tool-card"><div class="tool-card-label">Packets inspected</div>
+              <div class="tool-card-value"><span id="ipsPacketsVal">-</span></div>
+              <div class="tool-card-foot" id="ipsPacketsFoot"></div></div>
+            <div class="tool-card tool-card-text"><div class="tool-card-label">Top application</div>
+              <div class="tool-card-value"><span id="ipsTopVal">-</span></div>
+              <div class="tool-card-foot" id="ipsTopFoot"></div></div>
+          </div>
+
+          <div class="ips-panel" id="ipsPanel-flows">
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+              <input class="sform-input sform-sm" id="ipsFlowFilter" type="search" placeholder="Filter: address, application, host"
+                autocomplete="off" spellcheck="false">
+              <button class="chip" type="button" id="ipsFlowMatched">Matched by a rule</button>
+            </div>
+            <div class="data-scroll">
+              <table class="table table-vcenter mb-0">
+                <thead><tr id="ipsFlowsHead"></tr></thead>
+                <tbody id="ipsFlowsRows"><tr><td colspan="8" class="empty-state">No flows yet</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ips-panel" id="ipsPanel-apps" style="display:none">
+            <div class="data-scroll">
+              <table class="table table-vcenter mb-0">
+                <thead><tr id="ipsAppsHead"></tr></thead>
+                <tbody id="ipsAppsRows"><tr><td colspan="4" class="empty-state">No flows yet</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ips-panel" id="ipsPanel-events" style="display:none">
+            <div class="data-scroll">
+              <table class="table table-vcenter mb-0">
+                <thead><tr id="ipsEventsHead"></tr></thead>
+                <tbody id="ipsEventsRows"><tr><td colspan="7" class="empty-state">No decisions yet</td></tr></tbody>
+              </table>
+            </div>
+            <div class="d-flex align-items-center justify-content-between gap-2 mt-3 mb-2 flex-wrap">
+              <div class="sec-card-title">On the router now</div>
+              <button class="sbtn sbtn-outline is-sm" id="ipsListedLoad" type="button">Read the lists</button>
+            </div>
+            <div class="data-scroll">
+              <table class="table table-vcenter mb-0">
+                <thead><tr id="ipsListedHead"></tr></thead>
+                <tbody id="ipsListedRows"><tr><td colspan="5" class="empty-state">Not read yet</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ips-panel" id="ipsPanel-rules" style="display:none">
+            <div class="muted-note mb-2">The first enabled rule that matches a flow decides it. Block lists the server for every
+              client; quarantine lists the client. Rules apply to every router with a sensor.</div>
+            <div class="data-scroll">
+              <table class="table table-vcenter mb-0">
+                <thead><tr><th>#</th><th>Name</th><th>Matches</th><th>Action</th><th>Timeout</th><th>State</th><th></th></tr></thead>
+                <tbody id="ipsRulesRows"><tr><td colspan="7" class="empty-state">No rules: every flow is only counted</td></tr></tbody>
+              </table>
+            </div>
+            <form class="ips-editor mt-3" id="ipsRuleForm" autocomplete="off" style="display:none">
+              <div class="sec-card-title mb-2" id="ipsRuleFormTitle">New rule</div>
+              <div class="ff-grid">
+                <div class="ff">
+                  <label class="sform-label" for="ipsRuleName">Name <span class="ff-req">*</span></label>
+                  <input class="sform-input" id="ipsRuleName" maxlength="60" placeholder="Block peer-to-peer">
+                  <div class="ff-help"></div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsRuleAction">Action</label>
+                  <select class="sform-input" id="ipsRuleAction">
+                    <option value="log">Log only</option>
+                    <option value="block">Block the server</option>
+                    <option value="quarantine">Quarantine the client</option>
+                    <option value="allow">Allow (stop here)</option>
+                  </select>
+                  <div class="ff-help">Start with Log only, and read Decisions before blocking.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsRuleApps">Applications</label>
+                  <input class="sform-input" id="ipsRuleApps" placeholder="BitTorrent, TikTok" spellcheck="false">
+                  <div class="ff-help">nDPI names, comma separated: see the Applications tab.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsRuleCategories">Categories</label>
+                  <input class="sform-input" id="ipsRuleCategories" placeholder="Download, Game" spellcheck="false">
+                  <div class="ff-help"></div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsRuleBreeds">Breeds</label>
+                  <input class="sform-input" id="ipsRuleBreeds" placeholder="Dangerous, Unsafe" spellcheck="false">
+                  <div class="ff-help">nDPI's verdict on a protocol.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsRuleRisks">Risks</label>
+                  <input class="sform-input" id="ipsRuleRisks" placeholder="* for any risk" spellcheck="false">
+                  <div class="ff-help">nDPI risk names, or * for any.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsRuleHosts">Hosts</label>
+                  <input class="sform-input" id="ipsRuleHosts" placeholder="tiktok.com" spellcheck="false">
+                  <div class="ff-help">A name matches itself and every name under it.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsRuleClients">Clients</label>
+                  <input class="sform-input" id="ipsRuleClients" placeholder="192.168.88.0/24" spellcheck="false">
+                  <div class="ff-help">Empty is every client.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsRuleTimeout">Timeout, minutes</label>
+                  <input class="sform-input" id="ipsRuleTimeout" type="number" min="1" max="10080" placeholder="60">
+                  <div class="ff-help">How long a listed address stays listed.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsRuleEnabled">Enabled</label>
+                  <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="ipsRuleEnabled" checked><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                  <div class="ff-help"></div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                <button class="sbtn sbtn-primary" type="submit">Save rule</button>
+                <button class="sbtn sbtn-ghost" type="button" id="ipsRuleCancel">Cancel</button>
+                <span class="muted-note" id="ipsRuleMsg"></span>
+              </div>
+            </form>
+            <div class="mt-2" id="ipsRuleAddWrap">
+              <button class="sbtn sbtn-primary is-sm" type="button" id="ipsRuleAdd">Add rule</button>
+            </div>
+          </div>
+
+          <div class="ips-panel" id="ipsPanel-setup" style="display:none">
+            <div class="muted-note mb-2" id="ipsSetupNote"></div>
+            <form id="ipsSensorForm" autocomplete="off">
+              <div class="ff-grid">
+                <div class="ff">
+                  <label class="sform-label" for="ipsSensorAddress">Sensor address <span class="ff-req">*</span></label>
+                  <input class="sform-input" id="ipsSensorAddress" placeholder="172.31.255.2" spellcheck="false">
+                  <div class="ff-help">The container's IPv4 address. MikroDash must be able to reach it.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsSensorEnforce">Enforce</label>
+                  <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="ipsSensorEnforce"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                  <div class="ff-help">Off: decisions are recorded, nothing is listed on the router.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsSensorBytes">Bytes copied of each connection</label>
+                  <input class="sform-input" id="ipsSensorBytes" type="number" min="2000" max="1000000" placeholder="20000">
+                  <div class="ff-help">More finds more, and costs the router more.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsSensorDisk">Router disk</label>
+                  <input class="sform-input" id="ipsSensorDisk" placeholder="usb1" spellcheck="false">
+                  <div class="ff-help">Where the container's image is unpacked.</div>
+                </div>
+                <div class="ff ff-full">
+                  <label class="sform-label" for="ipsSensorProtected">Never list</label>
+                  <textarea class="sform-input" id="ipsSensorProtected" rows="3" spellcheck="false"
+                    placeholder="192.168.88.10&#10;10.0.0.0/24"></textarea>
+                  <div class="ff-help">Your workstation, servers, resolvers: one address or prefix a line. The router, MikroDash and the sensor are always protected.</div>
+                </div>
+                <div class="ff ff-full">
+                  <label class="sform-label" for="ipsSensorImage">Image</label>
+                  <input class="sform-input" id="ipsSensorImage" spellcheck="false">
+                  <div class="ff-help"></div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                <button class="sbtn sbtn-primary" type="submit">Save sensor</button>
+                <button class="sbtn sbtn-outline" type="button" id="ipsSensorToken">New token</button>
+                <button class="sbtn sbtn-danger" type="button" id="ipsSensorDelete">Forget sensor</button>
+                <span class="muted-note" id="ipsSensorMsg"></span>
+              </div>
+            </form>
+
+            <div class="sec-card-title mt-4 mb-2">1. Create the container</div>
+            <div class="muted-note mb-2">Run these in the router's terminal. The token in them is what MikroDash sends the sensor;
+              a new token means running them again.</div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <button class="sbtn sbtn-outline is-sm" type="button" id="ipsScriptShow">Show the commands</button>
+              <button class="sbtn sbtn-outline is-sm" type="button" id="ipsScriptCopy" disabled>Copy</button>
+            </div>
+            <pre class="ips-script" id="ipsScript" style="display:none"></pre>
+
+            <div class="sec-card-title mt-4 mb-2">2. Copy traffic to it, and drop what it lists</div>
+            <div class="muted-note mb-2">One mangle rule and three raw rules, each commented "MikroDash IPS". Nothing else on the
+              router is changed.</div>
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+              <button class="sbtn sbtn-outline is-sm" type="button" id="ipsPlanShow">Preview</button>
+              <button class="sbtn sbtn-primary is-sm" type="button" id="ipsApply">Apply to the router</button>
+              <button class="sbtn sbtn-danger is-sm" type="button" id="ipsRemove">Remove from the router</button>
+              <span class="muted-note" id="ipsPlanMsg"></span>
+            </div>
+            <div id="ipsPlanWarnings"></div>
+            <div class="data-scroll">
+              <table class="table table-vcenter mb-0">
+                <thead><tr><th>Step</th><th>Menu</th><th>What</th><th>Result</th></tr></thead>
+                <tbody id="ipsPlanRows"><tr><td colspan="4" class="empty-state">Not previewed yet</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

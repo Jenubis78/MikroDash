@@ -92,6 +92,11 @@
       "settingsKey": "pageFirewall"
     },
     {
+      "key": "ips",
+      "title": "IPS",
+      "settingsKey": null
+    },
+    {
       "key": "users",
       "title": "Device Users",
       "settingsKey": "pageRosusers"
@@ -192,6 +197,7 @@
     "routing",
     "bandwidth",
     "firewall",
+    "ips",
     "logs",
     "packages",
     "queues",
@@ -220,6 +226,7 @@
     "connections",
     "security-scan",
     "firewall",
+    "ips",
     "users",
     "logs",
     "packages",

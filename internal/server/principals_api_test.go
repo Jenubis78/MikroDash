@@ -198,9 +198,15 @@ func TestThePageCatalogueIsComplete(t *testing.T) {
 	// which the device decides and the reset button changes. Three mechanisms
 	// for one question, two of them ours, is how an operator ends up unable to
 	// work out why a page is not there.
-	if noToggle != 12 {
-		t.Errorf("%d hand-built pages have no settings toggle, want 12 (dashboard, reports, "+
-			"settings, ai-agent, security-scan, config-management, terminal, tools-ping, "+
+	//
+	// THIRTEEN SINCE THE IPS (2026-10-27). Its engine reads the sensor whether
+	// or not the page is open, so hiding the page saves the router nothing, and
+	// a toggle that looked as if it switched the IPS off while it went on
+	// listing addresses would be a lie. Who may see it is the permission matrix;
+	// whether it runs is whether the router has a sensor.
+	if noToggle != 13 {
+		t.Errorf("%d hand-built pages have no settings toggle, want 13 (dashboard, reports, "+
+			"settings, ai-agent, security-scan, ips, config-management, terminal, tools-ping, "+
 			"tools-traceroute, tools-torch, tools-btest, tools-sniffer)", noToggle)
 	}
 	// And every page the projection can grant WRITE on must be in the catalogue.
