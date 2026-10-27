@@ -64,6 +64,13 @@ jobs:
       # :0.5 and :latest. A push to main builds but publishes nothing, so
       # :latest always points at the newest release rather than at whatever was
       # merged most recently.
+      # THE REPOSITORY'S OWN NAME, lower-cased: registry names must be, and an
+      # owner need not be. Upstream this is secops-7/mikrodash, as it was when it
+      # was written out; on a fork it is the fork's, which is the only package a
+      # fork's token may write to.
+      - name: Image name
+        run: echo "IMAGE_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v6
