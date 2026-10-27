@@ -145,6 +145,9 @@ var portAddedPrunes = map[string]string{
 		"connectivity strip can draw time nobody was watching as not-monitored. Live had no such " +
 		"record. It ages on the connectivity policy because a run only means anything beside the " +
 		"connectivity rows it qualifies, and on last_seen_at so an open run is never pruned",
+	"ips_events": "the IPS page's decisions (2026-10-27): what a rule did with a classified flow. " +
+		"Live had no IPS. It ages on the alert policy because a decision is an event about a " +
+		"router, read beside its alerts",
 }
 
 // TestPortAddedPruneRulesAreRecorded — BOTH DIRECTIONS.
@@ -264,6 +267,9 @@ func TestPruneDeletesOnlyWhatIsOlderThanItsOwnPolicy(t *testing.T) {
 		// Wi-Fi client history ages on its own setting.
 		{"wifi_samples", 400,
 			`INSERT INTO wifi_samples (router_id, ts, mac) VALUES ('r1', ?, '02:00:00:00:00:01')`, nil},
+		// The IPS page's decisions age on the alert policy.
+		{"ips_events", 100,
+			`INSERT INTO ips_events (ts, router_id, rule_id, action, result) VALUES (?, 'r1', 1, 'block', 'listed')`, nil},
 	}
 
 	for _, s := range seeds {
@@ -324,7 +330,7 @@ func openTestDB(t *testing.T) *DB {
 	}
 	// AND THE REAL `monitorRunsDDL`, the constant itself rather than a retyped
 	// copy, for the same reason as the line above.
-	if _, err := h.Exec(historyDDL + monitorRunsDDL + clientWatchDDL); err != nil {
+	if _, err := h.Exec(historyDDL + monitorRunsDDL + clientWatchDDL + ipsDDL); err != nil {
 		t.Fatal(err)
 	}
 	_ = h.Close()

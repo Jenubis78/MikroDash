@@ -262,6 +262,11 @@
       "settingsKey": "pageFirewall"
     },
     {
+      "key": "ips",
+      "title": "IPS",
+      "settingsKey": null
+    },
+    {
       "key": "users",
       "title": "Users",
       "settingsKey": "pageRosusers"

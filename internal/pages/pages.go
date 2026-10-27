@@ -107,6 +107,10 @@ var All = []Page{
 	// demand, through secscan:run (internal/server/secscan.go).
 	{Key: "security-scan", Title: "Security Scan"},
 	{Key: "firewall", Title: "Firewall", Collector: "firewall"},
+	// The IPS (2026-10-27). NO COLLECTOR: its flows come from a sensor on the
+	// router (dpi-sensor/), read by internal/server/ips.go whether or not the
+	// page is open, and the page asks for them over HTTP.
+	{Key: "ips", Title: "IPS"},
 	{Key: "wifi-networks", Title: "Wifi Networks", Collector: "wifi"},
 	{Key: "capsman", Title: "CAPsMAN", Collector: "capsman"},
 	{Key: "interfaces", Title: "Interfaces", Collector: "ifStatus"},

@@ -205,6 +205,12 @@ var pruneRules = []pruneRule{
 
 	// ── WI-FI CLIENT HISTORY, ITS OWN POLICY ────────────────────────────────
 	{"wifi_samples", "ts", PruneDays.WifiDays, true},
+
+	// ── THE IPS PAGE'S DECISIONS, ON THE ALERT POLICY ───────────────────────
+	//
+	// A decision is an event about a router, read beside its alerts, so it
+	// ages as they do.
+	{"ips_events", "ts", PruneDays.AlertDays, true},
 }
 
 const msPerDay = 86400000

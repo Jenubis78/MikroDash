@@ -164,6 +164,8 @@ type Server struct {
 	dnsBulk dnsBulkJobs
 	// features is the optional features' background loop. See features_loop.go.
 	features *featureLoop
+	// ips is the IPS page's readers, one per router with a sensor. See ips.go.
+	ips *ipsEngine
 	// aiLimit bounds questions to the model, per user per router (#98).
 	//
 	// EVERY ASK IS AN OUTBOUND REQUEST to an endpoint the operator named, which
@@ -551,6 +553,7 @@ func New(st *store.Store, opts Options) (*Server, error) {
 	// `-history` instead (#59); the comment on the builder has the split.
 	srv.pruneSched = srv.buildPruneScheduler(opts.Retention, opts.History)
 	srv.features = srv.buildFeatureLoop()
+	srv.ips = srv.buildIPS()
 	// The traffic and ping recorder, off the session's emit seam. CONNECTIVITY
 	// is no longer part of it — that is the tracker's, attached at the top of
 	// New, where the ordering is correct.
@@ -653,6 +656,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerDNSBulk(mux)
 	s.registerDNSFleetSync(mux)
 	s.registerDNSLists(mux)
+	s.registerIPS(mux)
 	s.registerClientFeatures(mux)
 	s.registerCapVersions(mux)
 	s.registerTopologyFleet(mux)
@@ -883,6 +887,9 @@ func (s *Server) Shutdown() {
 	}
 	if s.features != nil {
 		s.features.Stop()
+	}
+	if s.ips != nil {
+		s.ips.Stop()
 	}
 	// AND THE RECONCILER, for that same reason: its loop holds a ticker and
 	// would outlive every Server a test builds.
