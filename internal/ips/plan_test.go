@@ -108,7 +108,7 @@ func TestTheContainerScriptNamesTheTokenAndTheGateway(t *testing.T) {
 	for _, want := range []string{
 		"address=172.31.255.2/30 gateway=172.31.255.1",
 		"/ip/address/add address=172.31.255.1/30",
-		"registry-url=https://ghcr.io tmpdir=usb1/tmp",
+		"root-dir=usb1/mikrodash-dpi",
 		`cmd="--token 0123456789abcdef0123"`,
 		"remote-image=" + DefaultImage,
 	} {
@@ -154,6 +154,9 @@ func TestASensorOnARouterNetworkJoinsItsBridge(t *testing.T) {
 		if !strings.Contains(s, want) {
 			t.Errorf("the script lacks %q:\n%s", want, s)
 		}
+	}
+	if strings.Contains(s, "\n/container/config/set") {
+		t.Errorf("the script must not change the router-wide container settings:\n%s", s)
 	}
 	for _, not := range []string{"br-mikrodash-dpi", "/ip/address/add"} {
 		if strings.Contains(s, not) {

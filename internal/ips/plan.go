@@ -402,7 +402,12 @@ func ContainerScript(p ScriptParams) string {
 		fmt.Fprintf(&b, "/interface/bridge/port/add bridge=br-mikrodash-dpi interface=veth-mikrodash-dpi %s\n", c)
 		fmt.Fprintf(&b, "/ip/address/add address=%s/30 interface=br-mikrodash-dpi %s\n", gw, c)
 	}
-	fmt.Fprintf(&b, "/container/config/set registry-url=%s tmpdir=%s/tmp\n", registry, disk)
+	// NOT /container/config: registry-url and tmpdir are the router's, shared by
+	// every container on it, and a router already running containers from
+	// Docker Hub would stop pulling them. RouterOS takes the registry from the
+	// image's own name.
+	fmt.Fprintf(&b, "# The image names its registry (%s). Only if the pull still fails, and knowing it applies to\n", registry)
+	fmt.Fprintf(&b, "# every container on this router: /container/config/set registry-url=%s\n", registry)
 	fmt.Fprintf(&b, "/container/add remote-image=%s interface=veth-mikrodash-dpi root-dir=%s/mikrodash-dpi \\\n", image, disk)
 	fmt.Fprintf(&b, "  cmd=\"--token %s\" logging=yes start-on-boot=yes %s\n", p.Token, c)
 	fmt.Fprintf(&b, "# Wait for status=stopped (the image is pulled), then:\n")
