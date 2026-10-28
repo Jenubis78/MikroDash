@@ -31,6 +31,14 @@ never added a second time, and its Traffic Flow plan is the removal: Preview
 shows MikroDash's target coming off (and Traffic Flow with it, when no other
 collector uses it). The UDP port closes when no router needs it.
 
+The handover runs both ways from the IPS page's **Apply**, which carries the
+Traffic Flow steps in its Preview and says so in its confirmation: switching to
+*Every packet* takes Traffic Flow off and records it as *handed to the sensor*;
+switching back to the first bytes puts it back. Until that Apply runs the page
+reads **interrupted** rather than *not set up*. A Traffic Flow somebody removed
+on purpose is never put back. FastTrack is the operator's rule and is left
+alone; Preview warns about it either way.
+
 ## Backends
 
 | | SQLite (default) | ClickHouse |

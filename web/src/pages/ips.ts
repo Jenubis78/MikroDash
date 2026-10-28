@@ -114,6 +114,7 @@ export function networkLabel(n: Network): string {
 interface State {
   configured: boolean; sensor: Sensor | null; status: Status; flows: Flow[]; apps: AppCount[]; risks: RiskCount[];
   events: Event[]; rules: Rule[]; admin: boolean; defaults: { sniffBytes: number; image: string; timeoutMin: number };
+  trafficFlow: string;
 }
 interface Step { op: string; menu: string; what: string; error?: string }
 /** GET /api/ips/geo: the router's country lists, and the apply writing them. */
@@ -146,6 +147,18 @@ export const INSPECT_ALL_WARNING = 'Warning: every packet of every connection is
   'its whole forwarded throughput a second time and the sensor inspects all of it: only for a router sized for it ' +
   '(a CCR or an RB5009 with CPU to spare, a fast link to the sensor). Watch its CPU after applying and go back to the ' +
   'first bytes if it climbs. A fasttrack rule must be disabled, or fasttracked connections stop being inspected.';
+
+/** What Apply also does to Traffic Flow when the inspection changed: taken off
+ *  when the sensor now counts every packet, put back when it no longer does. */
+export function handoverNote(everyPacket: boolean, trafficFlow: string): string {
+  if (everyPacket && trafficFlow === 'on') {
+    return '\n\nTraffic Flow is taken off the router too: the sensor counts the volumes now.';
+  }
+  if (!everyPacket && trafficFlow === 'handed') {
+    return '\n\nTraffic Flow is put back on the router too: the sensor no longer counts every packet.';
+  }
+  return '';
+}
 
 /** GET /api/ips/sensor/update: the sensor's release, the registry's newest, the update job. */
 export interface SensorUpdate {
@@ -868,7 +881,8 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       ? 'Remove the IPS\'s rules from the router, and empty its two lists?'
       : 'Write the IPS\'s rules to the router? One mangle rule and three raw rules, each commented "MikroDash IPS".' +
         (state?.sensor?.everyPacket ? '\n\nEVERY PACKET is copied to the sensor: the router sends its whole forwarded ' +
-          'throughput a second time. Only for a router sized for it.' : '');
+          'throughput a second time. Only for a router sized for it.' : '') +
+        handoverNote(!!state?.sensor?.everyPacket, state?.trafficFlow || '');
     if (!window.confirm(ask)) return;
     setText('ipsPlanMsg', 'Writing…');
     post<{ ok: boolean; steps: Step[]; warnings: string[]; cleared: number }>('/api/ips/apply' + qs() + (remove ? '&remove=1' : ''))

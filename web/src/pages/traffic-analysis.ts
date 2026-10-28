@@ -99,8 +99,8 @@ export function seriesDatasets(points: Point[], keys: string[], from: number, to
 }
 
 /** The collector's state as a pill. */
-export function statePill(st: Status): string {
-  if (!st.enabled) return pill('not set up', 'muted');
+export function statePill(st: Status, handed = false): string {
+  if (!st.enabled) return handed ? pill('interrupted', 'warn') : pill('not set up', 'muted');
   if (st.source === 'sensor') {
     return !st.lastAt || Date.now() - st.lastAt > 30000 ? pill('no counts', 'warn') : pill('sensor live', 'ok');
   }
@@ -166,10 +166,14 @@ export function initTrafficAnalysisPage(socket: Socket, isVisible: (page: string
     setText('taRecordsVal', st.records ? st.records.toLocaleString() : '-');
     setText('taRecordsFoot', (st.lost ? st.lost.toLocaleString() + ' lost' : 'none lost') +
       (st.unknown ? ', ' + st.unknown + ' before their template' : ''));
-    setHTML('taStatePill', statePill(st));
+    const handed = s.router.result === 'handed to the sensor';
+    setHTML('taStatePill', statePill(st, handed));
     setHTML('taBackendPill', pill(st.backend === 'clickhouse' ? 'ClickHouse' : 'SQLite', st.storeError ? 'err' : 'alt'));
     const notes: string[] = [];
-    if (!st.enabled) notes.push('This router is not set up: open Setup, then Apply.');
+    if (!st.enabled && handed) {
+      notes.push('Volumes interrupted: the IPS sensor no longer counts every packet, and Traffic Flow, handed to it, ' +
+        'is not back yet. Apply on the IPS page (Setup) puts it back, or Setup here.');
+    } else if (!st.enabled) notes.push('This router is not set up: open Setup, then Apply.');
     else if (st.source === 'sensor') {
       notes.push('Counted by the IPS sensor, which inspects every packet: Live is the last ' + (s.liveSeconds || 30) +
         ' seconds, refreshed every five.' + (st.ignored ? ' ' + st.ignored + ' IPFIX records were ignored: remove Traffic Flow in Setup.' : ''));

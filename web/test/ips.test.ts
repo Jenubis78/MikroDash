@@ -168,6 +168,13 @@ const n = doc.nodes;
     'The update to 0.3.0 stopped: the sensor did not stop');
   say("ok - the sensor's release and its update read as they should");
 
+  // THE HANDOVER: Apply's question says what happens to Traffic Flow.
+  assert.ok(mod.handoverNote(true, 'on').includes('taken off'));
+  assert.ok(mod.handoverNote(false, 'handed').includes('put back'));
+  assert.strictEqual(mod.handoverNote(false, 'on'), '');
+  assert.strictEqual(mod.handoverNote(true, 'handed'), '');
+  say('ok - Apply says what it does to Traffic Flow when the inspection changed');
+
   // LEAVING stops the poll: nothing is asked once another page is shown.
   doc.dispatchEvent({ type: 'mikrodash:pagechange', detail: 'dashboard' });
   visible = false;

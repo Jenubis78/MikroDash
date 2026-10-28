@@ -215,7 +215,9 @@ func (e *trafficEngine) sync() {
 	}
 	e.listenLocked()
 	e.mu.Unlock()
-	go e.refreshAddresses()
+	if e.s.sessions != nil {
+		go e.refreshAddresses()
+	}
 }
 
 func (e *trafficEngine) newRouter(id string) *trafficRouter {
@@ -238,6 +240,9 @@ func (e *trafficEngine) newRouter(id string) *trafficRouter {
 		decoders: map[netip.Addr]*ipfix.Decoder{}, drop: func() {}}
 	// A hold, as the IPS reader's: it keeps the session the address reads go
 	// through, and starts no collector.
+	if e.s.sessions == nil {
+		return r // no session manager: a test, or a server without routers
+	}
 	if _, err := e.s.sessions.Retain(id, trafficHold); err == nil {
 		r.drop = func() { e.s.sessions.Drop(id, trafficHold) }
 	}

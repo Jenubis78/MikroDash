@@ -361,6 +361,56 @@ func (s *Server) trafficRouterSave(w http.ResponseWriter, r *http.Request) {
 // errNoCollector is a router that does not show where it sees MikroDash from.
 var errNoCollector = errors.New("the router does not show where it sees MikroDash from: set the collector address in the settings")
 
+// trafficHandedToSensor is a router's Traffic Flow taken off because its IPS
+// sensor counts every packet: unlike a removal somebody asked for, it is put
+// back when the sensor goes back to the first bytes.
+const trafficHandedToSensor = "handed to the sensor"
+
+// trafficHandover is what Traffic Flow needs when a router's IPS sensor
+// changes inspection, for the IPS page's Apply to do in the same go: taken off
+// when the sensor now counts every packet and Traffic Flow is on, put back when
+// it no longer does and Traffic Flow was handed to it. `after` is the router's
+// state once the steps ran: "sensor", "ipfix", or "" for nothing to do.
+func (s *Server) trafficHandover(sn *session.Session, rid string) (plan ips.Plan, after string) {
+	fed, row := s.sensorFeeds(rid), s.trafficRouterRow(rid)
+	switch {
+	case fed && row.Enabled:
+		after = "sensor"
+	case !fed && !row.Enabled && row.Result == trafficHandedToSensor:
+		after = "ipfix"
+	default:
+		return ips.Plan{}, ""
+	}
+	plan, err := s.trafficRouterPlan(sn, rid, false)
+	if err != nil {
+		return ips.Plan{Warnings: []string{"Traffic Flow could not be planned with it: " + safe.Message(err.Error()) +
+			". Do it from Traffic Analysis, Setup."}}, ""
+	}
+	if after == "ipfix" {
+		plan.Warnings = append([]string{"The sensor no longer counts every packet: Traffic Flow, handed to it, is put " +
+			"back so Traffic Analysis keeps its volumes."}, plan.Warnings...)
+	}
+	return plan, after
+}
+
+// recordHandover stores a router's Traffic Flow state after a handover ran.
+func (s *Server) recordHandover(rid, after string) {
+	row := s.trafficRouterRow(rid)
+	row.AppliedAt = nowMillis()
+	switch after {
+	case "sensor":
+		row.Enabled, row.Result = false, trafficHandedToSensor
+	case "ipfix":
+		row.Enabled, row.Result = true, "applied"
+	default:
+		return
+	}
+	if err := s.auditDB.SaveTrafficRouter(row); err != nil {
+		return
+	}
+	s.traffic.sync()
+}
+
 // sensorFeeds is whether a router's IPS sensor inspects every packet, and so
 // counts its volumes itself.
 func (s *Server) sensorFeeds(rid string) bool {
@@ -488,6 +538,8 @@ func (s *Server) trafficApply(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case failed > 0:
 		row.Result = "failed"
+	case remove && s.sensorFeeds(rid) && r.URL.Query().Get("remove") != "1":
+		row.Enabled, row.Result = false, trafficHandedToSensor
 	case remove:
 		row.Enabled, row.Result = false, "removed"
 	default:

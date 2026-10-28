@@ -49,6 +49,7 @@ assert.deepStrictEqual(s.sets.map((x: { key: string }) => x.key), ['YouTube', 'O
 assert.deepStrictEqual(s.sets[0].data, [8, 0, 16], 'bits per second per step');
 assert.deepStrictEqual(s.sets[1].data, [0, 0.8, 0]);
 assert.ok(mod.statePill({ enabled: false }).includes('not set up'));
+assert.ok(mod.statePill({ enabled: false }, true).includes('interrupted'), 'a router handed to the sensor and not back says so');
 assert.ok(mod.statePill({ enabled: true, listening: true, lastAt: Date.now() }).includes('receiving'));
 assert.ok(mod.statePill({ enabled: true, listening: false }).includes('not listening'));
 say('ok - the Traffic Analysis helpers rate, label and stack');

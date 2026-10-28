@@ -149,6 +149,10 @@ type IPSStatePayload struct {
 	Actions    []string          `json:"actions"`
 	Lists      map[string]string `json:"lists"`
 	Defaults   map[string]any    `json:"defaults"`
+	// TrafficFlow is this router's Traffic Flow as Traffic Analysis set it:
+	// "on", "handed" (taken off for the sensor, put back by Apply when it no
+	// longer counts every packet) or "" (never set up, or removed).
+	TrafficFlow string `json:"trafficFlow"`
 }
 
 func (s *Server) ipsState(w http.ResponseWriter, r *http.Request) {
@@ -170,6 +174,12 @@ func (s *Server) ipsState(w http.ResponseWriter, r *http.Request) {
 	if rd := s.ips.reader(rid); rd != nil {
 		p.Status, p.Flows, p.Apps = rd.snapshot()
 		p.Risks = rd.riskSnapshot()
+	}
+	switch row := s.trafficRouterRow(rid); {
+	case row.Enabled:
+		p.TrafficFlow = "on"
+	case row.Result == trafficHandedToSensor:
+		p.TrafficFlow = "handed"
 	}
 	ev, err := s.auditDB.IPSEvents(rid, 200)
 	if err != nil {
@@ -472,13 +482,15 @@ func (s *Server) ipsScript(w http.ResponseWriter, r *http.Request) {
 }
 
 // ipsRouterPlan reads what the plan needs and plans. With remove, the plan
-// takes everything off, whatever the sensor is.
-func (s *Server) ipsRouterPlan(sn *session.Session, rid string, remove bool) (ips.Plan, error) {
+// takes everything off, whatever the sensor is. Otherwise it carries the
+// Traffic Flow handover a change of inspection needs (trafficHandover), and
+// `after` is what to record once it ran.
+func (s *Server) ipsRouterPlan(sn *session.Session, rid string, remove bool) (plan ips.Plan, after string, err error) {
 	rows := map[string][]routeros.Reply{}
 	for _, menu := range []string{"/ip/firewall/mangle", "/ip/firewall/raw"} {
 		got, err := sn.Exec(routeros.Cmd{Path: menu + "/print", Timeout: ipsCmdTimeout})
 		if err != nil {
-			return ips.Plan{}, err
+			return ips.Plan{}, "", err
 		}
 		rows[menu] = got
 	}
@@ -500,11 +512,18 @@ func (s *Server) ipsRouterPlan(sn *session.Session, rid string, remove bool) (ip
 				addr = ips.LeasedAddress(veth[0])
 			}
 			if !addr.IsValid() {
-				return ips.Plan{}, errIPSNoLease
+				return ips.Plan{}, "", errIPSNoLease
 			}
 		}
 	}
-	return ips.PlanRouter(addr, bytes, rows, filter), nil
+	plan = ips.PlanRouter(addr, bytes, rows, filter)
+	if !remove && s.traffic != nil {
+		hand, a := s.trafficHandover(sn, rid)
+		plan.Steps = append(plan.Steps, hand.Steps...)
+		plan.Warnings = append(plan.Warnings, hand.Warnings...)
+		after = a
+	}
+	return plan, after, nil
 }
 
 // errIPSNoLease is a plan for a DHCP sensor that has no lease to copy to.
@@ -545,7 +564,7 @@ func (s *Server) ipsPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer drop()
-	plan, err := s.ipsRouterPlan(sn, rid, r.URL.Query().Get("remove") == "1")
+	plan, _, err := s.ipsRouterPlan(sn, rid, r.URL.Query().Get("remove") == "1")
 	if err != nil {
 		if errors.Is(err, errIPSNoLease) {
 			writeJSONErr(w, http.StatusConflict, safe.Message(errIPSNoLease.Error()))
@@ -579,7 +598,7 @@ func (s *Server) ipsApply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer drop()
-	plan, err := s.ipsRouterPlan(sn, rid, remove)
+	plan, after, err := s.ipsRouterPlan(sn, rid, remove)
 	if err != nil {
 		if errors.Is(err, errIPSNoLease) {
 			writeJSONErr(w, http.StatusConflict, safe.Message(errIPSNoLease.Error()))
@@ -608,6 +627,9 @@ func (s *Server) ipsApply(w http.ResponseWriter, r *http.Request) {
 	cleared := 0
 	if remove && failed == 0 {
 		cleared, failed = s.ipsClearLists(sn)
+	}
+	if failed == 0 {
+		s.recordHandover(rid, after)
 	}
 	action := "ips.apply"
 	if remove {
