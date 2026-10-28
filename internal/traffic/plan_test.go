@@ -25,7 +25,7 @@ func TestAFreshRouterGetsTrafficFlowATargetAndNothingElse(t *testing.T) {
 	if cmd := s.Cmd(); cmd.Path != "/ip/traffic-flow/set" || strings.Contains(strings.Join(cmd.Args, " "), ".id") {
 		t.Errorf("a one-row menu is set without an id: %+v", cmd)
 	}
-	if a := p.Steps[1].Args; p.Steps[1].Op != "add" || a["dst-address"] != "192.168.11.5" || a["port"] != "2055" || a["version"] != "IPFIX" {
+	if a := p.Steps[1].Args; p.Steps[1].Op != "add" || a["dst-address"] != "192.168.11.5" || a["port"] != "2055" || a["version"] != "ipfix" {
 		t.Errorf("target: %+v", p.Steps[1])
 	}
 	if f := p.Steps[2].Args; len(f) != 1 || f["nat-src-address"] != "yes" {

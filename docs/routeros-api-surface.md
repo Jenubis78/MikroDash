@@ -538,7 +538,9 @@ Added by hand on 2026-10-28 and kept out of the counts above. Paths and
 properties checked against the RouterOS docs (rosetta): `/ip/traffic-flow`
 (`enabled`, `interfaces`, `active-flow-timeout` default 30m,
 `inactive-flow-timeout` default 15s), its `target` (`dst-address`, `port`,
-`version` = `1 | 5 | 9 | IPFIX`) and `ipfix` (one yes/no per field). The docs
+`version` = `1 | 5 | 9 | IPFIX` as documented - but a router refused `IPFIX`
+live, and the value written is `ipfix`, as `/export` prints it) and `ipfix` (one
+yes/no per field). The docs
 state that FastTrack packets bypass traffic-flow. Nothing is measured on
 hardware yet.
 
@@ -553,7 +555,7 @@ Everything else runs only when an administrator presses a button.
 | `/ip/traffic-flow/print`, `/ip/traffic-flow/target/print`, `/ip/traffic-flow/ipfix/print` | whole rows | Preview, Apply, Remove |
 | `/ip/firewall/filter/print` | `=.proplist=.id,action,disabled` | Preview's FastTrack warning |
 | `/ip/traffic-flow/set` | only the properties that differ: `enabled`, `interfaces`, `active-flow-timeout=1m`, `inactive-flow-timeout=15s` | Apply; `enabled=no` on Remove when no other target is left |
-| `/ip/traffic-flow/target/add`, `/set`, `/remove` | `dst-address=<MikroDash>`, `port`, `version=IPFIX` | Apply, Remove |
+| `/ip/traffic-flow/target/add`, `/set`, `/remove` | `dst-address=<MikroDash>`, `port`, `version=ipfix` | Apply, Remove |
 | `/ip/traffic-flow/ipfix/set` | the fields the join reads, each `yes` | Apply |
 
 ## Proplists

@@ -29,6 +29,13 @@ const ActiveTimeout = "1m"
 // InactiveTimeout is RouterOS's default, kept: shorter overflows the cache.
 const InactiveTimeout = "15s"
 
+// TargetVersion is IPFIX as a target's `version` takes it. The documentation
+// spells the enumeration `1 | 5 | 9 | IPFIX`, and a router refused that
+// spelling live ("input does not match any value of version", 2026-10-28):
+// the value is lower case, as /export prints it. A target already there is
+// compared without regard to case.
+const TargetVersion = "ipfix"
+
 // IPFIXFields are the record fields the join reads; each must be "yes".
 var IPFIXFields = []string{"bytes", "packets", "protocol", "src-address", "dst-address", "src-port", "dst-port",
 	"nat-src-address", "nat-dst-address", "nat-src-port", "nat-dst-port", "in-interface", "out-interface",
@@ -104,13 +111,13 @@ func RouterPlan(p PlanParams, tf routeros.Reply, targets []routeros.Reply, ipfix
 	switch {
 	case len(mine) == 0:
 		plan.Steps = append(plan.Steps, ips.Step{Op: "add", Menu: "/ip/traffic-flow/target",
-			Args: map[string]string{"dst-address": p.Collector.String(), "port": strconv.Itoa(p.Port), "version": "IPFIX"},
+			Args: map[string]string{"dst-address": p.Collector.String(), "port": strconv.Itoa(p.Port), "version": TargetVersion},
 			What: "send IPFIX to MikroDash at " + p.Collector.String() + ":" + strconv.Itoa(p.Port)})
 	default:
 		t := mine[0]
 		fix := map[string]string{}
-		if !strings.EqualFold(t["version"], "IPFIX") {
-			fix["version"] = "IPFIX"
+		if !strings.EqualFold(t["version"], TargetVersion) {
+			fix["version"] = TargetVersion
 		}
 		if t["disabled"] == "true" {
 			fix["disabled"] = "no"
