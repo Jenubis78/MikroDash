@@ -391,9 +391,29 @@ func (s *Server) ipsScript(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	addr, _ := validSensorAddress(sn.Address)
-	if b := addr.As4(); b[3]%4 != 2 {
+	// ON ONE OF THE ROUTER'S NETWORKS, OR ON A /30 OF ITS OWN. The router is
+	// read to find out which: an address inside one of its networks joins that
+	// network's bridge; any other is the second address of a new /30.
+	rs, drop, ok := s.ipsSession(r.Context(), rid)
+	if !ok {
+		writeJSONErr(w, http.StatusBadGateway, "the router is not reachable")
+		return
+	}
+	defer drop()
+	read := func(path string, props string) []routeros.Reply {
+		rows, _ := rs.Exec(routeros.Cmd{Path: path, Args: []string{"=.proplist=" + props}, Timeout: ipsCmdTimeout})
+		return rows
+	}
+	lan, err := ips.FindLAN(addr, read("/ip/address/print", "address,interface,disabled"),
+		read("/interface/bridge/print", "name,vlan-filtering"), read("/interface/vlan/print", "name,interface,vlan-id"))
+	if err != nil {
+		writeJSONErr(w, http.StatusBadRequest, safe.Message(err.Error()))
+		return
+	}
+	if b := addr.As4(); lan == nil && b[3]%4 != 2 {
 		writeJSONErr(w, http.StatusBadRequest,
-			"the script puts the sensor on a /30 as its second address (x.x.x.2, .6, .10, …); choose one")
+			"the sensor is in none of the router's networks, so it gets a /30 of its own as its second address "+
+				"(x.x.x.2, .6, .10, ...); choose one, or an address in one of the router's networks")
 		return
 	}
 	tok := s.openCredSecret(sn.Token)
@@ -404,7 +424,7 @@ func (s *Server) ipsScript(w http.ResponseWriter, r *http.Request) {
 	s.httpRecorder(r, sess).Record(audit.Event{Action: "ips.script", RouterID: rid, TargetType: "ipsSensor",
 		TargetID: rid, Note: "the container script, with its token, was shown"})
 	writeJSON(w, map[string]any{"script": ips.ContainerScript(ips.ScriptParams{Token: tok, Sensor: addr,
-		Disk: sn.Disk, Image: sn.Image})})
+		LAN: lan, Disk: sn.Disk, Image: sn.Image})})
 }
 
 // ipsRouterPlan reads what the plan needs and plans. With remove, the plan

@@ -117,3 +117,55 @@ func TestTheContainerScriptNamesTheTokenAndTheGateway(t *testing.T) {
 		}
 	}
 }
+
+func TestASensorOnARouterNetworkJoinsItsBridge(t *testing.T) {
+	addrs := []routeros.Reply{
+		{"address": "192.168.11.1/24", "interface": "bridge"},
+		{"address": "192.168.20.1/24", "interface": "vlan20"},
+		{"address": "192.168.30.1/24", "interface": "vlan30"},
+		{"address": "203.0.113.2/30", "interface": "ether1"},
+	}
+	bridges := []routeros.Reply{{"name": "bridge", "vlan-filtering": "true"}, {"name": "br-old", "vlan-filtering": "false"}}
+	vlans := []routeros.Reply{{"name": "vlan20", "interface": "bridge", "vlan-id": "20"},
+		{"name": "vlan30", "interface": "br-old", "vlan-id": "30"}}
+	find := func(a string) (*LANAttach, error) {
+		return FindLAN(netip.MustParseAddr(a), addrs, bridges, vlans)
+	}
+
+	l, err := find("192.168.11.250")
+	if err != nil || l == nil || l.Bridge != "bridge" || l.Gateway.String() != "192.168.11.1" || l.Bits != 24 || l.PVID != 0 {
+		t.Fatalf("the bridge's own network: %+v %v", l, err)
+	}
+	s := ContainerScript(ScriptParams{Token: "0123456789abcdef0123", Sensor: netip.MustParseAddr("192.168.11.250"), LAN: l})
+	for _, want := range []string{"address=192.168.11.250/24 gateway=192.168.11.1",
+		"/interface/bridge/port/add bridge=bridge interface=veth-mikrodash-dpi comment="} {
+		if !strings.Contains(s, want) {
+			t.Errorf("the script lacks %q:\n%s", want, s)
+		}
+	}
+	for _, not := range []string{"br-mikrodash-dpi", "/ip/address/add"} {
+		if strings.Contains(s, not) {
+			t.Errorf("a sensor on an existing network needs no %q:\n%s", not, s)
+		}
+	}
+
+	if l, err := find("192.168.20.9"); err != nil || l.Bridge != "bridge" || l.PVID != 20 {
+		t.Errorf("a VLAN on a filtering bridge: %+v %v", l, err)
+	} else if s := ContainerScript(ScriptParams{Sensor: netip.MustParseAddr("192.168.20.9"), LAN: l}); !strings.Contains(s, "interface=veth-mikrodash-dpi pvid=20 ") {
+		t.Errorf("the VLAN is the port's pvid:\n%s", s)
+	}
+	for addr, why := range map[string]string{
+		"192.168.30.9":   "does not filter VLANs",
+		"203.0.113.1":    "not a bridge",
+		"192.168.11.1":   "router's own address",
+		"192.168.11.255": "not a host address",
+		"192.168.11.0":   "not a host address",
+	} {
+		if _, err := find(addr); err == nil || !strings.Contains(err.Error(), why) {
+			t.Errorf("%s: %v, want %q", addr, err, why)
+		}
+	}
+	if l, err := find("172.31.255.2"); l != nil || err != nil {
+		t.Errorf("an address outside every network gets its own /30: %+v %v", l, err)
+	}
+}

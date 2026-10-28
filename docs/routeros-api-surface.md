@@ -501,6 +501,7 @@ administrator presses a button on the page.
 | `/ip/firewall/address-list/remove` | `=.id=<id>` | Unlist, Remove |
 | `/ip/firewall/mangle/print`, `/ip/firewall/raw/print` | whole rows | Preview, Apply, Remove |
 | `/ip/firewall/filter/print` | `=.proplist=.id,action,disabled,connection-bytes` | Preview's fasttrack warning |
+| `/ip/address/print`, `/interface/bridge/print`, `/interface/vlan/print` | `=.proplist=address,interface,disabled`, `name,vlan-filtering`, `name,interface,vlan-id` | Show the commands: which bridge (and VLAN, as the port's `pvid`) the sensor's address belongs to |
 | `/ip/firewall/mangle/add`, `/set`, `/remove` | the one `action=sniff-tzsp` rule, `place-before` the first foreign rule | Apply, Remove |
 | `/ip/firewall/raw/add`, `/set`, `/remove` | the three `action=drop` rules on the two lists, `place-before` the first foreign rule | Apply, Remove |
 

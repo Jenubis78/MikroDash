@@ -35,13 +35,19 @@ MikroDash: the rules -> address lists -> raw drop rules on the router
 1. **Containers.** Install the `container` package and, once, with physical access:
    `/system/device-mode/update container=yes`, then press the reset button or
    power-cycle. An external disk (`usb1`) is recommended.
-2. **Setup tab: the sensor.** Give the container an address that is the second of a
-   /30 (`172.31.255.2`), the disk, and the addresses that must never be listed
-   (your workstation, servers, resolvers). The router, MikroDash and the sensor are
-   always protected. Leave **Enforce** off to start with.
+2. **Setup tab: the sensor.** Give the container an address, the disk, and the
+   addresses that must never be listed (your workstation, servers, resolvers). The
+   router, MikroDash and the sensor are always protected. Leave **Enforce** off to
+   start with. The address decides where the container lives:
+   - **inside one of the router's networks** (`192.168.11.250` on a `192.168.11.1/24`
+     bridge): it becomes a port of that bridge, with the network's VLAN as its `pvid`
+     when the network is a VLAN on a VLAN-filtering bridge. Nothing else is created,
+     and MikroDash reaches it directly;
+   - **anywhere else**: it is the second address of a /30 of its own
+     (`172.31.255.2`), with a bridge and the router's address on it.
 3. **Show the commands**, and run them in the router's terminal. They create the
-   veth, a bridge, the router's address on the /30 and the container, with the
-   token MikroDash will send. The image is `ghcr.io/jenubis78/mikrodash-dpi`, built
+   veth, its bridge port (and, on a /30, the bridge and the router's address) and
+   the container, with the token MikroDash will send. The image is `ghcr.io/jenubis78/mikrodash-dpi`, built
    by `.github/workflows/dpi-sensor.yml` on a `dpi-v*` tag.
 4. **MikroDash must reach the sensor** at its address on TCP 37009. When MikroDash's
    host routes through this router, that works as it is. The header turns to

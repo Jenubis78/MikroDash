@@ -219,18 +219,96 @@ func ListEntryArgs(d Decision, app string) []string {
 // ScriptParams is what the container script is written for.
 type ScriptParams struct {
 	Token string
-	// Sensor is the container's address; the router takes the one below it.
+	// Sensor is the container's address. Without LAN it is the second address
+	// of a /30 of its own, and the router takes the one below it.
 	Sensor netip.Addr
+	// LAN puts the sensor on one of the router's existing networks instead.
+	LAN *LANAttach
 	// Disk is where the image is unpacked, e.g. "usb1".
 	Disk  string
 	Image string
+}
+
+// LANAttach is the router network the sensor joins: its bridge, the router's
+// address on it (the sensor's gateway), its prefix length, and the VLAN the
+// network rides on that bridge (0 when it is the bridge's own).
+type LANAttach struct {
+	Bridge  string
+	Gateway netip.Addr
+	Bits    int
+	PVID    int
+}
+
+// FindLAN says which of the router's networks holds the sensor's address, and
+// how the container joins it: nil when none does (the sensor gets a /30 of its
+// own), an error when one does but the script cannot attach to it.
+//
+// A network on a bridge is joined as a port of that bridge. A network on a VLAN
+// interface whose parent is a VLAN-filtering bridge is joined as a port of that
+// bridge with the VLAN as its pvid, which RouterOS turns into an untagged
+// membership on its own. Anything else (a physical port, a VLAN on a bridge that
+// does not filter) has no bridge the veth can be put on.
+func FindLAN(sensor netip.Addr, addresses, bridges, vlans []routeros.Reply) (*LANAttach, error) {
+	for _, r := range addresses {
+		if r["disabled"] == "true" {
+			continue
+		}
+		pf, err := netip.ParsePrefix(strings.TrimSpace(r["address"]))
+		if err != nil || !pf.Masked().Contains(sensor) {
+			continue
+		}
+		if pf.Addr() == sensor {
+			return nil, fmt.Errorf("%s is the router's own address", sensor)
+		}
+		if pf.Bits() > 30 || sensor == pf.Masked().Addr() || isBroadcast(pf, sensor) {
+			return nil, fmt.Errorf("%s is not a host address of %s", sensor, pf.Masked())
+		}
+		at := &LANAttach{Gateway: pf.Addr(), Bits: pf.Bits()}
+		iface := r["interface"]
+		for _, b := range bridges {
+			if b["name"] == iface {
+				at.Bridge = iface
+				return at, nil
+			}
+		}
+		for _, v := range vlans {
+			if v["name"] != iface {
+				continue
+			}
+			for _, b := range bridges {
+				if b["name"] != v["interface"] {
+					continue
+				}
+				if b["vlan-filtering"] != "true" {
+					return nil, fmt.Errorf("%s is VLAN %s on bridge %s, which does not filter VLANs: the container cannot be put in that VLAN",
+						iface, v["vlan-id"], b["name"])
+				}
+				at.Bridge = b["name"]
+				at.PVID, _ = strconv.Atoi(v["vlan-id"])
+				return at, nil
+			}
+			return nil, fmt.Errorf("%s is a VLAN on %s, which is not a bridge", iface, v["interface"])
+		}
+		return nil, fmt.Errorf("%s is on %s, which is not a bridge: use a bridge's network, or an address of its own", pf.Masked(), iface)
+	}
+	return nil, nil
+}
+
+func isBroadcast(pf netip.Prefix, a netip.Addr) bool {
+	b := pf.Masked().Addr().As4()
+	host := 32 - pf.Bits()
+	for i := 3; i >= 0 && host > 0; i-- {
+		n := min(host, 8)
+		b[i] |= byte(1<<n - 1)
+		host -= n
+	}
+	return netip.AddrFrom4(b) == a
 }
 
 // ContainerScript is the RouterOS commands that create the sensor's container.
 // The operator runs them: installing a container needs container mode, which
 // only somebody standing at the router can switch on, and a disk only they know.
 func ContainerScript(p ScriptParams) string {
-	gw := p.Sensor.Prev()
 	disk := strings.Trim(p.Disk, "/ ")
 	if disk == "" {
 		disk = "usb1"
@@ -244,10 +322,20 @@ func ContainerScript(p ScriptParams) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# MikroDash IPS sensor. Once, with physical access, if containers are not enabled yet:\n")
 	fmt.Fprintf(&b, "#   /system/device-mode/update container=yes   (then press the reset button or power-cycle)\n")
-	fmt.Fprintf(&b, "/interface/veth/add name=veth-mikrodash-dpi address=%s/30 gateway=%s %s\n", p.Sensor, gw, c)
-	fmt.Fprintf(&b, "/interface/bridge/add name=br-mikrodash-dpi %s\n", c)
-	fmt.Fprintf(&b, "/interface/bridge/port/add bridge=br-mikrodash-dpi interface=veth-mikrodash-dpi %s\n", c)
-	fmt.Fprintf(&b, "/ip/address/add address=%s/30 interface=br-mikrodash-dpi %s\n", gw, c)
+	if l := p.LAN; l != nil {
+		fmt.Fprintf(&b, "/interface/veth/add name=veth-mikrodash-dpi address=%s/%d gateway=%s %s\n", p.Sensor, l.Bits, l.Gateway, c)
+		pvid := ""
+		if l.PVID > 0 {
+			pvid = " pvid=" + strconv.Itoa(l.PVID)
+		}
+		fmt.Fprintf(&b, "/interface/bridge/port/add bridge=%s interface=veth-mikrodash-dpi%s %s\n", l.Bridge, pvid, c)
+	} else {
+		gw := p.Sensor.Prev()
+		fmt.Fprintf(&b, "/interface/veth/add name=veth-mikrodash-dpi address=%s/30 gateway=%s %s\n", p.Sensor, gw, c)
+		fmt.Fprintf(&b, "/interface/bridge/add name=br-mikrodash-dpi %s\n", c)
+		fmt.Fprintf(&b, "/interface/bridge/port/add bridge=br-mikrodash-dpi interface=veth-mikrodash-dpi %s\n", c)
+		fmt.Fprintf(&b, "/ip/address/add address=%s/30 interface=br-mikrodash-dpi %s\n", gw, c)
+	}
 	fmt.Fprintf(&b, "/container/config/set registry-url=%s tmpdir=%s/tmp\n", registry, disk)
 	fmt.Fprintf(&b, "/container/add remote-image=%s interface=veth-mikrodash-dpi root-dir=%s/mikrodash-dpi \\\n", image, disk)
 	fmt.Fprintf(&b, "  cmd=\"--token %s\" logging=yes start-on-boot=yes %s\n", p.Token, c)
