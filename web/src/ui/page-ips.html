@@ -108,25 +108,25 @@
                   </select>
                   <div class="ff-help">Start with Log only, and read Decisions before blocking.</div>
                 </div>
-                <div class="ff">
-                  <label class="sform-label" for="ipsRuleApps">Applications</label>
-                  <input class="sform-input" id="ipsRuleApps" placeholder="BitTorrent, TikTok" spellcheck="false">
-                  <div class="ff-help">nDPI names, comma separated: see the Applications tab.</div>
+                <div class="ff ff-full">
+                  <label class="sform-label">Applications</label>
+                  <div class="ff-box ips-pick" id="ipsRuleAppsPick"></div>
+                  <div class="ff-help">Any one of them; empty is every application. Grouped by nDPI category.</div>
                 </div>
-                <div class="ff">
-                  <label class="sform-label" for="ipsRuleCategories">Categories</label>
-                  <input class="sform-input" id="ipsRuleCategories" placeholder="Download, Game" spellcheck="false">
+                <div class="ff ff-full">
+                  <label class="sform-label">Categories</label>
+                  <div class="ff-box ips-pick" id="ipsRuleCategoriesPick"></div>
                   <div class="ff-help"></div>
                 </div>
-                <div class="ff">
-                  <label class="sform-label" for="ipsRuleBreeds">Breeds</label>
-                  <input class="sform-input" id="ipsRuleBreeds" placeholder="Dangerous, Unsafe" spellcheck="false">
+                <div class="ff ff-full">
+                  <label class="sform-label">Breeds</label>
+                  <div class="ff-box ips-pick" id="ipsRuleBreedsPick"></div>
                   <div class="ff-help">nDPI's verdict on a protocol.</div>
                 </div>
-                <div class="ff">
-                  <label class="sform-label" for="ipsRuleRisks">Risks</label>
-                  <input class="sform-input" id="ipsRuleRisks" placeholder="* for any risk" spellcheck="false">
-                  <div class="ff-help">nDPI risk names, or * for any.</div>
+                <div class="ff ff-full">
+                  <label class="sform-label">Risks</label>
+                  <div class="ff-box ips-pick" id="ipsRuleRisksPick"></div>
+                  <div class="ff-help">Any risk at all, or the ones listed.</div>
                 </div>
                 <div class="ff">
                   <label class="sform-label" for="ipsRuleHosts">Hosts</label>

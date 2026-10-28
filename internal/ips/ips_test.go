@@ -134,3 +134,34 @@ func TestValidateNormalisesAndRefuses(t *testing.T) {
 		}
 	}
 }
+
+func TestTheCatalogNamesWhatTheSensorSends(t *testing.T) {
+	c := TheCatalog()
+	if len(c.Apps) < 300 || len(c.Categories) < 30 || len(c.Breeds) != 8 || len(c.Risks) < 40 {
+		t.Fatalf("a short catalogue: %d apps, %d categories, %d breeds, %d risks",
+			len(c.Apps), len(c.Categories), len(c.Breeds), len(c.Risks))
+	}
+	// Names as a real sensor run reported them (netflixLine, the BitTorrent
+	// replay): the catalogue must spell them the same, letter for letter.
+	f := flowOf(t, netflixLine)
+	has := func(list []string, v string) bool {
+		for _, x := range list {
+			if x == v {
+				return true
+			}
+		}
+		return false
+	}
+	apps := []string{}
+	for _, a := range c.Apps {
+		apps = append(apps, a.Name)
+	}
+	for _, v := range []string{f.App, f.Master, "BitTorrent", "DNS", "QUIC"} {
+		if !has(apps, v) {
+			t.Errorf("the catalogue has no app %q", v)
+		}
+	}
+	if !has(c.Categories, f.Category) || !has(c.Breeds, f.Breed) || !has(c.Risks, "Known Proto on Non Std Port") {
+		t.Errorf("category %q, breed %q or a known risk is missing", f.Category, f.Breed)
+	}
+}

@@ -45,6 +45,47 @@ interface Sensor {
   address: string; enforce: boolean; sniffBytes: number; protected: string[]; disk: string; image: string;
   network: string; dhcp: boolean;
 }
+/** What nDPI can name (GET /api/ips/catalog), printed from the sensor's own nDPI. */
+export interface Catalog {
+  ndpi: string;
+  apps: { name: string; category: string; breed: string }[];
+  categories: string[]; breeds: string[]; risks: string[];
+}
+
+/** The four criteria picked from lists rather than typed. */
+export type PickField = 'apps' | 'categories' | 'breeds' | 'risks';
+
+/**
+ * A pick box: the values chosen, each a chip that removes itself, then a list
+ * of what is left to add. Applications come grouped by their nDPI category; a
+ * value a rule already holds that the catalogue does not name still shows, so
+ * an older rule is never silently emptied.
+ */
+export function pickHtml(field: PickField, chosen: string[], cat: Catalog | null): string {
+  const chips = chosen.map((v) => '<span class="chip is-on">' + esc(v === '*' ? 'Any risk' : v) +
+    '<button class="chip-x" type="button" title="Remove" data-ipsunpick="' + esc(field) + '" data-v="' + esc(v) + '">×</button></span>').join(' ');
+  const left = (list: string[]): string[] => list.filter((v) => !chosen.includes(v));
+  const opt = (v: string, label = v): string => '<option value="' + esc(v) + '">' + esc(label) + '</option>';
+  const prompt: Record<PickField, string> = { apps: 'Add an application', categories: 'Add a category',
+    breeds: 'Add a breed', risks: 'Add a risk' };
+  let options = '';
+  if (cat) {
+    if (field === 'apps') {
+      const groups: Record<string, string[]> = {};
+      for (const a of cat.apps) if (!chosen.includes(a.name)) (groups[a.category] ||= []).push(a.name);
+      options = Object.keys(groups).sort().map((g) => '<optgroup label="' + esc(g) + '">' +
+        groups[g]!.sort((x, y) => x.localeCompare(y)).map((v) => opt(v)).join('') + '</optgroup>').join('');
+    } else if (field === 'risks') {
+      options = (chosen.includes('*') ? '' : opt('*', 'Any risk')) + left(cat.risks).map((v) => opt(v)).join('');
+    } else {
+      options = left(field === 'categories' ? cat.categories : cat.breeds).map((v) => opt(v)).join('');
+    }
+  }
+  return chips + (chips ? ' ' : '') + '<select class="sform-input sform-sm" data-ipsadd="' + esc(field) + '"' +
+    (cat ? '' : ' disabled') + '><option value="">' + (cat ? prompt[field] : 'Loading the list') + '</option>' +
+    options + '</select>';
+}
+
 /** One of the router's networks, as GET /api/ips/networks lists it. */
 export interface Network { interface: string; prefix: string; gateway: string; bridge: string; vlan: number; why: string }
 
@@ -135,6 +176,9 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   let networks: Network[] = [];
   let networksFor = '';
   let networksError = '';
+  let catalog: Catalog | null = null;
+  let catalogAsked = false;
+  const picks: Record<PickField, string[]> = { apps: [], categories: [], breeds: [], risks: [] };
   let chosenNetwork = '';
   const flowSort: SortState = { col: 'ts', dir: 'desc' };
   const appSort: SortState = { col: 'flows', dir: 'desc' };
@@ -435,6 +479,34 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   });
 
   // ── rules ────────────────────────────────────────────────────────────────
+  const PICK_IDS: Record<PickField, string> = { apps: 'ipsRuleAppsPick', categories: 'ipsRuleCategoriesPick',
+    breeds: 'ipsRuleBreedsPick', risks: 'ipsRuleRisksPick' };
+  function drawPicks(): void {
+    for (const f of Object.keys(PICK_IDS) as PickField[]) setHTML(PICK_IDS[f], pickHtml(f, picks[f], catalog));
+  }
+  // ONCE PER PAGE: the catalogue is the sensor's nDPI and does not change while
+  // MikroDash runs.
+  function loadCatalog(): void {
+    if (catalogAsked) return;
+    catalogAsked = true;
+    call<Catalog>('/api/ips/catalog').then((c) => { catalog = c; drawPicks(); })
+      .catch(() => { catalogAsked = false; });
+  }
+  el('ipsRuleForm')?.addEventListener('change', (ev) => {
+    const sel = (ev.target as HTMLElement | null)?.closest?.('[data-ipsadd]') as HTMLSelectElement | null;
+    if (!sel || !sel.value) return;
+    const f = sel.getAttribute('data-ipsadd') as PickField;
+    if (!picks[f].includes(sel.value)) picks[f].push(sel.value);
+    drawPicks();
+  });
+  el('ipsRuleForm')?.addEventListener('click', (ev) => {
+    const b = (ev.target as HTMLElement | null)?.closest?.('[data-ipsunpick]');
+    if (!b) return;
+    const f = b.getAttribute('data-ipsunpick') as PickField;
+    picks[f] = picks[f].filter((v) => v !== b.getAttribute('data-v'));
+    drawPicks();
+  });
+
   function showEditor(on: boolean, r?: Rule): void {
     const form = el('ipsRuleForm');
     if (form) form.style.display = on ? '' : 'none';
@@ -447,10 +519,12 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     const set = (id: string, v: string): void => { const n = el<HTMLInputElement>(id); if (n) n.value = v; };
     set('ipsRuleName', e.name);
     set('ipsRuleAction', e.action);
-    set('ipsRuleApps', e.apps.join(', '));
-    set('ipsRuleCategories', e.categories.join(', '));
-    set('ipsRuleBreeds', e.breeds.join(', '));
-    set('ipsRuleRisks', e.risks.join(', '));
+    picks.apps = [...e.apps];
+    picks.categories = [...e.categories];
+    picks.breeds = [...e.breeds];
+    picks.risks = [...e.risks];
+    drawPicks();
+    loadCatalog();
     set('ipsRuleHosts', e.hosts.join(', '));
     set('ipsRuleClients', e.clients.join(', '));
     set('ipsRuleTimeout', e.timeoutMin ? String(e.timeoutMin) : '');
@@ -466,8 +540,8 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     const rule: Rule = {
       id: editing.id, name: q('ipsRuleName'), action: q('ipsRuleAction'),
       enabled: !!el<HTMLInputElement>('ipsRuleEnabled')?.checked,
-      apps: splitList(q('ipsRuleApps')), categories: splitList(q('ipsRuleCategories')),
-      breeds: splitList(q('ipsRuleBreeds')), risks: splitList(q('ipsRuleRisks')),
+      apps: [...picks.apps], categories: [...picks.categories],
+      breeds: [...picks.breeds], risks: [...picks.risks],
       hosts: splitList(q('ipsRuleHosts')), clients: splitList(q('ipsRuleClients')),
       timeoutMin: Number(q('ipsRuleTimeout')) || 0,
     };

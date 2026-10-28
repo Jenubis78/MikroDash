@@ -11,6 +11,7 @@ package server
 //	DELETE /api/ips/sensor?router=       forget it
 //	GET    /api/ips/script?router=       the RouterOS commands that create its container
 //	GET    /api/ips/networks?router=     the router's networks the sensor can join
+//	GET    /api/ips/catalog              what nDPI can name, for the rule editor
 //	GET    /api/ips/plan?router=         what the router needs, read-only
 //	POST   /api/ips/apply?router=        do it (`remove=1`: take everything off)
 //	POST   /api/ips/unlist?router=       take one address off a list
@@ -55,6 +56,7 @@ func (s *Server) registerIPS(mux *http.ServeMux) {
 	mux.HandleFunc("DELETE /api/ips/sensor", s.ipsSensorDelete)
 	mux.HandleFunc("GET /api/ips/script", s.ipsScript)
 	mux.HandleFunc("GET /api/ips/networks", s.ipsNetworksGet)
+	mux.HandleFunc("GET /api/ips/catalog", s.ipsCatalog)
 	mux.HandleFunc("GET /api/ips/plan", s.ipsPlan)
 	mux.HandleFunc("POST /api/ips/apply", s.ipsApply)
 	mux.HandleFunc("POST /api/ips/unlist", s.ipsUnlist)
@@ -664,4 +666,13 @@ func (s *Server) ipsUnlist(w http.ResponseWriter, r *http.Request) {
 	s.httpRecorder(r, sess).Record(audit.Event{Action: "ips.unlist", RouterID: rid, TargetType: "ipsList",
 		TargetID: body.List, TargetName: body.Address})
 	writeJSON(w, map[string]any{"ok": true, "removed": len(rows)})
+}
+
+// ipsCatalog is the rule editor's lists: what the sensor's nDPI can name.
+// For administrators, as the rules are; the same for every router.
+func (s *Server) ipsCatalog(w http.ResponseWriter, r *http.Request) {
+	if s.ipsAdminGate(w, r) == nil {
+		return
+	}
+	writeJSON(w, ips.TheCatalog())
 }

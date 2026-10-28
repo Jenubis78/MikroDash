@@ -36,13 +36,24 @@ assert.strictEqual(mod.networkLabel({ interface: 'vlan11', prefix: '192.168.11.0
   vlan: 11, why: '' }), 'vlan11 - 192.168.11.0/24 (VLAN 11 on bridge)');
 assert.ok(mod.networkLabel({ interface: 'ether1', prefix: '203.0.113.0/30', gateway: '', bridge: '', vlan: 0,
   why: 'ether1 is not a bridge' }).endsWith('cannot be joined: ether1 is not a bridge'));
+const cat = { ndpi: '4.14', apps: [{ name: 'NetFlix', category: 'Video', breed: 'Fun' },
+  { name: 'BitTorrent', category: 'Download', breed: 'Acceptable' }, { name: 'YouTube', category: 'Video', breed: 'Fun' }],
+categories: ['Video', 'Download'], breeds: ['Safe', 'Fun'], risks: ['Known Proto on Non Std Port', 'Self-signed Cert'] };
+const apps = mod.pickHtml('apps', ['NetFlix', 'old<one>'], cat);
+assert.ok(apps.includes('data-ipsunpick="apps" data-v="NetFlix"') && apps.includes('old&lt;one&gt;'),
+  'the chosen values, a value the catalogue does not name among them, are chips, escaped');
+assert.ok(apps.includes('<optgroup label="Video"><option value="YouTube">') && !apps.includes('<option value="NetFlix">'),
+  'applications are grouped by category, and a chosen one is not offered again');
+const risks = mod.pickHtml('risks', [], cat);
+assert.ok(risks.includes('<option value="*">Any risk</option>'), 'any risk is offered first');
+assert.ok(mod.pickHtml('breeds', [], null).includes(' disabled'), 'with no catalogue yet the list waits, disabled');
 say('ok - the IPS helpers summarise a rule and tone its outcomes');
 
 const ids = ['ipsBadge', 'ipsTabs', 'ipsStatePill', 'ipsModePill', 'ipsStatus', 'ipsSeenVal', 'ipsListedVal',
   'ipsListedFoot', 'ipsPacketsVal', 'ipsPacketsFoot', 'ipsTopVal', 'ipsTopFoot', 'ipsFlowFilter', 'ipsFlowMatched',
   'ipsFlowsHead', 'ipsFlowsRows', 'ipsAppsHead', 'ipsAppsRows', 'ipsEventsHead', 'ipsEventsRows', 'ipsListedLoad',
   'ipsListedHead', 'ipsListedRows', 'ipsRulesRows', 'ipsRuleForm', 'ipsRuleFormTitle', 'ipsRuleName', 'ipsRuleAction',
-  'ipsRuleApps', 'ipsRuleCategories', 'ipsRuleBreeds', 'ipsRuleRisks', 'ipsRuleHosts', 'ipsRuleClients',
+  'ipsRuleAppsPick', 'ipsRuleCategoriesPick', 'ipsRuleBreedsPick', 'ipsRuleRisksPick', 'ipsRuleHosts', 'ipsRuleClients',
   'ipsRuleTimeout', 'ipsRuleEnabled', 'ipsRuleCancel', 'ipsRuleMsg', 'ipsRuleAddWrap', 'ipsRuleAdd', 'ipsSetupNote',
   'ipsSensorForm', 'ipsSensorAddress', 'ipsSensorEnforce', 'ipsSensorBytes', 'ipsSensorDisk', 'ipsSensorProtected',
   'ipsSensorImage', 'ipsSensorNetwork', 'ipsSensorNetworkHelp', 'ipsSensorDhcp', 'ipsSensorAddressField', 'ipsSensorToken', 'ipsSensorDelete', 'ipsSensorMsg', 'ipsScriptShow', 'ipsScriptCopy', 'ipsScript',
