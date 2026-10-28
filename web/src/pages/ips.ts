@@ -132,6 +132,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   let formFilledFor = '';
   let networks: Network[] = [];
   let networksFor = '';
+  let networksError = '';
   let chosenNetwork = '';
   const flowSort: SortState = { col: 'ts', dir: 'desc' };
   const appSort: SortState = { col: 'flows', dir: 'desc' };
@@ -270,21 +271,31 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     const sel = el<HTMLSelectElement>('ipsSensorNetwork');
     if (!sel) return;
     const keep = chosenNetwork;
-    sel.innerHTML = '<option value="">By the address</option>' + networks.map((n) =>
-      '<option value="' + esc(n.interface) + '"' + (n.why ? ' disabled' : '') + '>' + esc(networkLabel(n)) + '</option>').join('') +
+    const dhcp = !!el<HTMLInputElement>('ipsSensorDhcp')?.checked;
+    // By DHCP no address says which network: the first entry asks for one.
+    sel.innerHTML = '<option value="">' + (dhcp ? 'Choose the network' : 'By the address') + '</option>' +
+      networks.map((n) => '<option value="' + esc(n.interface) + '"' + (n.why ? ' disabled' : '') + '>' +
+        esc(networkLabel(n)) + '</option>').join('') +
       (keep && !networks.some((n) => n.interface === keep) ? '<option value="' + esc(keep) + '">' + esc(keep) + '</option>' : '');
     sel.value = keep;
+    sel.classList.toggle('active', dhcp && !keep);
     const n = networks.find((x) => x.interface === keep);
-    setText('ipsSensorNetworkHelp', n ? (n.why || 'Joins ' + n.bridge + (n.vlan ? ' with pvid ' + n.vlan : '') + '; the router is ' + n.gateway + '.')
-      : 'The bridge or VLAN the container joins, read from the router.');
+    let help = 'The bridge or VLAN the container joins, read from the router.';
+    if (networksError) help = 'The router\'s networks could not be read: ' + networksError;
+    else if (n) help = n.why || 'Joins ' + n.bridge + (n.vlan ? ' with pvid ' + n.vlan : '') + '; the router is ' + n.gateway + '.';
+    else if (dhcp) help = 'By DHCP, choose the network the sensor joins.';
+    else if (networksFor && !networks.length) help = 'The router has no IPv4 network to join.';
+    setText('ipsSensorNetworkHelp', help);
   }
 
   function loadNetworks(): void {
     if (!state?.admin || !routerId || networksFor === routerId) return;
     networksFor = routerId;
     call<{ networks: Network[] }>('/api/ips/networks' + qs())
-      .then((d) => { networks = d.networks; drawNetworks(); })
-      .catch(() => { networksFor = ''; });
+      .then((d) => { networksError = ''; networks = d.networks; drawNetworks(); })
+      // SAID, NOT RETRIED EVERY POLL: the list is read again when the Setup
+      // tab is opened again, and the reason stays under the field until then.
+      .catch((e: Error) => { networksError = e.message; drawNetworks(); });
   }
 
   // BY DHCP, the address is the server's: its field goes, and a network must
@@ -293,6 +304,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     const on = !!el<HTMLInputElement>('ipsSensorDhcp')?.checked;
     const f = el('ipsSensorAddressField');
     if (f) f.style.display = on ? 'none' : '';
+    drawNetworks();
   }
 
   function drawSetup(s: State): void {
@@ -361,6 +373,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
 
   // ── tabs ─────────────────────────────────────────────────────────────────
   function showTab(key: string): void {
+    if (key === 'setup' && tab !== 'setup' && networksError) networksFor = ''; // read again on return
     tab = key;
     for (const k of ['flows', 'apps', 'events', 'rules', 'setup']) {
       const p = el('ipsPanel-' + k);
