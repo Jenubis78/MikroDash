@@ -245,35 +245,39 @@ func (d *DB) IPSEvents(routerID string, limit int) ([]IPSEvent, error) {
 }
 
 // IPSGeo is one router's geofencing: what it should hold, and what the last
-// apply did.
+// apply did. Countries is the blacklist, Allow the whitelist.
 type IPSGeo struct {
 	RouterID  string   `json:"routerId"`
+	Mode      string   `json:"mode"`
 	Countries []string `json:"countries"`
+	Allow     []string `json:"allow"`
 	Direction string   `json:"direction"`
 	AppliedAt int64    `json:"appliedAt"`
 	Result    string   `json:"result"`
 	Entries   int      `json:"entries"`
+	// Saved is whether anybody chose: a router never saved gets its defaults.
+	Saved bool `json:"saved"`
 }
 
 // IPSGeoOf is a router's geofencing; a router without a row has none chosen.
 func (d *DB) IPSGeoOf(routerID string) (IPSGeo, error) {
-	g := IPSGeo{RouterID: routerID, Countries: []string{}, Direction: ips.GeoBoth}
-	var countries string
-	err := d.sql.QueryRow(`SELECT countries, direction, applied_at, result, entries FROM ips_geo WHERE router_id = ?`,
-		routerID).Scan(&countries, &g.Direction, &g.AppliedAt, &g.Result, &g.Entries)
+	g := IPSGeo{RouterID: routerID, Mode: ips.GeoModeBlock, Countries: []string{}, Allow: []string{}, Direction: ips.GeoBoth}
+	var countries, allow string
+	err := d.sql.QueryRow(`SELECT mode, countries, allow, direction, applied_at, result, entries FROM ips_geo
+	   WHERE router_id = ?`, routerID).Scan(&g.Mode, &countries, &allow, &g.Direction, &g.AppliedAt, &g.Result, &g.Entries)
 	if err == sql.ErrNoRows {
 		return g, nil
 	}
-	g.Countries = listOf(countries)
+	g.Countries, g.Allow, g.Saved = listOf(countries), listOf(allow), true
 	return g, err
 }
 
-// SaveIPSGeo stores a router's choice of countries and direction, keeping what
-// the last apply recorded.
-func (d *DB) SaveIPSGeo(routerID string, countries []string, direction string) error {
-	_, err := d.sql.Exec(`INSERT INTO ips_geo (router_id, countries, direction) VALUES (?, ?, ?)
-	        ON CONFLICT (router_id) DO UPDATE SET countries = excluded.countries, direction = excluded.direction`,
-		routerID, jsonList(countries), direction)
+// SaveIPSGeo stores a router's choice, keeping what the last apply recorded.
+func (d *DB) SaveIPSGeo(routerID string, c ips.GeoChoice) error {
+	_, err := d.sql.Exec(`INSERT INTO ips_geo (router_id, mode, countries, allow, direction) VALUES (?, ?, ?, ?, ?)
+	        ON CONFLICT (router_id) DO UPDATE SET mode = excluded.mode, countries = excluded.countries,
+	        allow = excluded.allow, direction = excluded.direction`,
+		routerID, c.Mode, jsonList(c.Block), jsonList(c.Allow), c.Direction)
 	return err
 }
 

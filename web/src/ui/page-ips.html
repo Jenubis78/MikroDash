@@ -185,10 +185,23 @@
             <div class="muted-note mb-2" id="ipsGeoNote"></div>
             <form id="ipsGeoForm" autocomplete="off">
               <div class="ff-grid">
+                <div class="ff">
+                  <label class="sform-label" for="ipsGeoMode">Mode</label>
+                  <select class="sform-input" id="ipsGeoMode">
+                    <option value="block">Block the blacklist</option>
+                    <option value="allow">Allow only the whitelist</option>
+                  </select>
+                  <div class="ff-help" id="ipsGeoModeHelp"></div>
+                </div>
                 <div class="ff ff-full">
-                  <label class="sform-label">Countries</label>
-                  <div class="ff-box ips-pick" id="ipsGeoCountriesPick"></div>
-                  <div class="ff-help">Every IPv4 network the geo database places in them, merged, in one address list on the router.</div>
+                  <label class="sform-label">Whitelist</label>
+                  <div class="ff-box ips-pick" id="ipsGeoAllowPick" data-geolist="allow"></div>
+                  <div class="ff-help" id="ipsGeoAllowHelp">Never dropped. The router's own country is on it until you change it.</div>
+                </div>
+                <div class="ff ff-full" id="ipsGeoBlockField">
+                  <label class="sform-label">Blacklist</label>
+                  <div class="ff-box ips-pick" id="ipsGeoBlockPick" data-geolist="block"></div>
+                  <div class="ff-help">Every IPv4 network the geo database places in them, merged, in one address list on the router. A country also on the whitelist is not dropped.</div>
                 </div>
                 <div class="ff">
                   <label class="sform-label" for="ipsGeoDirection">Direction</label>

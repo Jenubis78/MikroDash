@@ -3,6 +3,7 @@ package ips
 import (
 	"net/netip"
 	"reflect"
+	"strings"
 	"testing"
 
 	"mikrodash/internal/routeros"
@@ -11,7 +12,7 @@ import (
 func TestEachGeoDirectionDropsOnlyNewConnectionsOnItsSide(t *testing.T) {
 	sides := func(dir string) []string {
 		var out []string
-		for _, w := range GeoWant(dir) {
+		for _, w := range GeoWant(GeoModeBlock, dir) {
 			if w.Props["connection-state"] != "new" || w.Props["action"] != "drop" || !GeoOwned(routeros.Reply(w.Props)) {
 				t.Errorf("%s: %+v", dir, w.Props)
 			}
@@ -38,23 +39,23 @@ func TestEachGeoDirectionDropsOnlyNewConnectionsOnItsSide(t *testing.T) {
 func TestChangingDirectionRemovesTheOtherSideAndLeavesTheOperatorsRules(t *testing.T) {
 	filter := []routeros.Reply{{".id": "*1", "chain": "forward", "action": "fasttrack-connection", "dynamic": "true"},
 		{".id": "*2", "chain": "input", "action": "accept", "comment": "theirs"}}
-	for i, w := range GeoWant(GeoBoth) {
+	for i, w := range GeoWant(GeoModeBlock, GeoBoth) {
 		r := routeros.Reply{".id": "*a" + string(rune('0'+i))}
 		for k, v := range w.Props {
 			r[k] = v
 		}
 		filter = append(filter, r)
 	}
-	steps := GeoRulesPlan(GeoOut, filter)
+	steps := GeoRulesPlan(GeoModeBlock, GeoOut, filter)
 	if len(steps) != 2 || steps[0].Op != "remove" || steps[1].Op != "remove" {
 		t.Fatalf("%+v", steps)
 	}
-	for _, s := range GeoRulesPlan("", filter) {
+	for _, s := range GeoRulesPlan(GeoModeBlock, "", filter) {
 		if s.ID == "*2" || s.ID == "*1" {
 			t.Errorf("removed a rule the IPS does not own: %+v", s)
 		}
 	}
-	adds := GeoRulesPlan(GeoIn, filter[:2])
+	adds := GeoRulesPlan(GeoModeBlock, GeoIn, filter[:2])
 	if len(adds) != 2 || adds[0].Args["place-before"] != "*2" {
 		t.Errorf("a missing rule goes above the first static foreign one: %+v", adds)
 	}
@@ -79,7 +80,7 @@ func TestTheListSyncWritesOnlyTheDifference(t *testing.T) {
 	if len(add) != 2 || add[0].Prefix.String() != "1.0.1.0/24" || add[0].Country != "CN" || add[1].Country != "FR" {
 		t.Errorf("add %+v", add)
 	}
-	if args := GeoEntryArgs(GeoEntry{netip.MustParsePrefix("1.0.8.1/32"), "CN"}); args[1] != "=address=1.0.8.1" ||
+	if args := GeoEntryArgs(GeoList, GeoEntry{netip.MustParsePrefix("1.0.8.1/32"), "CN"}); args[1] != "=address=1.0.8.1" ||
 		args[0] != "=list="+GeoList || args[2] != "=comment="+Marker+" geo CN" {
 		t.Errorf("%v", args)
 	}
@@ -93,15 +94,62 @@ func TestAGeoChoiceHoldingTheRoutersOwnAddressIsAConflict(t *testing.T) {
 	}
 }
 
-func TestAGeoChoiceIsCleanedAndItsDirectionChecked(t *testing.T) {
-	got, err := GeoValidate([]string{"ru", " CN", "RU"}, GeoBoth)
-	if err != nil || !reflect.DeepEqual(got, []string{"CN", "RU"}) {
-		t.Errorf("%v %v", got, err)
+func TestAGeoChoiceIsCleanedAndChecked(t *testing.T) {
+	got, err := GeoValidate(GeoChoice{Direction: GeoBoth, Block: []string{"ru", " CN", "RU"}, Allow: []string{"fr"}})
+	if err != nil || got.Mode != GeoModeBlock || !reflect.DeepEqual(got.Block, []string{"CN", "RU"}) || got.Allow[0] != "FR" {
+		t.Errorf("%+v %v", got, err)
 	}
-	if _, err := GeoValidate([]string{"CHN"}, GeoIn); err == nil {
-		t.Error("a three-letter code")
+	for name, c := range map[string]GeoChoice{
+		"a three-letter code":    {Direction: GeoIn, Block: []string{"CHN"}},
+		"an unknown direction":   {Direction: "sideways"},
+		"an unknown mode":        {Mode: "maybe", Direction: GeoIn},
+		"a whitelist of nothing": {Mode: GeoModeAllow, Direction: GeoIn},
+	} {
+		if _, err := GeoValidate(c); err == nil {
+			t.Errorf("%s was accepted", name)
+		}
 	}
-	if _, err := GeoValidate(nil, "sideways"); err == nil {
-		t.Error("an unknown direction")
+}
+
+// The whitelist wins over the blacklist in block mode, and is the list in
+// allow mode, whose rules match what is NOT on it.
+func TestTheWhitelistIsNeverDroppedInEitherMode(t *testing.T) {
+	list, cs := GeoTarget(GeoModeBlock, []string{"CN", "FR", "RU"}, []string{"FR"})
+	if list != GeoList || !reflect.DeepEqual(cs, []string{"CN", "RU"}) {
+		t.Errorf("block: %s %v", list, cs)
+	}
+	list, cs = GeoTarget(GeoModeAllow, []string{"CN"}, []string{"FR", "BE"})
+	if list != GeoAllowList || !reflect.DeepEqual(cs, []string{"FR", "BE"}) {
+		t.Errorf("allow: %s %v", list, cs)
+	}
+	for _, w := range GeoWant(GeoModeAllow, GeoBoth) {
+		side := w.Props["src-address-list"] + w.Props["dst-address-list"]
+		if side != "!"+GeoAllowList || !strings.Contains(w.Comment(), "not whitelisted") {
+			t.Errorf("%+v", w.Props)
+		}
+	}
+	// Switching mode replaces the rules: their comments differ.
+	var filter []routeros.Reply
+	for i, w := range GeoWant(GeoModeBlock, GeoIn) {
+		r := routeros.Reply{".id": "*b" + string(rune('0'+i))}
+		for k, v := range w.Props {
+			r[k] = v
+		}
+		filter = append(filter, r)
+	}
+	ops := map[string]int{}
+	for _, st := range GeoRulesPlan(GeoModeAllow, GeoIn, filter) {
+		ops[st.Op]++
+	}
+	if ops["add"] != 2 || ops["remove"] != 2 {
+		t.Errorf("mode switch: %v", ops)
+	}
+}
+
+func TestAWhitelistLeavingOutWhereTheRouterIsReachedFromIsAConflict(t *testing.T) {
+	want := map[string][]netip.Prefix{"FR": {netip.MustParsePrefix("198.51.100.0/24")}, GeoLocal: LocalPrefixes}
+	own := []netip.Addr{netip.MustParseAddr("198.51.100.7"), netip.MustParseAddr("203.0.113.1"), netip.MustParseAddr("192.168.11.5")}
+	if got := GeoAllowConflicts(want, own); !reflect.DeepEqual(got, []string{"203.0.113.1 (not whitelisted)"}) {
+		t.Errorf("%v", got)
 	}
 }

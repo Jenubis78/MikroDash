@@ -92,20 +92,23 @@ func TestIPSSensorsAndEventsRoundTrip(t *testing.T) {
 
 func TestIPSGeoKeepsTheChoiceAndTheLastApplySeparately(t *testing.T) {
 	d := openTestDB(t)
-	if g, err := d.IPSGeoOf("r1"); err != nil || len(g.Countries) != 0 || g.Direction != ips.GeoBoth {
+	if g, err := d.IPSGeoOf("r1"); err != nil || g.Saved || len(g.Countries) != 0 || g.Direction != ips.GeoBoth || g.Mode != ips.GeoModeBlock {
 		t.Fatalf("none chosen: %v %+v", err, g)
 	}
-	if err := d.SaveIPSGeo("r1", []string{"CN", "RU"}, ips.GeoIn); err != nil {
+	if err := d.SaveIPSGeo("r1", ips.GeoChoice{Mode: ips.GeoModeBlock, Direction: ips.GeoIn, Block: []string{"CN", "RU"},
+		Allow: []string{"FR"}}); err != nil {
 		t.Fatal(err)
 	}
 	if err := d.RecordIPSGeo("r1", 42, "applied", 1234); err != nil {
 		t.Fatal(err)
 	}
-	if err := d.SaveIPSGeo("r1", []string{"KP"}, ips.GeoOut); err != nil {
+	if err := d.SaveIPSGeo("r1", ips.GeoChoice{Mode: ips.GeoModeAllow, Direction: ips.GeoOut, Block: []string{"KP"},
+		Allow: []string{"FR", "BE"}}); err != nil {
 		t.Fatal(err)
 	}
 	g, err := d.IPSGeoOf("r1")
-	if err != nil || g.Countries[0] != "KP" || g.Direction != ips.GeoOut || g.AppliedAt != 42 || g.Entries != 1234 {
+	if err != nil || !g.Saved || g.Mode != ips.GeoModeAllow || g.Countries[0] != "KP" || len(g.Allow) != 2 ||
+		g.Direction != ips.GeoOut || g.AppliedAt != 42 || g.Entries != 1234 {
 		t.Errorf("%v %+v", err, g)
 	}
 }

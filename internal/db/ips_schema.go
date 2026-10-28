@@ -25,10 +25,11 @@ package db
 // server, port) was taken again within ten minutes of its row: one row, not
 // one per connection (migration 42).
 //
-// ips_geo is a router's geofencing (migration 41): the countries whose networks
-// its address list holds, the direction its filter rules drop (in, out, both),
-// and what the last apply did - when, its outcome, and how many entries the
-// list held after it. The list itself lives on the router.
+// ips_geo is a router's geofencing (migration 41): the blacklist (`countries`),
+// the direction its filter rules drop (in, out, both), and what the last apply
+// did - when, its outcome, and how many entries the list held after it. The
+// lists themselves live on the router. Migration 44 adds the whitelist
+// (`allow`) and the `mode`: block the blacklist, or allow only the whitelist.
 const ipsDDL = `
 CREATE TABLE IF NOT EXISTS ips_rules (
           id          INTEGER PRIMARY KEY,
@@ -83,6 +84,8 @@ CREATE TABLE IF NOT EXISTS ips_geo (
           direction   TEXT    NOT NULL DEFAULT 'both',
           applied_at  INTEGER NOT NULL DEFAULT 0,
           result      TEXT    NOT NULL DEFAULT '',
-          entries     INTEGER NOT NULL DEFAULT 0
+          entries     INTEGER NOT NULL DEFAULT 0,
+          mode        TEXT    NOT NULL DEFAULT 'block',
+          allow       TEXT    NOT NULL DEFAULT '[]'
         );
 `

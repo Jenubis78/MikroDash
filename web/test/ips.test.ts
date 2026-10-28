@@ -143,6 +143,15 @@ const n = doc.nodes;
     conflicts: ['198.51.100.7 (FR)'] }), 'Stopped: these countries hold addresses the router is reached from (198.51.100.7 (FR))');
   assert.strictEqual(mod.geoJobLine({ ...job, running: false }), '');
   say('ok - a geofencing apply reads as its progress or why it stopped');
+  // The question before writing names what will be dropped: the blacklist
+  // less the whitelist, or every country but the whitelist.
+  assert.strictEqual(mod.geoApplyQuestion(false, 'block', 'in', ['FR'], ['CN', 'FR']),
+    'Drop new connections from CN? (FR stays: whitelisted.)');
+  assert.ok(mod.geoApplyQuestion(false, 'allow', 'both', ['FR', 'BE'], []).startsWith(
+    'Drop new connections to and from every country but FR, BE'));
+  assert.ok(mod.geoApplyQuestion(false, 'block', 'in', ['FR'], ['FR']).startsWith('Remove'),
+    'a blacklist the whitelist empties is a removal');
+  say('ok - geofencing asks about what it will drop, never the whitelist');
 
   // LEAVING stops the poll: nothing is asked once another page is shown.
   doc.dispatchEvent({ type: 'mikrodash:pagechange', detail: 'dashboard' });

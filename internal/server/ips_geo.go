@@ -102,7 +102,34 @@ type IPSGeoPayload struct {
 	// Available is whether this install can turn countries into networks.
 	Available  bool   `json:"available"`
 	List       string `json:"list"`
+	AllowList  string `json:"allowList"`
 	MaxEntries int    `json:"maxEntries"`
+	// RouterCountry is where the router is: its WAN address's country, or
+	// the place set for it. A choice never saved has it on the whitelist.
+	RouterCountry string `json:"routerCountry"`
+}
+
+// routerCountry is where a router is, as the Connections map has it: its WAN
+// address's country, or failing that the place set for it.
+func (s *Server) routerCountry(rid string) string {
+	if cc := countryOf(s.wanIPOf(rid)); cc != "" {
+		return cc
+	}
+	if loc := s.routerPlace(rid); loc != nil {
+		return strings.ToUpper(loc.CC)
+	}
+	return ""
+}
+
+// ipsGeoOf is a router's geofencing, with the router's country whitelisted
+// when nobody has chosen yet.
+func (s *Server) ipsGeoOf(rid string) (db.IPSGeo, string, error) {
+	g, err := s.auditDB.IPSGeoOf(rid)
+	cc := s.routerCountry(rid)
+	if err == nil && !g.Saved && cc != "" {
+		g.Allow = []string{cc}
+	}
+	return g, cc, err
 }
 
 func (s *Server) ipsGeoGet(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +137,7 @@ func (s *Server) ipsGeoGet(w http.ResponseWriter, r *http.Request) {
 	if sess == nil {
 		return
 	}
-	g, err := s.auditDB.IPSGeoOf(rid)
+	g, cc, err := s.ipsGeoOf(rid)
 	if err != nil {
 		writeJSONErr(w, http.StatusInternalServerError, "the geofencing could not be read")
 		return
@@ -119,7 +146,7 @@ func (s *Server) ipsGeoGet(w http.ResponseWriter, r *http.Request) {
 	gdb, ok := geo.Current()
 	_, werr := gdb.Countries()
 	writeJSON(w, IPSGeoPayload{Geo: g, Job: job, Available: ok && werr == nil, List: ips.GeoList,
-		MaxEntries: ips.GeoMaxEntries})
+		AllowList: ips.GeoAllowList, MaxEntries: ips.GeoMaxEntries, RouterCountry: cc})
 }
 
 func (s *Server) ipsGeoSave(w http.ResponseWriter, r *http.Request) {
@@ -128,25 +155,28 @@ func (s *Server) ipsGeoSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Countries []string `json:"countries"`
+		Mode      string   `json:"mode"`
+		Countries []string `json:"countries"` // the blacklist
+		Allow     []string `json:"allow"`
 		Direction string   `json:"direction"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&body); err != nil {
 		writeJSON400OK(w)
 		return
 	}
-	countries, err := ips.GeoValidate(body.Countries, body.Direction)
+	c, err := ips.GeoValidate(ips.GeoChoice{Mode: body.Mode, Direction: body.Direction, Block: body.Countries, Allow: body.Allow})
 	if err != nil {
 		writeJSONErr(w, http.StatusBadRequest, safe.Message(err.Error()))
 		return
 	}
-	if err := s.auditDB.SaveIPSGeo(rid, countries, body.Direction); err != nil {
+	if err := s.auditDB.SaveIPSGeo(rid, c); err != nil {
 		writeJSONErr(w, http.StatusInternalServerError, "the geofencing could not be saved")
 		return
 	}
 	s.httpRecorder(r, sess).Record(audit.Event{Action: "ips.geo.save", RouterID: rid, TargetType: "ipsGeo",
-		TargetID: rid, Note: body.Direction + ": " + strings.Join(countries, ",")})
-	writeJSON(w, map[string]any{"ok": true, "countries": countries})
+		TargetID: rid, Note: c.Mode + " " + c.Direction + ": block " + strings.Join(c.Block, ",") +
+			", allow " + strings.Join(c.Allow, ",")})
+	writeJSON(w, map[string]any{"ok": true, "countries": c.Block, "allow": c.Allow, "mode": c.Mode})
 }
 
 func (s *Server) ipsGeoApply(w http.ResponseWriter, r *http.Request) {
@@ -154,13 +184,15 @@ func (s *Server) ipsGeoApply(w http.ResponseWriter, r *http.Request) {
 	if sess == nil {
 		return
 	}
-	g, err := s.auditDB.IPSGeoOf(rid)
+	g, _, err := s.ipsGeoOf(rid)
 	if err != nil {
 		writeJSONErr(w, http.StatusInternalServerError, "the geofencing could not be read")
 		return
 	}
-	// No countries is a removal whatever was asked: an empty list needs no rules.
-	remove := r.URL.Query().Get("remove") == "1" || len(g.Countries) == 0
+	list, countries := ips.GeoTarget(g.Mode, g.Countries, g.Allow)
+	// Nothing to drop is a removal whatever was asked: an empty blacklist needs
+	// no rules. (A whitelist mode has a whitelist: GeoValidate holds it to one.)
+	remove := r.URL.Query().Get("remove") == "1" || len(countries) == 0
 	var want map[string][]netip.Prefix
 	if !remove {
 		gdb, ok := geo.Current()
@@ -168,9 +200,12 @@ func (s *Server) ipsGeoApply(w http.ResponseWriter, r *http.Request) {
 			writeJSONErr(w, http.StatusConflict, safe.Message(geo.ErrNoNetworks.Error()))
 			return
 		}
-		if want, err = gdb.CountryNetworks(g.Countries); err != nil {
+		if want, err = gdb.CountryNetworks(countries); err != nil {
 			writeJSONErr(w, http.StatusConflict, safe.Message(geo.ErrNoNetworks.Error()))
 			return
+		}
+		if list == ips.GeoAllowList {
+			want[ips.GeoLocal] = ips.LocalPrefixes
 		}
 		n := 0
 		for _, ps := range want {
@@ -188,12 +223,13 @@ func (s *Server) ipsGeoApply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rec := s.httpRecorder(r, sess)
-	go s.ips.runGeo(rid, g, want, job, rec)
+	go s.ips.runGeo(rid, g, list, want, job, rec)
 	writeJSON(w, map[string]any{"ok": true})
 }
 
 // runGeo is one apply (want != nil) or removal, start to finish.
-func (e *ipsEngine) runGeo(rid string, g db.IPSGeo, want map[string][]netip.Prefix, j *IPSGeoJob, rec *audit.Recorder) {
+func (e *ipsEngine) runGeo(rid string, g db.IPSGeo, list string, want map[string][]netip.Prefix, j *IPSGeoJob,
+	rec *audit.Recorder) {
 	errText, entries := "", 0
 	defer func() {
 		e.geoUpdate(j, func(j *IPSGeoJob) { j.Running, j.Error = false, errText })
@@ -203,7 +239,8 @@ func (e *ipsEngine) runGeo(rid string, g db.IPSGeo, want map[string][]netip.Pref
 			result, action = "removed", "ips.geo.remove"
 		}
 		ev := audit.Event{Action: action, RouterID: rid, TargetType: "ipsGeo", TargetID: rid,
-			Note: g.Direction + ": " + strings.Join(g.Countries, ",") + ", " + strconv.Itoa(entries) + " entries"}
+			Note: g.Mode + " " + g.Direction + ": block " + strings.Join(g.Countries, ",") + ", allow " +
+				strings.Join(g.Allow, ",") + ", " + strconv.Itoa(entries) + " entries"}
 		if errText != "" {
 			result, ev.Outcome = "failed: "+errText, "failure"
 		}
@@ -220,20 +257,23 @@ func (e *ipsEngine) runGeo(rid string, g db.IPSGeo, want map[string][]netip.Pref
 		return
 	}
 	defer drop()
-	errText, entries = e.geoWrite(sn, g, want, j)
+	errText, entries = e.geoWrite(sn, g, list, want, j)
 }
 
-// geoWrite brings the router in line: rules off, list, rules on.
-func (e *ipsEngine) geoWrite(sn *session.Session, g db.IPSGeo, want map[string][]netip.Prefix, j *IPSGeoJob) (string, int) {
+// geoWrite brings the router in line: the chosen mode's list filled, the
+// rules switched to it, then the other mode's list emptied; or, for a removal,
+// the rules taken off and both lists emptied.
+func (e *ipsEngine) geoWrite(sn *session.Session, g db.IPSGeo, list string, want map[string][]netip.Prefix,
+	j *IPSGeoJob) (string, int) {
 	phase := func(p string, total int) {
 		e.geoUpdate(j, func(j *IPSGeoJob) { j.Phase, j.Done, j.Total = p, 0, total })
 	}
-	rules := func(direction string) string {
+	rules := func(mode, direction string) string {
 		filter, err := sn.Exec(routeros.Cmd{Path: "/ip/firewall/filter/print", Timeout: ipsCmdTimeout})
 		if err != nil {
 			return "the firewall could not be read"
 		}
-		for _, st := range ips.GeoRulesPlan(direction, filter) {
+		for _, st := range ips.GeoRulesPlan(mode, direction, filter) {
 			cmd := st.Cmd()
 			cmd.Timeout = ipsCmdTimeout
 			if _, err := sn.Exec(cmd); err != nil {
@@ -242,23 +282,59 @@ func (e *ipsEngine) geoWrite(sn *session.Session, g db.IPSGeo, want map[string][
 		}
 		return ""
 	}
+	other := ips.GeoAllowList
+	if list == ips.GeoAllowList {
+		other = ips.GeoList
+	}
 	if want == nil {
 		phase("removing the rules", 0)
-		if msg := rules(""); msg != "" {
+		if msg := rules(g.Mode, ""); msg != "" {
 			return msg, 0
 		}
-	} else {
-		phase("checking what the countries hold", 0)
-		if conflicts := e.geoConflicts(sn, want, g.Direction); len(conflicts) > 0 {
-			e.geoUpdate(j, func(j *IPSGeoJob) { j.Conflicts = conflicts })
-			return "these countries hold addresses the router is reached from", 0
+		for _, l := range []string{ips.GeoList, ips.GeoAllowList} {
+			if msg, _ := e.geoSync(sn, l, nil, j); msg != "" {
+				return msg, 0
+			}
 		}
+		phase("done", 0)
+		return "", 0
 	}
-	phase("reading the list", 0)
+	phase("checking what the countries hold", 0)
+	if conflicts := e.geoConflicts(sn, g.Mode, want, g.Direction); len(conflicts) > 0 {
+		e.geoUpdate(j, func(j *IPSGeoJob) { j.Conflicts = conflicts })
+		if g.Mode == ips.GeoModeAllow {
+			return "the whitelist leaves out addresses the router is reached from", 0
+		}
+		return "these countries hold addresses the router is reached from", 0
+	}
+	msg, entries := e.geoSync(sn, list, want, j)
+	if msg != "" {
+		// Rules over a partial list drop part of the choice, or with a
+		// whitelist far more than it: not put in.
+		return msg, entries
+	}
+	phase("switching the rules", 0)
+	if msg := rules(g.Mode, g.Direction); msg != "" {
+		return msg, entries
+	}
+	if msg, _ := e.geoSync(sn, other, nil, j); msg != "" {
+		return msg, entries
+	}
+	phase("done", 0)
+	return "", entries
+}
+
+// geoSync makes one list hold exactly `want` (nil: nothing), writing only the
+// difference. It returns why it stopped, and how many entries the list holds.
+func (e *ipsEngine) geoSync(sn *session.Session, list string, want map[string][]netip.Prefix, j *IPSGeoJob) (string, int) {
+	phase := func(p string, total int) {
+		e.geoUpdate(j, func(j *IPSGeoJob) { j.Phase, j.Done, j.Total = p, 0, total })
+	}
+	phase("reading "+list, 0)
 	have, err := sn.Exec(routeros.Cmd{Path: "/ip/firewall/address-list/print",
-		Args: []string{"=.proplist=.id,address", "?list=" + ips.GeoList}, Timeout: ipsGeoListTimeout})
+		Args: []string{"=.proplist=.id,address", "?list=" + list}, Timeout: ipsGeoListTimeout})
 	if err != nil {
-		return "the address list could not be read", 0
+		return "the address list " + list + " could not be read", 0
 	}
 	add, remove := ips.GeoEntriesPlan(want, have)
 	entries := len(have) - len(remove)
@@ -272,7 +348,7 @@ func (e *ipsEngine) geoWrite(sn *session.Session, g db.IPSGeo, want map[string][
 		e.geoUpdate(j, func(j *IPSGeoJob) { j.Done++ })
 		return err == nil
 	}
-	phase("removing entries", len(remove))
+	phase("removing entries from "+list, len(remove))
 	for _, id := range remove {
 		if e.ctx.Err() != nil {
 			return "stopped with the server", entries
@@ -282,36 +358,28 @@ func (e *ipsEngine) geoWrite(sn *session.Session, g db.IPSGeo, want map[string][
 			return "the router refused " + strconv.Itoa(failures) + " writes", entries
 		}
 	}
-	phase("adding entries", len(add))
+	phase("adding entries to "+list, len(add))
 	for _, en := range add {
 		if e.ctx.Err() != nil {
 			return "stopped with the server", entries
 		}
-		if write(routeros.Cmd{Path: "/ip/firewall/address-list/add", Args: ips.GeoEntryArgs(en)}) {
+		if write(routeros.Cmd{Path: "/ip/firewall/address-list/add", Args: ips.GeoEntryArgs(list, en)}) {
 			entries++
 		} else if failures >= ipsGeoMaxFailures {
 			return "the router refused " + strconv.Itoa(failures) + " writes", entries
 		}
 	}
 	if failures > 0 {
-		// Rules over a partial list drop part of the choice: not put in.
 		return strconv.Itoa(failures) + " entries could not be written; apply again", entries
 	}
-	if want != nil {
-		phase("adding the rules", 0)
-		if msg := rules(g.Direction); msg != "" {
-			return msg, entries
-		}
-	}
-	phase("done", 0)
 	return "", entries
 }
 
 // geoConflicts is the addresses the router is reached from that an inbound
-// drop of these countries would cut off: its own public addresses, and every
-// public address someone is logged in from now, MikroDash included. Outbound
-// alone cuts none of them, so it has none.
-func (e *ipsEngine) geoConflicts(sn *session.Session, want map[string][]netip.Prefix, direction string) []string {
+// drop would cut off - its own public addresses, and every public address
+// someone is logged in from now, MikroDash included - when a blacklist holds
+// them or a whitelist leaves them out. Outbound alone cuts none of them.
+func (e *ipsEngine) geoConflicts(sn *session.Session, mode string, want map[string][]netip.Prefix, direction string) []string {
 	if direction == ips.GeoOut {
 		return nil
 	}
@@ -324,6 +392,9 @@ func (e *ipsEngine) geoConflicts(sn *session.Session, want map[string][]netip.Pr
 				own = append(own, a.Unmap())
 			}
 		}
+	}
+	if mode == ips.GeoModeAllow {
+		return ips.GeoAllowConflicts(want, own)
 	}
 	return ips.GeoConflicts(want, own)
 }

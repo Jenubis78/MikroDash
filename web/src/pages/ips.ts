@@ -119,8 +119,24 @@ interface Step { op: string; menu: string; what: string; error?: string }
 /** GET /api/ips/geo: the router's country lists, and the apply writing them. */
 export interface GeoJob { running: boolean; remove: boolean; phase: string; done: number; total: number; error: string; conflicts: string[] }
 export interface GeoState {
-  geo: { countries: string[]; direction: string; appliedAt: number; result: string; entries: number };
-  job: GeoJob; available: boolean; list: string; maxEntries: number;
+  geo: { mode: string; countries: string[]; allow: string[]; direction: string; appliedAt: number; result: string;
+    entries: number; saved: boolean };
+  job: GeoJob; available: boolean; list: string; allowList: string; maxEntries: number; routerCountry: string;
+}
+
+/** What Apply or Remove asks before writing: what will be dropped, in which direction. */
+export function geoApplyQuestion(remove: boolean, mode: string, dir: string, allow: string[], block: string[]): string {
+  const way = ({ in: 'from', out: 'to', both: 'to and from' } as Record<string, string>)[dir] || 'to and from';
+  const dropped = block.filter((c) => !allow.includes(c));
+  if (remove || (mode !== 'allow' && !dropped.length)) {
+    return 'Remove the geofencing rules from the router, and empty its geofencing lists?';
+  }
+  if (mode === 'allow') {
+    return 'Drop new connections ' + way + ' every country but ' + allow.join(', ') +
+      ' (private addresses stay allowed)? Check that every place you reach the router from is on the whitelist.';
+  }
+  return 'Drop new connections ' + way + ' ' + dropped.join(', ') + '?' +
+    (dropped.length < block.length ? ' (' + block.filter((c) => allow.includes(c)).join(', ') + ' stays: whitelisted.)' : '');
 }
 
 /** A geofencing apply as its line reads: the phase, how far, and how it ended. */
@@ -256,7 +272,8 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   let chosenNetwork = '';
   let geo: GeoState | null = null;
   let geoFor = '';
-  let geoPicks: string[] = [];
+  // The whitelist and the blacklist as the form holds them.
+  const geoPicks: Record<'allow' | 'block', string[]> = { allow: [], block: [] };
   const flowSort: SortState = { col: 'ts', dir: 'desc' };
   const appSort: SortState = { col: 'flows', dir: 'desc' };
   const eventSort: SortState = { col: 'ts', dir: 'desc' };
@@ -790,7 +807,18 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   // The choice is saved, then applied: an apply is a job on the server, and
   // its progress rides the page's poll while it runs.
   function drawGeoPick(): void {
-    setHTML('ipsGeoCountriesPick', pickHtml('countries', geoPicks, catalog));
+    setHTML('ipsGeoAllowPick', pickHtml('countries', geoPicks.allow, catalog));
+    setHTML('ipsGeoBlockPick', pickHtml('countries', geoPicks.block, catalog));
+    syncGeoMode();
+  }
+  // ALLOW ONLY THE WHITELIST makes the blacklist moot: its field goes.
+  function syncGeoMode(): void {
+    const allow = el<HTMLSelectElement>('ipsGeoMode')?.value === 'allow';
+    const f = el('ipsGeoBlockField');
+    if (f) f.style.display = allow ? 'none' : '';
+    setText('ipsGeoModeHelp', allow
+      ? 'Drops new connections from (or to) every country but the whitelist\'s. Private addresses are always allowed.'
+      : 'Drops new connections from (or to) the blacklist\'s countries.');
   }
   function drawGeo(): void {
     const admin = !!state?.admin;
@@ -803,8 +831,11 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     setText('ipsGeoNote', !g.available ? 'Geofencing needs the DB-IP geo database, which this install does not have.'
       : admin ? 'Drop new connections to or from whole countries, on the router itself: no sensor needed.'
         : 'Geofencing is configured by administrators.');
-    setText('ipsGeoListNote', 'The list ' + g.list + ', at most ' + g.maxEntries + ' networks, and two or three filter rules ' +
-      'commented "MikroDash IPS: geo". Apply again after a geo database update: only the difference is written.');
+    setText('ipsGeoListNote', 'The list ' + (g.geo.mode === 'allow' ? g.allowList : g.list) + ', at most ' + g.maxEntries +
+      ' networks, and two or three filter rules commented "MikroDash IPS: geo". Apply again after a geo database update: ' +
+      'only the difference is written.');
+    setText('ipsGeoAllowHelp', 'Never dropped.' + (g.routerCountry ? ' The router is in ' + g.routerCountry +
+      (g.geo.saved ? '.' : ', so it is on the whitelist until you save another choice.') : ''));
     const running = g.job.running;
     for (const id of ['ipsGeoApply', 'ipsGeoRemove']) el(id)?.toggleAttribute('disabled', running || !g.available);
     setText('ipsGeoJob', geoJobLine(g.job));
@@ -820,30 +851,41 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       geo = g;
       if (geoFor !== asked) {
         geoFor = asked;
-        geoPicks = [...g.geo.countries];
+        geoPicks.allow = [...g.geo.allow];
+        geoPicks.block = [...g.geo.countries];
         const d = el<HTMLSelectElement>('ipsGeoDirection');
         if (d) d.value = g.geo.direction;
+        const m = el<HTMLSelectElement>('ipsGeoMode');
+        if (m) m.value = g.geo.mode || 'block';
         drawGeoPick();
       }
       drawGeo();
     }).catch((e: Error) => setText('ipsGeoNote', e.message));
   }
+  // Which list a pick box edits: its box's data-geolist.
+  const geoListOf = (n: Element | null): 'allow' | 'block' =>
+    n?.closest?.('[data-geolist]')?.getAttribute('data-geolist') === 'allow' ? 'allow' : 'block';
   el('ipsGeoForm')?.addEventListener('change', (ev) => {
-    const sel = (ev.target as HTMLElement | null)?.closest?.('[data-ipsadd]') as HTMLSelectElement | null;
+    const t = ev.target as HTMLElement | null;
+    if (t?.id === 'ipsGeoMode') { syncGeoMode(); return; }
+    const sel = t?.closest?.('[data-ipsadd]') as HTMLSelectElement | null;
     if (!sel || !sel.value) return;
-    if (!geoPicks.includes(sel.value)) geoPicks.push(sel.value);
+    const list = geoPicks[geoListOf(sel)];
+    if (!list.includes(sel.value)) list.push(sel.value);
     drawGeoPick();
   });
   el('ipsGeoForm')?.addEventListener('click', (ev) => {
     const b = (ev.target as HTMLElement | null)?.closest?.('[data-ipsunpick]');
     if (!b) return;
-    geoPicks = geoPicks.filter((v) => v !== b.getAttribute('data-v'));
+    const which = geoListOf(b);
+    geoPicks[which] = geoPicks[which].filter((v) => v !== b.getAttribute('data-v'));
     drawGeoPick();
   });
   function saveGeo(): Promise<void> {
-    return post<{ countries: string[] }>('/api/ips/geo' + qs(), { countries: geoPicks,
+    return post<{ countries: string[]; allow: string[] }>('/api/ips/geo' + qs(), {
+      mode: el<HTMLSelectElement>('ipsGeoMode')?.value || 'block', countries: geoPicks.block, allow: geoPicks.allow,
       direction: el<HTMLSelectElement>('ipsGeoDirection')?.value || 'both' })
-      .then((r) => { geoPicks = r.countries; drawGeoPick(); });
+      .then((r) => { geoPicks.block = r.countries; geoPicks.allow = r.allow; drawGeoPick(); });
   }
   el('ipsGeoForm')?.addEventListener('submit', (ev) => {
     ev.preventDefault();
@@ -853,12 +895,8 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   });
   // APPLY SAVES FIRST: what is written is what the form shows.
   function applyGeo(remove: boolean): void {
-    const n = geoPicks.length;
     const dir = el<HTMLSelectElement>('ipsGeoDirection')?.value || 'both';
-    const ask = remove || !n
-      ? 'Remove the geofencing rules from the router, and empty the list ' + (geo?.list || '') + '?'
-      : 'Write ' + n + ' countr' + (n === 1 ? 'y' : 'ies') + ' to the router, and drop new connections ' +
-        ({ in: 'from', out: 'to', both: 'to and from' } as Record<string, string>)[dir] + ' them?';
+    const ask = geoApplyQuestion(remove, el<HTMLSelectElement>('ipsGeoMode')?.value || 'block', dir, geoPicks.allow, geoPicks.block);
     if (!window.confirm(ask)) return;
     (remove ? Promise.resolve() : saveGeo())
       .then(() => post('/api/ips/geo/apply' + qs() + (remove ? '&remove=1' : '')))

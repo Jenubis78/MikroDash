@@ -73,19 +73,27 @@ Two ways, and they combine:
 - **A rule criterion.** A rule's **Countries** match the flow's party on the internet
   (where it went, or where it came from when it came in), from the geo database. It
   needs the sensor, and acts per flow like any other criterion.
-- **Country lists on the router (Geo tab).** Pick countries and a direction, then
-  **Apply to the router**: every IPv4 network the DB-IP database places in them,
-  merged into the fewest prefixes, goes into the address list `mikrodash-ips-geo`, and
-  filter rules commented `MikroDash IPS: geo` drop **new** connections from them
-  (inbound: `forward` and `input`), to them (outbound: `forward`), or both. Replies to
-  connections already open are left alone. No sensor is needed.
+- **Country lists on the router (Geo tab).** Two lists and a mode:
+  - **Whitelist**: countries never dropped. Until a choice is saved it holds the
+    router's own country (its WAN address's, or the place set for it).
+  - **Blacklist**: countries dropped in *Block the blacklist* mode, less any the
+    whitelist names. Their IPv4 networks, merged, go into `mikrodash-ips-geo`.
+  - *Allow only the whitelist* drops every other country instead: the whitelist's
+    networks and the private ranges go into `mikrodash-ips-geo-allow`, and the
+    rules match what is **not** on it (`src-address-list=!mikrodash-ips-geo-allow`).
+
+  Filter rules commented `MikroDash IPS: geo` drop **new** connections from those
+  countries (inbound: `forward` and `input`), to them (outbound: `forward`), or
+  both. Replies to connections already open are left alone. No sensor is needed.
 
 The apply runs in the background, one API write per prefix, and the tab shows its
 progress. The list is filled before the rules go in, and the rules come out before it
 is emptied. Re-applying (after a geo database update, or a new choice) writes only the
-difference. More than 100000 networks is refused, and so is an inbound choice holding
-the router's own public address or an address someone is logged in to it from now -
-MikroDash included - since the rules would cut that access off.
+difference, and switching mode fills the new list before the rules move and empties
+the old one after. More than 100000 networks is refused, and so is an inbound choice
+that would cut off the router's own public address or an address someone is logged
+in to it from now - MikroDash included: a blacklist holding it, or a whitelist
+leaving it out.
 
 ## Safety
 
