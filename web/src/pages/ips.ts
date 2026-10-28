@@ -51,7 +51,9 @@ export interface Network { interface: string; prefix: string; gateway: string; b
 /** A network as its option reads: the interface, the subnet, and the VLAN when there is one. */
 export function networkLabel(n: Network): string {
   return n.interface + ' - ' + n.prefix + (n.vlan ? ' (VLAN ' + n.vlan + ' on ' + n.bridge + ')' : '') +
-    (n.why ? ' - cannot be joined' : '');
+    // A greyed option cannot be picked, so its help line never shows: the
+    // reason rides in the label itself.
+    (n.why ? ' - cannot be joined: ' + n.why : '');
 }
 interface State {
   configured: boolean; sensor: Sensor | null; status: Status; flows: Flow[]; apps: AppCount[];

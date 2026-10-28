@@ -35,7 +35,7 @@ assert.ok(mod.statePill({ state: 'connected' }).includes('sensor up'));
 assert.strictEqual(mod.networkLabel({ interface: 'vlan11', prefix: '192.168.11.0/24', gateway: '192.168.11.1', bridge: 'bridge',
   vlan: 11, why: '' }), 'vlan11 - 192.168.11.0/24 (VLAN 11 on bridge)');
 assert.ok(mod.networkLabel({ interface: 'ether1', prefix: '203.0.113.0/30', gateway: '', bridge: '', vlan: 0,
-  why: 'x' }).endsWith('cannot be joined'));
+  why: 'ether1 is not a bridge' }).endsWith('cannot be joined: ether1 is not a bridge'));
 say('ok - the IPS helpers summarise a rule and tone its outcomes');
 
 const ids = ['ipsBadge', 'ipsTabs', 'ipsStatePill', 'ipsModePill', 'ipsStatus', 'ipsSeenVal', 'ipsListedVal',
