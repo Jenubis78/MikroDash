@@ -100,3 +100,32 @@ func TestMinutesAreTakenOnceAndLateRecordsCountInTheOpenMinute(t *testing.T) {
 		t.Errorf("coverage %d/%d", a.Named, a.Total)
 	}
 }
+
+// What the sensor counted is named like a record: the LAN side is the host,
+// whichever way the connection was opened.
+func TestASensorCountIsTheLANHostsWithItsApplication(t *testing.T) {
+	j := youtube()
+	f := j.AttributeConn(6, ap("192.168.11.20:51544"), ap("142.250.1.1:443"), 100, 9000, t0)
+	if !f.Named || f.App != "YouTube" || f.Host != ad("192.168.11.20") || f.Tx != 100 || f.Rx != 9000 {
+		t.Errorf("outbound: %+v", f)
+	}
+	// In through a dst-nat: the client is on the internet, the host is the server.
+	f = j.AttributeConn(6, ap("203.0.113.9:40000"), ap("192.168.11.40:443"), 500, 70000, t0)
+	if f.Named || f.Host != ad("192.168.11.40") || f.Remote != ad("203.0.113.9") || f.Tx != 70000 || f.Rx != 500 ||
+		f.App != Unknown || f.Category != "tcp/40000" {
+		t.Errorf("inbound: %+v", f)
+	}
+}
+
+func TestTheWindowAddsUpItsLastSecondsAndForgetsOlderOnes(t *testing.T) {
+	var w Window
+	j := youtube()
+	base := t0.Truncate(WindowStep)
+	for i := range 10 { // 50 seconds of 5-second counts
+		w.Add(j.AttributeConn(6, ap("192.168.11.20:51544"), ap("142.250.1.1:443"), 10, 1000, base), base.Add(time.Duration(i)*WindowStep))
+	}
+	rows, secs := w.Rows(base.Add(10 * WindowStep))
+	if secs != 30 || len(rows) != 1 || rows[0].Rx != 6000 || rows[0].Tx != 60 || rows[0].App != "YouTube" {
+		t.Errorf("%d s: %+v", secs, rows)
+	}
+}

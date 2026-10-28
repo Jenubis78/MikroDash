@@ -74,8 +74,8 @@ func TestTheSensorsNameReachesTheStoredMinute(t *testing.T) {
 		got[1].Key != traffic.Unknown || got[1].Tx != 80 {
 		t.Fatalf("%v %+v", err, got)
 	}
-	status, live, at := e.status("r1")
-	if status.Records != 3 || len(live) != 2 || at.IsZero() || status.Coverage < 0.99 {
+	status, live, at, secs := e.status("r1")
+	if status.Records != 3 || len(live) != 2 || at.IsZero() || status.Coverage < 0.99 || secs != 60 || status.Source != "ipfix" {
 		t.Errorf("status %+v live %+v", status, live)
 	}
 	if fl := e.recentFlows(traffic.FlowQuery{RouterID: "r1", App: "YouTube", Limit: 10}); len(fl) != 2 {
@@ -110,5 +110,46 @@ func TestRowsWaitWhileTheBackendIsDown(t *testing.T) {
 	got, _ := st.Top(context.Background(), traffic.Query{RouterID: "r1", Dim: traffic.DimHost, From: now.Add(-time.Hour), To: now.Add(time.Hour)})
 	if len(got) != 1 || got[0].Tx != 1000 {
 		t.Errorf("%+v", got)
+	}
+}
+
+// A router whose sensor inspects every packet is counted by the sensor: its
+// counts reach the minute and the Live window under the application it named,
+// and its IPFIX is counted as ignored rather than added a second time.
+func TestASensorFedRouterIsCountedByTheSensorAlone(t *testing.T) {
+	st, err := traffic.OpenSQLite(filepath.Join(t.TempDir(), "traffic.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := &trafficEngine{s: &Server{}, store: st, routers: map[string]*trafficRouter{}, byAddr: map[netip.Addr]string{}}
+	e.ctx, e.cancel = context.WithCancel(context.Background())
+	defer e.Stop()
+	r := &trafficRouter{id: "r1", joiner: traffic.NewJoiner(traffic.Lookups{}), agg: traffic.NewAggregator(),
+		decoders: map[netip.Addr]*ipfix.Decoder{}, drop: func() {}, sensorFed: true}
+	e.routers["r1"] = r
+	e.classify("r1", ips.Flow{L4: "tcp", Client: "192.168.11.20", ClientPort: 51544, Server: "142.250.1.1",
+		ServerPort: 443, App: "YouTube", Category: "Media"})
+	now := time.Now()
+	c := ips.ConnBytes{L4: "tcp", Client: netip.MustParseAddr("192.168.11.20"), ClientPort: 51544,
+		Server: netip.MustParseAddr("142.250.1.1"), ServerPort: 443, Tx: 100, Rx: 9000}
+	for i := range 8 {
+		r.takeCounts([]ips.ConnBytes{c}, now.Add(time.Duration(i-8)*traffic.WindowStep))
+	}
+	r.take(netip.MustParseAddr("192.168.11.1"), ipfixMessage(0,
+		[5]any{"192.168.11.20", "142.250.1.1", uint16(51544), uint16(443), uint64(1000)}), false, now)
+
+	status, live, _, secs := e.status("r1")
+	if status.Source != "sensor" || status.Ignored != 1 || secs != 30 || len(live) != 1 || live[0].App != "YouTube" ||
+		live[0].Rx != 6*9000 {
+		t.Fatalf("status %+v, %d s, live %+v", status, secs, live)
+	}
+	e.flush(now.Add(time.Minute))
+	got, _ := st.Top(context.Background(), traffic.Query{RouterID: "r1", Dim: traffic.DimApp,
+		From: now.Add(-time.Hour), To: now.Add(time.Hour)})
+	if len(got) != 1 || got[0].Rx != 8*9000 || got[0].Tx != 800 {
+		t.Errorf("stored: %+v", got)
+	}
+	if fl := e.recentFlows(traffic.FlowQuery{RouterID: "r1", Limit: 10}); len(fl) != 1 || fl[0].Rx != 8*9000 {
+		t.Errorf("one row per connection per minute: %+v", fl)
 	}
 }

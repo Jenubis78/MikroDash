@@ -187,6 +187,28 @@ func (j *Joiner) Attribute(r ipfix.Record, now time.Time) Flow {
 	return j.fill(f)
 }
 
+// AttributeConn names what the sensor counted on one connection: tx is what
+// its client sent, rx what it received. The host is the LAN side - the client
+// of an outbound connection, the server of one that came in through a
+// dst-nat - and Rx/Tx are from the host's side.
+func (j *Joiner) AttributeConn(proto uint8, client, server netip.AddrPort, tx, rx uint64, now time.Time) Flow {
+	client, server = unmap(client), unmap(server)
+	f := Flow{Start: now, End: now, Proto: proto, Host: client.Addr(), HostPort: client.Port(), Remote: server.Addr(),
+		RemotePort: server.Port(), Tx: tx, Rx: rx}
+	if !local(client.Addr(), j.own) && local(server.Addr(), j.own) {
+		f.Host, f.HostPort, f.Remote, f.RemotePort = server.Addr(), server.Port(), client.Addr(), client.Port()
+		f.Tx, f.Rx = rx, tx
+	}
+	if c := j.conns[connKey{proto, client, server}]; c != nil {
+		c.seen = now
+		f.App, f.Category, f.Country, f.Named = c.class.App, c.class.Category, c.class.Country, true
+	}
+	if j.own[f.Host] && !f.Named {
+		f.App = RouterApp
+	}
+	return j.fill(f)
+}
+
 // fill completes what the lookups can: the remote's country and organisation,
 // and for an unnamed flow an application that says what is known.
 func (j *Joiner) fill(f Flow) Flow {

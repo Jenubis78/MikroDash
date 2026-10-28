@@ -20,6 +20,17 @@ A datagram is read only when it comes from an address of a router set up here;
 anything else is counted as a stray and dropped. Nothing listens on the port
 until the first router's Traffic Flow is applied.
 
+## Or the IPS sensor, when it inspects every packet
+
+A router whose IPS sensor is set to *Every packet* (IPS › Setup › Inspection)
+needs no Traffic Flow. The sensor (version 2 and later) counts each
+connection's bytes and sends them every five seconds, beside the application
+it named; Live is then the last 30 seconds, refreshed every five, and the
+minutes are stored as usual. IPFIX from such a router is counted as ignored,
+never added a second time, and its Traffic Flow plan is the removal: Preview
+shows MikroDash's target coming off (and Traffic Flow with it, when no other
+collector uses it). The UDP port closes when no router needs it.
+
 ## Backends
 
 | | SQLite (default) | ClickHouse |

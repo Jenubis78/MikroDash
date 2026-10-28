@@ -18,6 +18,16 @@ package server
 // minutes over its session, or the address MikroDash reaches it at); any
 // other sender is counted and dropped.
 //
+// ── OR THE SENSOR, WHEN IT SEES EVERY PACKET ────────────────────────────────
+//
+// A router whose IPS sensor inspects every packet needs no Traffic Flow: the
+// sensor counts each connection's bytes and sends them every few seconds
+// (ips.LiveBytesEvery), already beside the application it named. Such a
+// router is fed by the sensor alone - IPFIX from it is counted and ignored, so
+// nothing is counted twice - and its Live tab is a rate over the last
+// traffic.WindowSpan instead of the last finished minute. Its flows are kept a
+// row per connection per minute.
+//
 // ── THE STORE NEVER HOLDS UP THE READ ───────────────────────────────────────
 //
 // The UDP loop only decodes and adds up. Once a minute another goroutine takes
@@ -41,6 +51,7 @@ import (
 	"mikrodash/internal/ipfix"
 	"mikrodash/internal/ips"
 	"mikrodash/internal/routeros"
+	"mikrodash/internal/safe"
 	"mikrodash/internal/traffic"
 )
 
@@ -85,6 +96,11 @@ type trafficRouter struct {
 	liveAt   time.Time
 	records  uint64
 	lastAt   time.Time
+	// sensorFed: the IPS sensor's counts are this router's volumes, not IPFIX.
+	sensorFed bool
+	ignored   uint64 // IPFIX records not counted, the sensor being the source
+	window    traffic.Window
+	connMin   map[string]*traffic.RouterFlow // this minute's flows, a row per connection
 }
 
 func (s *Server) buildTraffic() *trafficEngine {
@@ -173,6 +189,14 @@ func (e *trafficEngine) sync() {
 			want[r.RouterID] = true
 		}
 	}
+	fed := map[string]bool{}
+	if sensors, err := e.s.auditDB.IPSSensors(); err == nil {
+		for _, sn := range sensors {
+			if sn.EveryPacket {
+				want[sn.RouterID], fed[sn.RouterID] = true, true
+			}
+		}
+	}
 	e.mu.Lock()
 	for id, r := range e.routers {
 		if !want[id] {
@@ -184,6 +208,10 @@ func (e *trafficEngine) sync() {
 		if e.routers[id] == nil {
 			e.routers[id] = e.newRouter(id)
 		}
+		r := e.routers[id]
+		r.mu.Lock()
+		r.sensorFed = fed[id]
+		r.mu.Unlock()
 	}
 	e.listenLocked()
 	e.mu.Unlock()
@@ -219,12 +247,20 @@ func (e *trafficEngine) newRouter(id string) *trafficRouter {
 // listenLocked opens the port when a router needs it and closes it when none
 // does. Called with mu held.
 func (e *trafficEngine) listenLocked() {
-	if len(e.routers) == 0 {
+	ipfixFed := 0
+	for _, r := range e.routers {
+		r.mu.Lock()
+		if !r.sensorFed {
+			ipfixFed++
+		}
+		r.mu.Unlock()
+	}
+	if ipfixFed == 0 {
 		if e.conn != nil {
 			e.conn.Close()
 			e.conn = nil
 		}
-		e.listen = "no router is set up"
+		e.listen = "no router takes its volumes from Traffic Flow"
 		return
 	}
 	if e.conn != nil {
@@ -277,6 +313,10 @@ func (r *trafficRouter) take(src netip.Addr, msg []byte, keep bool, now time.Tim
 	if err != nil && len(recs) == 0 {
 		return
 	}
+	if r.sensorFed {
+		r.ignored += uint64(len(recs))
+		return
+	}
 	for _, rec := range recs {
 		f := r.joiner.Attribute(rec, now)
 		r.agg.Add(f, now)
@@ -291,6 +331,42 @@ func (r *trafficRouter) take(src netip.Addr, msg []byte, keep bool, now time.Tim
 	if len(r.ring) > trafficRingMax {
 		r.ring = r.ring[len(r.ring)-trafficRingMax:]
 	}
+}
+
+// takeCounts adds a sensor's counts up: the minute, the Live window, and a
+// row per connection for the minute's flows.
+func (r *trafficRouter) takeCounts(counts []ips.ConnBytes, now time.Time) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if !r.sensorFed {
+		return
+	}
+	if r.connMin == nil {
+		r.connMin = map[string]*traffic.RouterFlow{}
+	}
+	for _, c := range counts {
+		proto := traffic.Proto(c.L4)
+		f := r.joiner.AttributeConn(proto, netip.AddrPortFrom(c.Client, c.ClientPort),
+			netip.AddrPortFrom(c.Server, c.ServerPort), c.Tx, c.Rx, now)
+		r.agg.Add(f, now)
+		r.window.Add(f, now)
+		k := c.L4 + " " + netip.AddrPortFrom(c.Client, c.ClientPort).String() + " " +
+			netip.AddrPortFrom(c.Server, c.ServerPort).String()
+		row := r.connMin[k]
+		if row == nil {
+			v := f.Row()
+			r.connMin[k] = &v
+			continue
+		}
+		row.Rx += f.Rx
+		row.Tx += f.Tx
+		row.End = f.End
+		if row.App == traffic.Unknown && f.Named {
+			row.App, row.Category, row.Country = f.App, f.Category, f.Country
+		}
+	}
+	r.records += uint64(len(counts))
+	r.lastAt = now
 }
 
 // classify is the IPS sensor naming a connection on a router.
@@ -317,6 +393,20 @@ func (e *trafficEngine) classify(routerID string, f ips.Flow) {
 	r.mu.Unlock()
 }
 
+// sensorBytes is the IPS sensor's counts for a router that it feeds.
+func (e *trafficEngine) sensorBytes(routerID string, counts []ips.ConnBytes) {
+	if e == nil {
+		return
+	}
+	e.mu.Lock()
+	r := e.routers[routerID]
+	e.mu.Unlock()
+	if r == nil {
+		return
+	}
+	r.takeCounts(counts, time.Now())
+}
+
 // minutes writes each router's finished minutes, a few seconds after each
 // minute turns, then lets the backend roll up and age out.
 func (e *trafficEngine) minutes() {
@@ -341,8 +431,19 @@ func (e *trafficEngine) flush(now time.Time) {
 	}
 	e.mu.Unlock()
 	var failed error
+	keep := st != nil && st.Backend() == "clickhouse"
 	for _, r := range routers {
 		r.mu.Lock()
+		for _, row := range r.connMin {
+			if keep {
+				r.pending = append(r.pending, *row)
+			}
+			r.ring = append(r.ring, *row)
+		}
+		r.connMin = nil
+		if len(r.ring) > trafficRingMax {
+			r.ring = r.ring[len(r.ring)-trafficRingMax:]
+		}
 		r.joiner.Expire(now)
 		rows := r.agg.Take(now)
 		if len(rows) > 0 {
@@ -502,14 +603,20 @@ type TrafficStatus struct {
 	Conns      int     `json:"conns"`
 	Strays     uint64  `json:"strays"`
 	Addresses  int     `json:"addresses"`
+	// Source is where the volumes come from: "ipfix" (Traffic Flow) or
+	// "sensor" (the IPS sensor, inspecting every packet).
+	Source string `json:"source"`
+	// Ignored is IPFIX records from a router the sensor feeds.
+	Ignored uint64 `json:"ignored"`
 }
 
-// status is a router's collection status, its last finished minute, and
-// when that minute started.
-func (e *trafficEngine) status(rid string) (TrafficStatus, []traffic.Agg, time.Time) {
+// status is a router's collection status, what Live adds up, when that span
+// started and how many seconds it covers: the last finished minute, or for a
+// router the sensor feeds, the last traffic.WindowSpan.
+func (e *trafficEngine) status(rid string) (TrafficStatus, []traffic.Agg, time.Time, int) {
 	e.mu.Lock()
-	st := TrafficStatus{Listening: e.conn != nil, Port: e.settings.Port, Listen: e.listen, Backend: e.settings.Backend,
-		StoreError: e.storeErr, Strays: e.strays}
+	st := TrafficStatus{Listening: e.conn != nil, Port: e.settings.Port, Listen: safe.Message(e.listen),
+		Backend: e.settings.Backend, StoreError: safe.Message(e.storeErr), Strays: e.strays}
 	r := e.routers[rid]
 	for _, id := range e.byAddr {
 		if id == rid {
@@ -518,11 +625,11 @@ func (e *trafficEngine) status(rid string) (TrafficStatus, []traffic.Agg, time.T
 	}
 	e.mu.Unlock()
 	if r == nil {
-		return st, []traffic.Agg{}, time.Time{}
+		return st, []traffic.Agg{}, time.Time{}, 60
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	st.Enabled, st.Records, st.Conns = true, r.records, r.joiner.Conns()
+	st.Enabled, st.Records, st.Conns, st.Ignored, st.Source = true, r.records, r.joiner.Conns(), r.ignored, "ipfix"
 	for _, d := range r.decoders {
 		st.Lost += d.Lost
 		st.Unknown += d.Unknown
@@ -533,7 +640,16 @@ func (e *trafficEngine) status(rid string) (TrafficStatus, []traffic.Agg, time.T
 	if r.agg.Total > 0 {
 		st.Coverage = float64(r.agg.Named) / float64(r.agg.Total)
 	}
-	return st, append([]traffic.Agg{}, r.live...), r.liveAt
+	if r.sensorFed {
+		st.Source = "sensor"
+		now := time.Now()
+		rows, secs := r.window.Rows(now)
+		if secs == 0 {
+			return st, []traffic.Agg{}, time.Time{}, 0
+		}
+		return st, rows, now.Truncate(traffic.WindowStep).Add(-time.Duration(secs) * time.Second), secs
+	}
+	return st, append([]traffic.Agg{}, r.live...), r.liveAt, 60
 }
 
 // recentFlows is the memory's flows that answer a search, newest first.

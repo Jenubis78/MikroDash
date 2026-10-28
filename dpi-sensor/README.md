@@ -43,6 +43,18 @@ for every flow once nDPI has classified it or given up:
  "packets":6,"bytes":2210}
 ```
 
+### Live volumes (version 2)
+
+A reader that sends `BYTES <seconds>` after the `HELLO` line (1 to 60; 0 stops)
+also gets, that often, what every connection moved since the last time: tx is
+what its client sent, rx what it received. MikroDash asks for it every five
+seconds when the router copies every packet; from the first bytes alone the
+counts would stop early. An older sensor ignores the line.
+
+```json
+{"type":"bytes","f":[["tcp","192.168.1.7",53251,"184.25.204.10",80,1334,33063]]}
+```
+
 ## Testing without a router
 
 `tools/tzsp-replay.py` sends a pcap to the sensor as the router would:

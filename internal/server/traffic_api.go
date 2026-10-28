@@ -115,9 +115,12 @@ type TrafficStatePayload struct {
 	Router TrafficRouterView        `json:"router"`
 	Status TrafficStatus            `json:"status"`
 	Live   map[string][]traffic.Top `json:"live"`
-	// LiveAt is the start of the minute Live adds up; 0 before the first.
+	// LiveAt is the start of the span Live adds up; 0 before the first.
 	LiveAt int64 `json:"liveAt"`
-	Admin  bool  `json:"admin"`
+	// LiveSeconds is how long that span is: 60 from Traffic Flow, the last
+	// few seconds from the sensor.
+	LiveSeconds int  `json:"liveSeconds"`
+	Admin       bool `json:"admin"`
 }
 
 // TrafficRouterView is a router's row as the page reads it.
@@ -134,10 +137,10 @@ func (s *Server) trafficState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	row := s.trafficRouterRow(rid)
-	st, live, at := s.traffic.status(rid)
+	st, live, at, secs := s.traffic.status(rid)
 	p := TrafficStatePayload{Router: TrafficRouterView{Enabled: row.Enabled, Interfaces: row.Interfaces,
 		AppliedAt: row.AppliedAt, Result: row.Result}, Status: st, Live: map[string][]traffic.Top{},
-		Admin: s.isGlobalAdmin(sess)}
+		Admin: s.isGlobalAdmin(sess), LiveSeconds: secs}
 	if !at.IsZero() {
 		p.LiveAt = at.UnixMilli()
 	}
@@ -358,8 +361,19 @@ func (s *Server) trafficRouterSave(w http.ResponseWriter, r *http.Request) {
 // errNoCollector is a router that does not show where it sees MikroDash from.
 var errNoCollector = errors.New("the router does not show where it sees MikroDash from: set the collector address in the settings")
 
-// trafficRouterPlan reads what the plan needs and plans.
+// sensorFeeds is whether a router's IPS sensor inspects every packet, and so
+// counts its volumes itself.
+func (s *Server) sensorFeeds(rid string) bool {
+	sn, ok := s.ipsSensorOf(rid)
+	return ok && sn.EveryPacket
+}
+
+// trafficRouterPlan reads what the plan needs and plans. A router the IPS
+// sensor feeds needs no Traffic Flow: its plan is the removal, whatever was
+// asked, and says why.
 func (s *Server) trafficRouterPlan(sn *session.Session, rid string, remove bool) (ips.Plan, error) {
+	fed := s.sensorFeeds(rid)
+	remove = remove || fed
 	set := s.traffic.currentSettings()
 	collector, err := netip.ParseAddr(set.Collector)
 	if err != nil {
@@ -400,8 +414,14 @@ func (s *Server) trafficRouterPlan(sn *session.Session, rid string, remove bool)
 	filter, _ := sn.Exec(routeros.Cmd{Path: "/ip/firewall/filter/print",
 		Args: []string{"=.proplist=.id,action,disabled"}, Timeout: ipsCmdTimeout})
 	row := s.trafficRouterRow(rid)
-	return traffic.RouterPlan(traffic.PlanParams{Collector: collector, Port: set.Port, Interfaces: row.Interfaces},
-		tf, targets, ipfixRow, filter, remove), nil
+	plan := traffic.RouterPlan(traffic.PlanParams{Collector: collector, Port: set.Port, Interfaces: row.Interfaces},
+		tf, targets, ipfixRow, filter, remove)
+	if fed {
+		plan.Warnings = append([]string{"This router's IPS sensor inspects every packet and counts its volumes " +
+			"itself, every five seconds: Traffic Flow is not needed, so this takes MikroDash's target off the " +
+			"router (and Traffic Flow with it, when no other collector uses it)."}, plan.Warnings...)
+	}
+	return plan, nil
 }
 
 func (s *Server) trafficPlanError(w http.ResponseWriter, err error) {
@@ -436,7 +456,7 @@ func (s *Server) trafficApply(w http.ResponseWriter, r *http.Request) {
 	if sess == nil {
 		return
 	}
-	remove := r.URL.Query().Get("remove") == "1"
+	remove := r.URL.Query().Get("remove") == "1" || s.sensorFeeds(rid)
 	sn, drop, ok := s.ipsSession(r.Context(), rid)
 	if !ok {
 		writeJSONErr(w, http.StatusBadGateway, "the router is not reachable")

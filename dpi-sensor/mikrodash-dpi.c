@@ -26,6 +26,16 @@
  * keep up loses events, which are counted in `stats`, rather than slowing the
  * capture.
  *
+ * ── LIVE VOLUMES, WHEN IT SEES EVERY PACKET ─────────────────────────────────
+ *
+ * A reader that sends `BYTES <seconds>\n` after the handshake (1 to 60; 0
+ * stops) gets, that often, a `bytes` event: for every connection that moved
+ * since the last one, the bytes its client sent (tx) and received (rx) in
+ * between, as compact arrays [l4, client, clientPort, server, serverPort, tx,
+ * rx], several hundred to a line. It is only worth asking when the router
+ * copies every packet: from the first bytes alone the counts stop early. A
+ * sensor before version 2 ignores the line.
+ *
  * Configuration is by flag or environment: --token / DPI_TOKEN (required),
  * --tzsp-port / DPI_TZSP_PORT (37008), --listen-port / DPI_LISTEN_PORT (37009),
  * --max-flows / DPI_MAX_FLOWS (32768), --idle / DPI_IDLE_SECONDS (120).
@@ -49,7 +59,7 @@
 
 #include "ndpi_api.h"
 
-#define SENSOR_VERSION "1"
+#define SENSOR_VERSION "2"
 #define DPI_MAX_PACKETS 32
 #define HASH_BUCKETS (1u << 16)
 #define OUT_CAP (1u << 20)
@@ -62,6 +72,9 @@ static int cfg_tzsp_port = 37008;
 static int cfg_listen_port = 37009;
 static unsigned cfg_max_flows = 32768;
 static unsigned cfg_idle_ms = 120000;
+/* bytes_every_ms is how often the reader asked for live volumes; 0 is never. */
+static uint64_t bytes_every_ms;
+static uint64_t bytes_last_ms;
 
 /* ── flows ─────────────────────────────────────────────────────────────── */
 
@@ -81,6 +94,7 @@ struct flow {
   uint64_t first_ms, last_ms;
   uint32_t packets;
   uint64_t bytes;
+  uint64_t up, down; /* bytes the client sent and received since the last bytes event */
 };
 
 static struct ndpi_detection_module_struct *ndpi;
@@ -95,6 +109,10 @@ static struct {
 /* ── output to the one reader ──────────────────────────────────────────── */
 
 static int reader_fd = -1;
+/* What the reader has sent and not yet ended with a newline; reset for each reader. */
+static char in[256];
+static size_t in_len;
+static void reader_lines(void);
 static char *out_buf;
 static size_t out_len;
 
@@ -467,6 +485,8 @@ static void handle_packet(const uint8_t *b, size_t len) {
   f->last_ms = now;
   f->packets++;
   f->bytes += p.l3_len;
+  if (src_is_a == f->client_is_a) f->up += p.l3_len;
+  else f->down += p.l3_len;
   lru_unlink(f);
   lru_push(f);
   if (f->done || !f->nf) return;
@@ -527,11 +547,90 @@ static void read_pending(void) {
   drop_reader();
   reader_fd = pending_fd;
   pending_fd = -1;
+  bytes_every_ms = 0; /* each reader asks for itself */
+  /* What came in behind the HELLO line is the reader's first requests. */
+  {
+    char *rest = nl + 1;
+    size_t left = pending_len - (size_t)(rest - pending_line);
+    if (left >= sizeof(in)) left = 0;
+    memcpy(in, rest, left);
+    in_len = left;
+    in[in_len] = 0;
+  }
   char hello[160];
   int n = snprintf(hello, sizeof(hello), "{\"type\":\"hello\",\"version\":\"%s\",\"ndpi\":\"%s\"}", SENSOR_VERSION,
                    ndpi_revision());
   emit(hello, (size_t)n);
   logf_("a reader connected");
+  reader_lines();
+}
+
+/* emit_bytes sends what every connection moved since the last call, newest
+ * first, and stops at the first that has not moved since. */
+static void emit_bytes(uint64_t now) {
+  static char line[16384];
+  char cli[INET6_ADDRSTRLEN], srv[INET6_ADDRSTRLEN];
+  size_t n = 0;
+  int count = 0;
+  for (struct flow *f = lru_new; f && f->last_ms >= bytes_last_ms; f = f->older) {
+    if (!f->up && !f->down) continue;
+    const uint8_t *ca = f->client_is_a ? f->key.a : f->key.b;
+    const uint8_t *sa = f->client_is_a ? f->key.b : f->key.a;
+    addr_str(f->key.family, ca, cli, sizeof(cli));
+    addr_str(f->key.family, sa, srv, sizeof(srv));
+    if (n == 0) n = (size_t)snprintf(line, sizeof(line), "{\"type\":\"bytes\",\"f\":[");
+    n += (size_t)snprintf(line + n, sizeof(line) - n, "%s[\"%s\",\"%s\",%u,\"%s\",%u,%llu,%llu]", count ? "," : "",
+                          l4_name(f->key.l4), cli, f->client_is_a ? f->key.pa : f->key.pb, srv,
+                          f->client_is_a ? f->key.pb : f->key.pa, (unsigned long long)f->up,
+                          (unsigned long long)f->down);
+    f->up = f->down = 0;
+    count++;
+    if (n + 200 > sizeof(line)) {
+      n += (size_t)snprintf(line + n, sizeof(line) - n, "]}");
+      emit(line, n);
+      n = 0;
+      count = 0;
+    }
+  }
+  if (n) {
+    n += (size_t)snprintf(line + n, sizeof(line) - n, "]}");
+    emit(line, n);
+  }
+  bytes_last_ms = now;
+}
+
+/* read_reader takes the reader's requests: today, `BYTES <seconds>`. */
+static void read_reader(void) {
+  ssize_t r = recv(reader_fd, in + in_len, sizeof(in) - 1 - in_len, MSG_DONTWAIT);
+  if (r == 0 || (r < 0 && errno != EAGAIN && errno != EINTR)) {
+    drop_reader();
+    in_len = 0;
+    logf_("the reader went away");
+    return;
+  }
+  if (r < 0) return;
+  in_len += (size_t)r;
+  in[in_len] = 0;
+  reader_lines();
+}
+
+/* reader_lines acts on each whole line the reader has sent. */
+static void reader_lines(void) {
+  char *nl;
+  while ((nl = strchr(in, '\n'))) {
+    *nl = 0;
+    unsigned secs;
+    if (sscanf(in, "BYTES %u", &secs) == 1 && secs <= 60) {
+      bytes_every_ms = (uint64_t)secs * 1000;
+      bytes_last_ms = now_mono_ms();
+      if (secs) logf_("live volumes every %u s", secs);
+      else logf_("live volumes off");
+    }
+    size_t used = (size_t)(nl - in) + 1;
+    memmove(in, nl + 1, in_len - used + 1);
+    in_len -= used;
+  }
+  if (in_len >= sizeof(in) - 1) in_len = 0; /* a line too long is nonsense: dropped */
 }
 
 static void emit_stats(void) {
@@ -680,14 +779,7 @@ int main(int argc, char **argv) {
     }
     if (pf[il].revents & POLLIN) accept_pending(lfd);
     if (ip >= 0 && pf[ip].revents) read_pending();
-    if (ir >= 0 && (pf[ir].revents & (POLLIN | POLLHUP | POLLERR))) {
-      char sink[256];
-      ssize_t r = recv(reader_fd, sink, sizeof(sink), MSG_DONTWAIT);
-      if (r == 0 || (r < 0 && errno != EAGAIN && errno != EINTR)) {
-        drop_reader();
-        logf_("the reader went away");
-      }
-    }
+    if (ir >= 0 && (pf[ir].revents & (POLLIN | POLLHUP | POLLERR))) read_reader();
 
     uint64_t now = now_mono_ms();
     if (pending_fd >= 0 && now > pending_deadline) {
@@ -702,6 +794,7 @@ int main(int argc, char **argv) {
       emit_stats();
       next_stats = now + 5000;
     }
+    if (bytes_every_ms && reader_fd >= 0 && now - bytes_last_ms >= bytes_every_ms) emit_bytes(now);
     flush_reader();
   }
   logf_("stopping");

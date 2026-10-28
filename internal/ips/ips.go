@@ -142,13 +142,60 @@ type Line struct {
 	Hello *Hello
 	Flow  *Flow
 	Stats *Stats
+	// Bytes is what each connection moved since the last such line: the
+	// sensor sends it, from version 2, to a reader that asked (LiveBytesRequest).
+	Bytes []ConnBytes
 	Error string
 }
+
+// ConnBytes is what one connection moved: tx is what its client sent, rx
+// what it received.
+type ConnBytes struct {
+	L4         string
+	Client     netip.Addr
+	ClientPort uint16
+	Server     netip.Addr
+	ServerPort uint16
+	Tx, Rx     uint64
+}
+
+// LiveBytesVersion is the first sensor version that sends live volumes.
+const LiveBytesVersion = 2
+
+// LiveBytesEvery is how often a reader asks for them.
+const LiveBytesEvery = 5
+
+// LiveBytesRequest is the line a reader sends to ask for them.
+func LiveBytesRequest(seconds int) string { return fmt.Sprintf("BYTES %d\n", seconds) }
 
 // Hello is the sensor's greeting once the token was accepted.
 type Hello struct {
 	Version string `json:"version"`
 	NDPI    string `json:"ndpi"`
+}
+
+// connBytesOf reads one [l4, client, clientPort, server, serverPort, tx, rx].
+func connBytesOf(r []json.RawMessage) (ConnBytes, error) {
+	var c ConnBytes
+	if len(r) != 7 {
+		return c, fmt.Errorf("a bytes entry has %d fields, not 7", len(r))
+	}
+	var client, server string
+	var cp, sp uint16
+	for i, dst := range []any{&c.L4, &client, &cp, &server, &sp, &c.Tx, &c.Rx} {
+		if err := json.Unmarshal(r[i], dst); err != nil {
+			return c, fmt.Errorf("bytes entry field %d: %w", i, err)
+		}
+	}
+	var err error
+	if c.Client, err = netip.ParseAddr(client); err != nil {
+		return c, fmt.Errorf("bytes client %q: %w", client, err)
+	}
+	if c.Server, err = netip.ParseAddr(server); err != nil {
+		return c, fmt.Errorf("bytes server %q: %w", server, err)
+	}
+	c.ClientPort, c.ServerPort = cp, sp
+	return c, nil
 }
 
 // ParseLine reads one line from the sensor. A flow whose addresses do not
@@ -176,6 +223,22 @@ func ParseLine(b []byte) (Line, error) {
 		return Line{Stats: &s}, nil
 	case "error":
 		return Line{Error: head.Message}, nil
+	case "bytes":
+		var raw struct {
+			F [][]json.RawMessage `json:"f"`
+		}
+		if err := json.Unmarshal(b, &raw); err != nil {
+			return Line{}, err
+		}
+		out := make([]ConnBytes, 0, len(raw.F))
+		for _, r := range raw.F {
+			c, err := connBytesOf(r)
+			if err != nil {
+				return Line{}, err
+			}
+			out = append(out, c)
+		}
+		return Line{Bytes: out}, nil
 	case "flow":
 		var f Flow
 		if err := json.Unmarshal(b, &f); err != nil {

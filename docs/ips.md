@@ -34,7 +34,9 @@ MikroDash: the rules -> address lists -> raw drop rules on the router
   from. *Every packet (heavy)* drops the `connection-bytes` limit: the router sends
   its whole forwarded throughput a second time and the sensor inspects all of it.
   It is for routers sized for it; the Setup screen, Preview and Apply all say so,
-  and with it any fasttrack rule must be disabled, not just delayed.
+  and with it any fasttrack rule must be disabled, not just delayed. In that mode
+  the sensor also counts every connection's bytes every five seconds, which makes
+  it the router's source for Traffic Analysis (`docs/traffic-analysis.md`).
 
 ## Setting it up
 

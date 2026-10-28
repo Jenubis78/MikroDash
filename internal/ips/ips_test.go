@@ -227,3 +227,20 @@ func TestCountriesMatchTheRemotePartyAndBlockListsIt(t *testing.T) {
 		}
 	}
 }
+
+func TestALiveBytesLineReadsEveryConnection(t *testing.T) {
+	l, err := ParseLine([]byte(`{"type":"bytes","f":[["tcp","192.168.1.7",53251,"184.25.204.10",80,1334,33063],` +
+		`["udp","2001:db8::1",5353,"2001:db8::2",53,10,0]]}`))
+	if err != nil || len(l.Bytes) != 2 || l.Bytes[0].Client.String() != "192.168.1.7" || l.Bytes[0].ServerPort != 80 ||
+		l.Bytes[0].Tx != 1334 || l.Bytes[0].Rx != 33063 || l.Bytes[1].L4 != "udp" {
+		t.Fatalf("%v %+v", err, l.Bytes)
+	}
+	for _, bad := range []string{`{"type":"bytes","f":[["tcp","x",1,"1.1.1.1",2,3,4]]}`, `{"type":"bytes","f":[["tcp"]]}`} {
+		if _, err := ParseLine([]byte(bad)); err == nil {
+			t.Errorf("accepted %s", bad)
+		}
+	}
+	if LiveBytesRequest(5) != "BYTES 5\n" {
+		t.Error(LiveBytesRequest(5))
+	}
+}

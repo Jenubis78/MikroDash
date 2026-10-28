@@ -9,10 +9,12 @@
 // tab is opened or a filter changes. Nothing here writes to the router except
 // the Setup tab's Apply and Remove, each confirmed.
 //
-// ── RATES ARE A MINUTE'S BYTES ──────────────────────────────────────────────
+// ── RATES ARE A SPAN'S BYTES ────────────────────────────────────────────────
 //
-// Traffic Flow exports once a minute, so Live is the last finished minute:
-// its bytes × 8 / 60 is the average rate over that minute, not a peak.
+// Traffic Flow exports once a minute, so Live is the last finished minute; a
+// router whose IPS sensor inspects every packet is counted by the sensor every
+// five seconds, and Live is its last thirty. Either way bytes × 8 / the span's
+// seconds (`liveSeconds`) is the average rate over it, not a peak.
 
 import { el, esc, pill, fmtBytes, fmtBps, protoPill, iso2Flag, renderSortHeader, sortRows, type SortState } from '../dom';
 import { paletteColour, monoFont, TONE_TOKEN, type PillTone } from '../palette';
@@ -28,11 +30,11 @@ export interface Point { ts: string; key: string; rx: number; tx: number }
 interface Status {
   enabled: boolean; listening: boolean; port: number; listen: string; backend: string; storeError: string;
   records: number; lost: number; unknown: number; lastAt: number; coverage: number; conns: number;
-  strays: number; addresses: number;
+  strays: number; addresses: number; source: string; ignored: number;
 }
 interface State {
   router: { enabled: boolean; interfaces: string; appliedAt: number; result: string };
-  status: Status; live: Record<string, Top[]>; liveAt: number; admin: boolean;
+  status: Status; live: Record<string, Top[]>; liveAt: number; liveSeconds: number; admin: boolean;
 }
 interface History { from: number; to: number; step: number; backend: string; top: Top[]; series: Point[] }
 interface Flow {
@@ -47,9 +49,14 @@ interface Step { op: string; menu: string; what: string; error?: string }
 
 declare const Chart: undefined | (new (canvas: HTMLElement, cfg: unknown) => { destroy(): void });
 
-/** The average rate of a minute's bytes, in bits per second. */
-export function minuteRate(bytes: number): number {
-  return (bytes * 8) / 60;
+/** The average rate of a span's bytes, in bits per second. */
+export function spanRate(bytes: number, seconds: number): number {
+  return seconds > 0 ? (bytes * 8) / seconds : 0;
+}
+
+/** What Live covers, as its foot reads. */
+export function spanLabel(seconds: number): string {
+  return seconds >= 60 ? 'last minute' : 'last ' + seconds + ' s';
 }
 
 /** A group's label: a country carries its flag, the rest are themselves. */
@@ -94,6 +101,9 @@ export function seriesDatasets(points: Point[], keys: string[], from: number, to
 /** The collector's state as a pill. */
 export function statePill(st: Status): string {
   if (!st.enabled) return pill('not set up', 'muted');
+  if (st.source === 'sensor') {
+    return !st.lastAt || Date.now() - st.lastAt > 30000 ? pill('no counts', 'warn') : pill('sensor live', 'ok');
+  }
   if (!st.listening) return pill('not listening', 'err');
   if (!st.lastAt || Date.now() - st.lastAt > 3 * 60000) return pill('no IPFIX', 'warn');
   return pill('receiving', 'ok');
@@ -146,8 +156,11 @@ export function initTrafficAnalysisPage(socket: Socket, isVisible: (page: string
     let rx = 0;
     let tx = 0;
     for (const t of apps) { rx += t.rx; tx += t.tx; }
-    setText('taRxVal', s.liveAt ? fmtBps(minuteRate(rx)) : '-');
-    setText('taTxVal', s.liveAt ? fmtBps(minuteRate(tx)) : '-');
+    setText('taRxVal', s.liveAt ? fmtBps(spanRate(rx, s.liveSeconds)) : '-');
+    setText('taTxVal', s.liveAt ? fmtBps(spanRate(tx, s.liveSeconds)) : '-');
+    setText('taRxFoot', spanLabel(s.liveSeconds));
+    setText('taTxFoot', spanLabel(s.liveSeconds));
+    setText('taRecordsLabel', st.source === 'sensor' ? 'Sensor counts' : 'IPFIX records');
     setText('taCoverageVal', st.records ? Math.round(st.coverage * 100) + ' %' : '-');
     setText('taCoverageFoot', st.conns + ' connections named by the sensor');
     setText('taRecordsVal', st.records ? st.records.toLocaleString() : '-');
@@ -157,7 +170,10 @@ export function initTrafficAnalysisPage(socket: Socket, isVisible: (page: string
     setHTML('taBackendPill', pill(st.backend === 'clickhouse' ? 'ClickHouse' : 'SQLite', st.storeError ? 'err' : 'alt'));
     const notes: string[] = [];
     if (!st.enabled) notes.push('This router is not set up: open Setup, then Apply.');
-    else if (!st.listening) notes.push('Not listening on udp/' + st.port + ': ' + st.listen);
+    else if (st.source === 'sensor') {
+      notes.push('Counted by the IPS sensor, which inspects every packet: Live is the last ' + (s.liveSeconds || 30) +
+        ' seconds, refreshed every five.' + (st.ignored ? ' ' + st.ignored + ' IPFIX records were ignored: remove Traffic Flow in Setup.' : ''));
+    } else if (!st.listening) notes.push('Not listening on udp/' + st.port + ': ' + st.listen);
     else if (!st.lastAt) notes.push('Listening on udp/' + st.port + '; no IPFIX from this router yet (' + st.addresses + ' of its addresses known).');
     if (st.storeError) notes.push('Storage: ' + st.storeError);
     if (st.strays) notes.push(st.strays + ' datagrams from no known router were dropped.');
@@ -194,7 +210,8 @@ export function initTrafficAnalysisPage(socket: Socket, isVisible: (page: string
       { key: 'total', label: 'Share' }, { key: 'flows', label: 'Connections' },
     ], liveSort, () => drawLive(s));
     const rows = sortRows(withTotal(s.live[liveDim] || []), liveSort.col, liveSort.dir);
-    setText('taLiveAt', s.liveAt ? 'Minute from ' + fmtTime(s.liveAt) + ', bytes over that minute' : '');
+    setText('taLiveAt', s.liveAt ? (s.liveSeconds >= 60 ? 'Minute from ' + fmtTime(s.liveAt) + ', bytes over that minute'
+      : 'The last ' + s.liveSeconds + ' seconds, bytes over them') : '');
     setHTML('taLiveRows', rows.length ? topRows(rows, liveDim, false)
       : '<tr><td colspan="5" class="empty-state">Nothing counted yet</td></tr>');
   }
@@ -408,9 +425,10 @@ export function initTrafficAnalysisPage(socket: Socket, isVisible: (page: string
   }
 
   function drawSetup(s: State): void {
-    setText('taSetupNote', s.admin
-      ? 'Choose where the totals are kept, then apply Traffic Flow to this router. The IPS sensor names the applications; without it, traffic is counted under the remote organisation and port.'
-      : 'Traffic Analysis is configured by administrators.');
+    setText('taSetupNote', !s.admin ? 'Traffic Analysis is configured by administrators.'
+      : s.status.source === 'sensor'
+        ? 'This router\'s IPS sensor inspects every packet and counts the volumes itself: Traffic Flow is not needed. Preview shows its removal.'
+        : 'Choose where the totals are kept, then apply Traffic Flow to this router. The IPS sensor names the applications; without it, traffic is counted under the remote organisation and port.');
     for (const id of ['taSettingsForm', 'taRouterForm', 'taPlanShow', 'taApply', 'taRemove']) {
       const n = el(id);
       if (n) n.style.display = s.admin ? '' : 'none';

@@ -26,7 +26,11 @@ fs.rmSync(ENTRY, { force: true });
 const mod = require(OUT);
 
 // THE PURE HELPERS.
-assert.strictEqual(mod.minuteRate(7_500_000), 1_000_000, '7.5 MB in a minute is 1 Mbit/s');
+assert.strictEqual(mod.spanRate(7_500_000, 60), 1_000_000, '7.5 MB in a minute is 1 Mbit/s');
+assert.strictEqual(mod.spanRate(3_750_000, 30), 1_000_000, 'and 3.75 MB in 30 s too');
+assert.strictEqual(mod.spanLabel(30), 'last 30 s');
+assert.strictEqual(mod.spanLabel(60), 'last minute');
+assert.ok(mod.statePill({ enabled: true, source: 'sensor', lastAt: Date.now() }).includes('sensor live'));
 assert.strictEqual(mod.keyLabel('country', 'FR'), '🇫🇷 FR');
 assert.strictEqual(mod.keyLabel('country', ''), 'Unknown');
 assert.strictEqual(mod.keyLabel('app', 'YouTube'), 'YouTube');
@@ -49,7 +53,7 @@ assert.ok(mod.statePill({ enabled: true, listening: true, lastAt: Date.now() }).
 assert.ok(mod.statePill({ enabled: true, listening: false }).includes('not listening'));
 say('ok - the Traffic Analysis helpers rate, label and stack');
 
-const ids = ['taBadge', 'taTabs', 'taStatePill', 'taBackendPill', 'taStatus', 'taRxVal', 'taTxVal', 'taCoverageVal',
+const ids = ['taBadge', 'taTabs', 'taRxFoot', 'taTxFoot', 'taRecordsLabel', 'taStatePill', 'taBackendPill', 'taStatus', 'taRxVal', 'taTxVal', 'taCoverageVal',
   'taCoverageFoot', 'taRecordsVal', 'taRecordsFoot', 'taLiveDims', 'taLiveAt', 'taLiveHead', 'taLiveRows',
   'taHistDim', 'taHistRange', 'taHistFilters', 'taHistMsg', 'taHistChart', 'taHistHead', 'taHistRows',
   'taFlowHost', 'taFlowRemote', 'taFlowApp', 'taFlowCountry', 'taFlowRange', 'taFlowSearch', 'taFlowMsg',
@@ -65,12 +69,12 @@ const asked: string[] = [];
 const state = {
   router: { enabled: true, interfaces: '', appliedAt: 1, result: 'applied' },
   status: { enabled: true, listening: true, port: 2055, listen: '', backend: 'sqlite', storeError: '', records: 1234,
-    lost: 0, unknown: 0, lastAt: Date.now(), coverage: 0.9, conns: 40, strays: 0, addresses: 3 },
+    lost: 0, unknown: 0, lastAt: Date.now(), coverage: 0.9, conns: 40, strays: 0, addresses: 3, source: 'ipfix', ignored: 0 },
   live: {
     app: [{ key: 'YouTube', rx: 7_500_000, tx: 750_000, flows: 3 }, { key: '<b>x</b>', rx: 10, tx: 10, flows: 1 }],
     category: [], host: [], country: [{ key: 'US', rx: 7_500_000, tx: 0, flows: 3 }],
   },
-  liveAt: Date.now() - 60000, admin: false,
+  liveAt: Date.now() - 60000, liveSeconds: 60, admin: false,
 };
 global.fetch = (url: string) => {
   asked.push(url);

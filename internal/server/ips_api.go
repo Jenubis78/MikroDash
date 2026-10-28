@@ -392,6 +392,10 @@ func (s *Server) ipsSensorSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.ips.sync()
+	if s.traffic != nil {
+		// A sensor inspecting every packet feeds Traffic Analysis; one that stops, no longer.
+		s.traffic.sync()
+	}
 	note := "monitor"
 	if body.Enforce {
 		note = "enforce"
@@ -411,6 +415,10 @@ func (s *Server) ipsSensorDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.ips.sync()
+	if s.traffic != nil {
+		// A sensor inspecting every packet feeds Traffic Analysis; one that stops, no longer.
+		s.traffic.sync()
+	}
 	s.httpRecorder(r, sess).Record(audit.Event{Action: "ips.sensor.delete", RouterID: rid, TargetType: "ipsSensor",
 		TargetID: rid})
 	writeJSON(w, map[string]any{"ok": true})

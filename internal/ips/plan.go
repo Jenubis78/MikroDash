@@ -73,7 +73,7 @@ func Want(sensor netip.Addr, sniffBytes int) []RouterRow {
 	mangle := RouterRow{Menu: "/ip/firewall/mangle", Props: map[string]string{
 		"chain": "forward", "action": "sniff-tzsp", "sniff-target": s,
 		"sniff-target-port": strconv.Itoa(TZSPPort),
-		"src-address": "!" + s, "dst-address": "!" + s, "comment": Marker + ": copy to the sensor"}}
+		"src-address":       "!" + s, "dst-address": "!" + s, "comment": Marker + ": copy to the sensor"}}
 	if sniffBytes == EveryPacket {
 		mangle.Absent = []string{"connection-bytes"}
 	} else {

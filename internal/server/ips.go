@@ -38,6 +38,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/netip"
@@ -260,6 +261,7 @@ func (e *ipsEngine) sync() {
 
 func sameSensor(a, b db.IPSSensor) bool {
 	return a.Address == b.Address && a.Token == b.Token && a.Enforce == b.Enforce && a.DHCP == b.DHCP &&
+		a.EveryPacket == b.EveryPacket &&
 		a.Network == b.Network && strings.Join(a.Protected, ",") == strings.Join(b.Protected, ",")
 }
 
@@ -398,6 +400,21 @@ func (r *ipsReader) readOnce(ctx context.Context) (connected bool, err error) {
 			r.mu.Unlock()
 			connected = true
 			r.setState("connected", "")
+			// EVERY PACKET: the sensor's counts are this router's live volumes
+			// (traffic.go), asked for once per connection.
+			if r.cfg.EveryPacket {
+				if v, _ := strconv.Atoi(line.Hello.Version); v >= ips.LiveBytesVersion {
+					_ = conn.SetWriteDeadline(time.Now().Add(ipsDialTimeout))
+					if _, err := io.WriteString(conn, ips.LiveBytesRequest(ips.LiveBytesEvery)); err != nil {
+						return connected, err
+					}
+				} else {
+					r.setState("connected", "this sensor is version "+line.Hello.Version+": live volumes need version "+
+						strconv.Itoa(ips.LiveBytesVersion)+"; update its image")
+				}
+			}
+		case line.Bytes != nil:
+			r.e.s.traffic.sensorBytes(r.routerID, line.Bytes)
 		case line.Stats != nil:
 			r.mu.Lock()
 			r.status.Stats = line.Stats
