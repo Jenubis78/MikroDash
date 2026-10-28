@@ -44,6 +44,8 @@ interface Rule {
 interface Event {
   id: number; ts: number; ruleName: string; action: string; result: string; target: string;
   client: string; server: string; serverPort: number; l4: string; app: string; host: string;
+  /** The same decision again within ten minutes counts here, not as a row. */
+  hits: number;
 }
 interface Sensor {
   address: string; enforce: boolean; sniffBytes: number; protected: string[]; disk: string; image: string;
@@ -368,7 +370,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     renderSortHeader('ipsEventsHead', [
       { key: 'ts', label: 'Time' }, { key: 'ruleName', label: 'Rule' }, { key: 'action', label: 'Action' },
       { key: 'result', label: 'Result' }, { key: 'target', label: 'Listed' }, { key: 'app', label: 'Application' },
-      { key: 'client', label: 'Flow' },
+      { key: 'client', label: 'Flow' }, { key: 'hits', label: 'Times' },
     ], eventSort, () => drawEvents(s));
     const sorted = sortRows(s.events, eventSort.col, eventSort.dir);
     setHTML('ipsEventsRows', sorted.length ? sorted.map((e) => '<tr>' +
@@ -376,8 +378,9 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       '<td>' + pill(e.action, ACTION_TONE[e.action] || 'muted') + '</td>' +
       '<td>' + pill(e.result, resultTone(e.result)) + '</td>' +
       '<td>' + esc(e.target || '-') + '</td><td>' + esc(e.app) + (e.host ? ' <span class="muted-note">' + esc(e.host) + '</span>' : '') + '</td>' +
-      '<td>' + esc(e.client) + ' → ' + esc(e.server) + ':' + e.serverPort + '</td></tr>').join('')
-      : '<tr><td colspan="7" class="empty-state">No decisions yet</td></tr>');
+      '<td>' + esc(e.client) + ' → ' + esc(e.server) + ':' + e.serverPort + '</td>' +
+      '<td>' + (e.hits > 1 ? '×' + e.hits : '') + '</td></tr>').join('')
+      : '<tr><td colspan="8" class="empty-state">No decisions yet</td></tr>');
   }
 
   // AN ORDERED TABLE: the first match decides, so it keeps its order and has

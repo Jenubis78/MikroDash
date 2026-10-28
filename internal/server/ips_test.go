@@ -22,7 +22,34 @@ func testReader(enforce bool, rules []ips.Rule) *ipsReader {
 	e.ctx, e.cancel = context.WithCancel(context.Background())
 	return &ipsReader{e: e, routerID: "r1", cfg: db.IPSSensor{RouterID: "r1", Enforce: enforce, Token: "0123456789abcdef"},
 		writes: make(chan ipsWrite, 2), apps: map[string]*IPSAppCount{}, risks: map[string]*IPSRiskCount{},
-		listed: map[string]time.Time{}}
+		listed: map[string]time.Time{}, recent: map[string]*ipsRecent{}}
+}
+
+// A decision taken again and again is one row whose hits count the repeats,
+// added in one write a minute.
+func TestARepeatedDecisionIsOneRowWithItsHits(t *testing.T) {
+	d, err := db.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	r := testReader(false, []ips.Rule{{ID: 1, Name: "watch p2p", Enabled: true, Apps: []string{"BitTorrent"}, Action: ips.ActionLog}})
+	r.e.s.auditDB = d
+	f := flowFrom(t, ipsTestFlow)
+	for range 1000 {
+		r.handle(f)
+	}
+	r.flushHits(time.Now())
+	ev, err := d.IPSEvents("r1", 10)
+	if err != nil || len(ev) != 1 || ev[0].Hits != 1000 || ev[0].Result != "logged" {
+		t.Fatalf("%v %+v", err, ev)
+	}
+	// Past the window the next one is a row of its own.
+	r.flushHits(time.Now().Add(ipsRepeatWindow + time.Second))
+	r.handle(f)
+	if ev, _ := d.IPSEvents("r1", 10); len(ev) != 2 {
+		t.Errorf("after the window: %+v", ev)
+	}
 }
 
 func flowFrom(t *testing.T, line string) ips.Flow {

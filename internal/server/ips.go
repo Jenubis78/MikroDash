@@ -29,6 +29,9 @@ package server
 // up to ipsEventsPerMinute a router; past that it is counted, not written. A
 // block of an address already listed is not recorded again until its entry has
 // timed out: one row says the server was listed, not one per connection to it.
+// The same decision again within ipsRepeatWindow (same rule, result, client,
+// server and port) is a hit on its row, not a row: the hits are added once a
+// minute in one transaction, and a router keeps its newest ipsEventsKeep rows.
 
 import (
 	"bufio"
@@ -60,6 +63,9 @@ const (
 	ipsFlowWindow      = 300
 	ipsListPerMinute   = 60
 	ipsEventsPerMinute = 240
+	ipsRepeatWindow    = 10 * time.Minute
+	ipsEventsKeep      = 500000
+	ipsFlushEvery      = time.Minute
 	ipsWriteQueue      = 256
 	ipsProtectedEvery  = 5 * time.Minute
 	ipsDialTimeout     = 5 * time.Second
@@ -162,8 +168,17 @@ type ipsReader struct {
 	minute    int64
 	listedMin int
 	eventsMin int
+	// recent is each decision's row while repeats still count on it.
+	recent    map[string]*ipsRecent
 	protected guard.IPSProtected
 	protAt    time.Time
+}
+
+// ipsRecent is a decision's row and the repeats not yet added to it.
+type ipsRecent struct {
+	id    int64
+	until time.Time
+	hits  int64
 }
 
 type ipsWrite struct {
@@ -258,11 +273,12 @@ func (e *ipsEngine) startReader(cfg db.IPSSensor) *ipsReader {
 	ctx, cancel := context.WithCancel(e.ctx)
 	r := &ipsReader{e: e, routerID: cfg.RouterID, cfg: cfg, cancel: cancel, addr: cfg.Address,
 		writes: make(chan ipsWrite, ipsWriteQueue), apps: map[string]*IPSAppCount{}, risks: map[string]*IPSRiskCount{},
-		listed: map[string]time.Time{}, status: IPSStatus{State: "connecting", Since: nowMillis(), Enforce: cfg.Enforce}}
+		listed: map[string]time.Time{}, recent: map[string]*ipsRecent{}, status: IPSStatus{State: "connecting", Since: nowMillis(), Enforce: cfg.Enforce}}
 	if cfg.Address != "" {
 		r.status.Sensor = net.JoinHostPort(cfg.Address, strconv.Itoa(ips.ReaderPort))
 	}
 	go r.run(ctx)
+	go r.flusher(ctx)
 	return r
 }
 
@@ -523,21 +539,76 @@ func (r *ipsReader) rollMinute(now time.Time) {
 	}
 }
 
-// record writes one decision, within the per-minute allowance.
+// record writes one decision, within the per-minute allowance, or counts it
+// as a hit on the same decision's recent row.
 func (r *ipsReader) record(d ips.Decision, f ips.Flow, result string) {
+	key := strconv.FormatInt(d.RuleID, 10) + "|" + result + "|" + f.Client + "|" + f.Server + "|" + strconv.Itoa(f.ServerPort)
+	now := time.Now()
 	r.mu.Lock()
+	if rc := r.recent[key]; rc != nil && rc.until.After(now) {
+		rc.hits++
+		r.mu.Unlock()
+		return
+	}
 	r.eventsMin++
 	over := r.eventsMin > ipsEventsPerMinute
 	r.mu.Unlock()
 	if over || r.e.s.auditDB == nil {
 		return
 	}
-	err := r.e.s.auditDB.InsertIPSEvent(db.IPSEvent{TS: nowMillis(), RouterID: r.routerID, RuleID: d.RuleID,
+	id, err := r.e.s.auditDB.InsertIPSEvent(db.IPSEvent{TS: nowMillis(), RouterID: r.routerID, RuleID: d.RuleID,
 		RuleName: d.RuleName, Action: d.Action, Result: result, Target: d.Target, Client: f.Client,
 		Server: f.Server, ServerPort: f.ServerPort, L4: f.L4, App: firstNonEmpty(f.Name, f.App),
 		Category: f.Category, Host: f.Host, Risks: f.Risks})
 	if err != nil {
 		log.Printf("[ips] %s: recording a decision: %v", r.routerID, err)
+		return
+	}
+	r.mu.Lock()
+	r.recent[key] = &ipsRecent{id: id, until: now.Add(ipsRepeatWindow)}
+	r.mu.Unlock()
+}
+
+// flusher adds the counted repeats to their rows once a minute, forgets rows
+// past their window, and trims the router's decisions to ipsEventsKeep once
+// an hour. A last flush on the way out keeps the hits of the final minute.
+func (r *ipsReader) flusher(ctx context.Context) {
+	t := time.NewTicker(ipsFlushEvery)
+	defer t.Stop()
+	for n := 1; ; n++ {
+		select {
+		case <-ctx.Done():
+			r.flushHits(time.Now())
+			return
+		case now := <-t.C:
+			r.flushHits(now)
+			if n%60 == 0 && r.e.s.auditDB != nil {
+				if _, err := r.e.s.auditDB.TrimIPSEvents(r.routerID, ipsEventsKeep); err != nil {
+					log.Printf("[ips] %s: trimming the decisions: %v", r.routerID, err)
+				}
+			}
+		}
+	}
+}
+
+func (r *ipsReader) flushHits(now time.Time) {
+	hits := map[int64]int64{}
+	r.mu.Lock()
+	for k, rc := range r.recent {
+		if rc.hits > 0 {
+			hits[rc.id] += rc.hits
+			rc.hits = 0
+		}
+		if !rc.until.After(now) {
+			delete(r.recent, k)
+		}
+	}
+	r.mu.Unlock()
+	if r.e.s.auditDB == nil {
+		return
+	}
+	if err := r.e.s.auditDB.AddIPSEventHits(hits); err != nil {
+		log.Printf("[ips] %s: adding repeats to the decisions: %v", r.routerID, err)
 	}
 }
 

@@ -20,7 +20,10 @@ package db
 // ips_events is what the rules decided, one row per flow a rule matched with
 // any action but allow. `result` is listed, monitor (not enforcing), refused
 // (the guard said no; the code follows), already, limited (the per-minute cap)
-// or failed. Pruned by age with the history.
+// or failed. Pruned by age with the history, and to ipsEventsKeep rows a
+// router. `hits` is how many times the same decision (rule, result, client,
+// server, port) was taken again within ten minutes of its row: one row, not
+// one per connection (migration 42).
 //
 // ips_geo is a router's geofencing (migration 41): the countries whose networks
 // its address list holds, the direction its filter rules drop (in, out, both),
@@ -70,7 +73,8 @@ CREATE TABLE IF NOT EXISTS ips_events (
           app         TEXT    NOT NULL DEFAULT '',
           category    TEXT    NOT NULL DEFAULT '',
           host        TEXT    NOT NULL DEFAULT '',
-          risks       TEXT    NOT NULL DEFAULT '[]'
+          risks       TEXT    NOT NULL DEFAULT '[]',
+          hits        INTEGER NOT NULL DEFAULT 1
         );
 CREATE INDEX IF NOT EXISTS idx_ips_events_router_ts ON ips_events (router_id, ts);
 CREATE TABLE IF NOT EXISTS ips_geo (

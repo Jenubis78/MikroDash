@@ -56,15 +56,31 @@ func TestIPSSensorsAndEventsRoundTrip(t *testing.T) {
 		t.Fatalf("sensors: %v %+v", err, got)
 	}
 	for i, ts := range []int64{100, 300, 200} {
-		if err := d.InsertIPSEvent(IPSEvent{TS: ts, RouterID: "r1", RuleID: int64(i), Action: "block", Result: "listed",
+		if _, err := d.InsertIPSEvent(IPSEvent{TS: ts, RouterID: "r1", RuleID: int64(i), Action: "block", Result: "listed",
 			Risks: []string{"x"}}); err != nil {
 			t.Fatal(err)
 		}
 	}
-	_ = d.InsertIPSEvent(IPSEvent{TS: 400, RouterID: "r2", Action: "log", Result: "monitor"})
+	r2, _ := d.InsertIPSEvent(IPSEvent{TS: 400, RouterID: "r2", Action: "log", Result: "monitor"})
 	ev, err := d.IPSEvents("r1", 2)
-	if err != nil || len(ev) != 2 || ev[0].TS != 300 || ev[1].TS != 200 || ev[0].Risks[0] != "x" {
+	if err != nil || len(ev) != 2 || ev[0].TS != 300 || ev[1].TS != 200 || ev[0].Risks[0] != "x" || ev[0].Hits != 1 {
 		t.Fatalf("events: %v %+v", err, ev)
+	}
+	if err := d.AddIPSEventHits(map[int64]int64{r2: 41}); err != nil {
+		t.Fatal(err)
+	}
+	if ev, _ := d.IPSEvents("r2", 1); ev[0].Hits != 42 {
+		t.Errorf("hits: %+v", ev)
+	}
+	// Trimming keeps the newest rows of that router only.
+	if n, err := d.TrimIPSEvents("r1", 1); err != nil || n != 2 {
+		t.Errorf("trimmed %d: %v", n, err)
+	}
+	if ev, _ := d.IPSEvents("r1", 10); len(ev) != 1 || ev[0].RuleID != 2 {
+		t.Errorf("after trim: %+v", ev)
+	}
+	if ev, _ := d.IPSEvents("r2", 10); len(ev) != 1 {
+		t.Errorf("another router's rows were trimmed: %+v", ev)
 	}
 	if err := d.DeleteIPSSensor("r1"); err != nil {
 		t.Fatal(err)

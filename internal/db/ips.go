@@ -174,22 +174,57 @@ type IPSEvent struct {
 	Category   string   `json:"category"`
 	Host       string   `json:"host"`
 	Risks      []string `json:"risks"`
+	// Hits is how many times this decision was taken while its row was recent.
+	Hits int64 `json:"hits"`
 }
 
-// InsertIPSEvent records one decision.
-func (d *DB) InsertIPSEvent(e IPSEvent) error {
-	_, err := d.sql.Exec(`INSERT INTO ips_events (ts, router_id, rule_id, rule_name, action, result, target,
+// InsertIPSEvent records one decision and returns its row's id.
+func (d *DB) InsertIPSEvent(e IPSEvent) (int64, error) {
+	res, err := d.sql.Exec(`INSERT INTO ips_events (ts, router_id, rule_id, rule_name, action, result, target,
 	        client, server, server_port, l4, app, category, host, risks)
 	        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		e.TS, e.RouterID, e.RuleID, e.RuleName, e.Action, e.Result, e.Target, e.Client, e.Server, e.ServerPort,
 		e.L4, e.App, e.Category, e.Host, jsonList(e.Risks))
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+// AddIPSEventHits adds repeats to decisions already recorded, in one
+// transaction: id -> how many more.
+func (d *DB) AddIPSEventHits(hits map[int64]int64) error {
+	if len(hits) == 0 {
+		return nil
+	}
+	tx, err := d.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	for id, n := range hits {
+		if _, err := tx.Exec(`UPDATE ips_events SET hits = hits + ? WHERE id = ?`, n, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// TrimIPSEvents keeps a router's newest `keep` decisions and returns how many
+// older ones it deleted.
+func (d *DB) TrimIPSEvents(routerID string, keep int) (int64, error) {
+	res, err := d.sql.Exec(`DELETE FROM ips_events WHERE router_id = ? AND id <= (
+	        SELECT id FROM ips_events WHERE router_id = ? ORDER BY id DESC LIMIT 1 OFFSET ?)`, routerID, routerID, keep)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
 
 // IPSEvents is a router's newest decisions, newest first.
 func (d *DB) IPSEvents(routerID string, limit int) ([]IPSEvent, error) {
 	rows, err := d.sql.Query(`SELECT id, ts, router_id, rule_id, rule_name, action, result, target, client, server,
-	        server_port, l4, app, category, host, risks
+	        server_port, l4, app, category, host, risks, hits
 	   FROM ips_events WHERE router_id = ? ORDER BY ts DESC, id DESC LIMIT ?`, routerID, limit)
 	if err != nil {
 		return nil, err
@@ -200,7 +235,7 @@ func (d *DB) IPSEvents(routerID string, limit int) ([]IPSEvent, error) {
 		var e IPSEvent
 		var risks string
 		if err := rows.Scan(&e.ID, &e.TS, &e.RouterID, &e.RuleID, &e.RuleName, &e.Action, &e.Result, &e.Target,
-			&e.Client, &e.Server, &e.ServerPort, &e.L4, &e.App, &e.Category, &e.Host, &risks); err != nil {
+			&e.Client, &e.Server, &e.ServerPort, &e.L4, &e.App, &e.Category, &e.Host, &risks, &e.Hits); err != nil {
 			return nil, err
 		}
 		e.Risks = listOf(risks)
