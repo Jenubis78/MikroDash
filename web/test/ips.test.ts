@@ -72,7 +72,7 @@ const ids = ['ipsBadge', 'ipsTabs', 'ipsStatePill', 'ipsModePill', 'ipsStatus', 
   'ipsListedHead', 'ipsListedRows', 'ipsRulesRows', 'ipsRuleForm', 'ipsRuleFormTitle', 'ipsRuleName', 'ipsRuleAction',
   'ipsRuleAppsPick', 'ipsRuleCategoriesPick', 'ipsRuleBreedsPick', 'ipsRuleRisksPick', 'ipsRuleCountriesPick', 'ipsRuleHosts', 'ipsRuleClients',
   'ipsRuleTimeout', 'ipsRuleEnabled', 'ipsRuleCancel', 'ipsRuleMsg', 'ipsRuleAddWrap', 'ipsRuleAdd', 'ipsSetupNote',
-  'ipsSensorForm', 'ipsSensorAddress', 'ipsSensorEnforce', 'ipsSensorBytes', 'ipsSensorDisk', 'ipsSensorProtected',
+  'ipsSensorForm', 'ipsSensorAddress', 'ipsSensorEnforce', 'ipsSensorBytes', 'ipsSensorInspect', 'ipsSensorBytesField', 'ipsSensorInspectHelp', 'ipsSensorDisk', 'ipsSensorProtected',
   'ipsSensorImage', 'ipsSensorNetwork', 'ipsSensorNetworkHelp', 'ipsSensorDhcp', 'ipsSensorAddressField', 'ipsSensorToken', 'ipsSensorDelete', 'ipsSensorMsg', 'ipsScriptShow', 'ipsScriptCopy', 'ipsScript',
   'ipsPlanShow', 'ipsApply', 'ipsRemove', 'ipsGeoForm', 'ipsGeoApply', 'ipsGeoRemove', 'ipsPlanMsg', 'ipsPlanWarnings', 'ipsPlanRows',
   'ipsPanel-flows', 'ipsPanel-apps', 'ipsPanel-events', 'ipsPanel-rules', 'ipsPanel-setup'];

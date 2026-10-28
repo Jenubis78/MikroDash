@@ -29,6 +29,12 @@ MikroDash: the rules -> address lists -> raw drop rules on the router
   after its first packets, often before the TLS ClientHello that names the service.
   The Setup tab's Preview warns and gives the change:
   `/ip/firewall/filter/set [find where action=fasttrack-connection] connection-bytes=20000-0`.
+- **The first bytes, or every packet.** Setup's *Inspection* copies the first
+  20000 bytes of each connection by default, which is what nDPI names a service
+  from. *Every packet (heavy)* drops the `connection-bytes` limit: the router sends
+  its whole forwarded throughput a second time and the sensor inspects all of it.
+  It is for routers sized for it; the Setup screen, Preview and Apply all say so,
+  and with it any fasttrack rule must be disabled, not just delayed.
 
 ## Setting it up
 

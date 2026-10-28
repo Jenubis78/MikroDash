@@ -44,6 +44,10 @@ const (
 	MinSniffBytes     = 2000
 	MaxSniffBytes     = 1000000
 	DefaultImage      = "ghcr.io/jenubis78/mikrodash-dpi:latest"
+	// EveryPacket, as sniffBytes, copies whole connections to the sensor: no
+	// connection-bytes limit. The router copies its whole forwarded throughput
+	// a second time, so it is for routers sized for it, and the page says so.
+	EveryPacket = 0
 )
 
 // Owned is whether a row's comment says the IPS made it.
@@ -54,19 +58,29 @@ func Owned(r routeros.Reply) bool { return strings.HasPrefix(r["comment"], Marke
 type RouterRow struct {
 	Menu  string            `json:"menu"`
 	Props map[string]string `json:"props"`
+	// Absent are properties the row must NOT have. The API sets a property
+	// but does not clear one, so a row holding one is replaced.
+	Absent []string `json:"absent,omitempty"`
 }
 
 // Comment is the row's identity within its menu.
 func (r RouterRow) Comment() string { return r.Props["comment"] }
 
-// Want is the rows the router must hold for a sensor at this address.
+// Want is the rows the router must hold for a sensor at this address, copying
+// the first sniffBytes of each connection, or every packet (EveryPacket).
 func Want(sensor netip.Addr, sniffBytes int) []RouterRow {
 	s := sensor.String()
+	mangle := RouterRow{Menu: "/ip/firewall/mangle", Props: map[string]string{
+		"chain": "forward", "action": "sniff-tzsp", "sniff-target": s,
+		"sniff-target-port": strconv.Itoa(TZSPPort),
+		"src-address": "!" + s, "dst-address": "!" + s, "comment": Marker + ": copy to the sensor"}}
+	if sniffBytes == EveryPacket {
+		mangle.Absent = []string{"connection-bytes"}
+	} else {
+		mangle.Props["connection-bytes"] = "0-" + strconv.Itoa(sniffBytes)
+	}
 	return []RouterRow{
-		{Menu: "/ip/firewall/mangle", Props: map[string]string{
-			"chain": "forward", "action": "sniff-tzsp", "sniff-target": s,
-			"sniff-target-port": strconv.Itoa(TZSPPort), "connection-bytes": "0-" + strconv.Itoa(sniffBytes),
-			"src-address": "!" + s, "dst-address": "!" + s, "comment": Marker + ": copy to the sensor"}},
+		mangle,
 		{Menu: "/ip/firewall/raw", Props: map[string]string{
 			"chain": "prerouting", "action": "drop", "src-address-list": QuarantineList,
 			"comment": Marker + ": quarantined clients"}},
@@ -130,8 +144,23 @@ func PlanRouter(sensor netip.Addr, sniffBytes int, rows map[string][]routeros.Re
 		p.Steps = append(p.Steps, planMenu(menu, want, rows[menu], Owned)...)
 	}
 	if sensor.IsValid() {
+		if sniffBytes == EveryPacket {
+			p.Warnings = append(p.Warnings, "Every packet of every connection is copied to the sensor: the router "+
+				"sends its whole forwarded throughput a second time, to the sensor. Only for a router with the CPU "+
+				"and the link to spare; watch its CPU after applying, and go back to the first bytes if it climbs.")
+		}
 		for _, r := range filter {
-			if r["action"] == "fasttrack-connection" && r["disabled"] != "true" && r["connection-bytes"] == "" {
+			// Inspecting every packet, any fasttrack cuts it short, even one that
+			// waits for the first bytes.
+			if r["action"] == "fasttrack-connection" && r["disabled"] != "true" &&
+				(r["connection-bytes"] == "" || sniffBytes == EveryPacket) {
+				if sniffBytes == EveryPacket {
+					p.Warnings = append(p.Warnings, fmt.Sprintf(
+						"A fasttrack rule (%s) takes connections off the slow path, and the sensor sees nothing of "+
+							"them from then on. To inspect every packet, disable it: "+
+							"/ip/firewall/filter/disable [find where action=fasttrack-connection]", r[".id"]))
+					break
+				}
 				p.Warnings = append(p.Warnings, fmt.Sprintf(
 					"A fasttrack rule (%s) takes connections off the slow path before the sensor has seen what names "+
 						"the service. Let the first bytes through first: "+
@@ -184,6 +213,19 @@ func planMenu(menu string, want []RouterRow, rows []routeros.Reply, owned func(r
 			steps = append(steps, Step{Op: "add", Menu: menu, Args: args, What: "add " + w.Comment()})
 			continue
 		}
+		if holdsAny(have, w.Absent) {
+			// Replaced, not corrected: the API cannot clear a property.
+			args := map[string]string{}
+			for k, v := range w.Props {
+				args[k] = v
+			}
+			if firstForeign != "" {
+				args["place-before"] = firstForeign
+			}
+			steps = append(steps, Step{Op: "remove", Menu: menu, ID: have[".id"], What: "replace " + w.Comment()},
+				Step{Op: "add", Menu: menu, Args: args, What: "add " + w.Comment()})
+			continue
+		}
 		if diff := differs(w.Props, have); len(diff) > 0 {
 			steps = append(steps, Step{Op: "set", Menu: menu, ID: have[".id"], Args: diff, What: "correct " + w.Comment()})
 		}
@@ -198,6 +240,16 @@ func planMenu(menu string, want []RouterRow, rows []routeros.Reply, owned func(r
 		steps = append(steps, Step{Op: "remove", Menu: menu, ID: r[".id"], What: "remove " + r["comment"]})
 	}
 	return steps
+}
+
+// holdsAny is whether a row has any of these properties set.
+func holdsAny(have routeros.Reply, props []string) bool {
+	for _, p := range props {
+		if have[p] != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // differs is the properties the router's row has wrong. A property the router

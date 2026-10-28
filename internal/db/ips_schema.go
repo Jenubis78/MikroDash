@@ -16,6 +16,8 @@ package db
 // no IPS. `network` is the router interface (a bridge, or a VLAN on one) the
 // container joins, empty to go by the address; `dhcp` leaves the address to
 // that network's DHCP server, and `address` is then empty (migration 39).
+// `every_packet` copies whole connections to the sensor rather than their
+// first `sniff_bytes` (migration 45).
 //
 // ips_events is what the rules decided, one row per flow a rule matched with
 // any action but allow. `result` is listed, monitor (not enforcing), refused
@@ -56,7 +58,8 @@ CREATE TABLE IF NOT EXISTS ips_sensors (
           disk        TEXT    NOT NULL DEFAULT '',
           image       TEXT    NOT NULL DEFAULT '',
           network     TEXT    NOT NULL DEFAULT '',
-          dhcp        INTEGER NOT NULL DEFAULT 0
+          dhcp        INTEGER NOT NULL DEFAULT 0,
+          every_packet INTEGER NOT NULL DEFAULT 0
         );
 CREATE TABLE IF NOT EXISTS ips_events (
           id          INTEGER PRIMARY KEY,

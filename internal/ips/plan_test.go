@@ -203,3 +203,34 @@ func TestTheLeaseIsReadFromTheVeth(t *testing.T) {
 		}
 	}
 }
+
+// Every packet: the mangle rule loses connection-bytes, which the API cannot
+// clear, so the rule is replaced; and the plan says what that costs.
+func TestEveryPacketReplacesTheCopyRuleAndWarns(t *testing.T) {
+	rows := map[string][]routeros.Reply{}
+	for i, w := range Want(sensor, DefaultSniffBytes) {
+		r := routeros.Reply{".id": "*" + string(rune('a'+i))}
+		for k, v := range w.Props {
+			r[k] = v
+		}
+		rows[w.Menu] = append(rows[w.Menu], r)
+	}
+	filter := []routeros.Reply{{".id": "*F", "action": "fasttrack-connection", "connection-bytes": "20000-0"}}
+	p := PlanRouter(sensor, EveryPacket, rows, filter)
+	if len(p.Steps) != 2 || p.Steps[0].Op != "remove" || p.Steps[1].Op != "add" || p.Steps[1].Args["connection-bytes"] != "" ||
+		p.Steps[1].Args["action"] != "sniff-tzsp" {
+		t.Fatalf("%+v", p.Steps)
+	}
+	if len(p.Warnings) != 2 || !strings.Contains(p.Warnings[0], "whole forwarded throughput") ||
+		!strings.Contains(p.Warnings[1], "disable") {
+		t.Errorf("%v", p.Warnings)
+	}
+	// And back: the first bytes again is a correction, not a replacement.
+	full := map[string][]routeros.Reply{"/ip/firewall/mangle": {{".id": "*a", "chain": "forward", "action": "sniff-tzsp",
+		"sniff-target": "172.31.255.2", "sniff-target-port": "37008", "src-address": "!172.31.255.2",
+		"dst-address": "!172.31.255.2", "comment": Marker + ": copy to the sensor"}}}
+	back := PlanRouter(sensor, DefaultSniffBytes, full, nil)
+	if back.Steps[0].Op != "set" || back.Steps[0].Args["connection-bytes"] != "0-20000" {
+		t.Errorf("%+v", back.Steps)
+	}
+}

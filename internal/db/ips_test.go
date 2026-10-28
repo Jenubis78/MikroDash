@@ -42,7 +42,7 @@ func TestIPSRulesKeepTheirOrderAndCriteria(t *testing.T) {
 func TestIPSSensorsAndEventsRoundTrip(t *testing.T) {
 	d := openTestDB(t)
 	s := IPSSensor{RouterID: "r1", Address: "172.31.255.2", Token: `{"sealed":"x"}`, Enforce: true,
-		SniffBytes: 20000, Protected: []string{"192.168.88.50"}, Disk: "usb1", Network: "vlan11", DHCP: true}
+		SniffBytes: 20000, Protected: []string{"192.168.88.50"}, Disk: "usb1", Network: "vlan11", DHCP: true, EveryPacket: true}
 	if err := d.SaveIPSSensor(s); err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestIPSSensorsAndEventsRoundTrip(t *testing.T) {
 	}
 	got, err := d.IPSSensors()
 	if err != nil || len(got) != 1 || got[0].Enforce || got[0].Token != s.Token || got[0].Protected[0] != "192.168.88.50" ||
-		got[0].Network != "vlan11" || !got[0].DHCP {
+		got[0].Network != "vlan11" || !got[0].DHCP || !got[0].EveryPacket {
 		t.Fatalf("sensors: %v %+v", err, got)
 	}
 	for i, ts := range []int64{100, 300, 200} {

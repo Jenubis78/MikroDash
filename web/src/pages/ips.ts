@@ -49,7 +49,7 @@ interface Event {
 }
 interface Sensor {
   address: string; enforce: boolean; sniffBytes: number; protected: string[]; disk: string; image: string;
-  network: string; dhcp: boolean;
+  network: string; dhcp: boolean; everyPacket: boolean;
 }
 /** What nDPI can name (GET /api/ips/catalog), printed from the sensor's own nDPI. */
 export interface Catalog {
@@ -138,6 +138,14 @@ export function geoApplyQuestion(remove: boolean, mode: string, dir: string, all
   return 'Drop new connections ' + way + ' ' + dropped.join(', ') + '?' +
     (dropped.length < block.length ? ' (' + block.filter((c) => allow.includes(c)).join(', ') + ' stays: whitelisted.)' : '');
 }
+
+const INSPECT_FIRST_HELP = 'nDPI names a connection from its first packets; the rest costs the router without naming more.';
+
+/** What the Setup screen says when every packet is chosen. */
+export const INSPECT_ALL_WARNING = 'Warning: every packet of every connection is copied to the sensor. The router sends ' +
+  'its whole forwarded throughput a second time and the sensor inspects all of it: only for a router sized for it ' +
+  '(a CCR or an RB5009 with CPU to spare, a fast link to the sensor). Watch its CPU after applying and go back to the ' +
+  'first bytes if it climbs. A fasttrack rule must be disabled, or fasttracked connections stop being inspected.';
 
 /** A geofencing apply as its line reads: the phase, how far, and how it ended. */
 export function geoJobLine(j: GeoJob): string {
@@ -429,6 +437,8 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     const set = (id: string, v: string): void => { const n = el<HTMLInputElement>(id); if (n) n.value = v; };
     set('ipsSensorAddress', sn?.address || '');
     set('ipsSensorBytes', sn ? String(sn.sniffBytes) : '');
+    set('ipsSensorInspect', sn?.everyPacket ? 'all' : 'first');
+    syncInspect();
     set('ipsSensorDisk', sn?.disk || '');
     set('ipsSensorImage', sn?.image || '');
     set('ipsSensorProtected', (sn?.protected || []).join('\n'));
@@ -472,6 +482,18 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       // SAID, NOT RETRIED EVERY POLL: the list is read again when the Setup
       // tab is opened again, and the reason stays under the field until then.
       .catch((e: Error) => { networksError = e.message; drawNetworks(); });
+  }
+
+  // EVERY PACKET has no byte count to set, and says what it costs.
+  function syncInspect(): void {
+    const all = el<HTMLSelectElement>('ipsSensorInspect')?.value === 'all';
+    const bytes = el('ipsSensorBytesField');
+    if (bytes) bytes.style.display = all ? 'none' : '';
+    const help = el('ipsSensorInspectHelp');
+    if (help) {
+      help.textContent = all ? INSPECT_ALL_WARNING : INSPECT_FIRST_HELP;
+      help.style.color = all ? 'var(--accent-warn)' : '';
+    }
   }
 
   // BY DHCP, the address is the server's: its field goes, and a network must
@@ -740,6 +762,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       sniffBytes: Number(q('ipsSensorBytes')) || 0, protected: splitList(q('ipsSensorProtected')),
       disk: q('ipsSensorDisk'), image: q('ipsSensorImage'), newToken,
       network: el<HTMLSelectElement>('ipsSensorNetwork')?.value || '', dhcp: !!el<HTMLInputElement>('ipsSensorDhcp')?.checked,
+      everyPacket: el<HTMLSelectElement>('ipsSensorInspect')?.value === 'all',
     }).then(() => {
       setText('ipsSensorMsg', newToken ? 'Saved with a new token: run the container commands again.' : 'Saved.');
       formFilledFor = '';
@@ -748,6 +771,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   }
   el('ipsSensorForm')?.addEventListener('submit', (ev) => { ev.preventDefault(); saveSensor(false); });
   el('ipsSensorDhcp')?.addEventListener('change', syncDhcp);
+  el('ipsSensorInspect')?.addEventListener('change', syncInspect);
   el('ipsSensorNetwork')?.addEventListener('change', () => {
     chosenNetwork = el<HTMLSelectElement>('ipsSensorNetwork')?.value || '';
     drawNetworks();
@@ -789,7 +813,9 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   function apply(remove: boolean): void {
     const ask = remove
       ? 'Remove the IPS\'s rules from the router, and empty its two lists?'
-      : 'Write the IPS\'s rules to the router? One mangle rule and three raw rules, each commented "MikroDash IPS".';
+      : 'Write the IPS\'s rules to the router? One mangle rule and three raw rules, each commented "MikroDash IPS".' +
+        (state?.sensor?.everyPacket ? '\n\nEVERY PACKET is copied to the sensor: the router sends its whole forwarded ' +
+          'throughput a second time. Only for a router sized for it.' : '');
     if (!window.confirm(ask)) return;
     setText('ipsPlanMsg', 'Writing…');
     post<{ ok: boolean; steps: Step[]; warnings: string[]; cleared: number }>('/api/ips/apply' + qs() + (remove ? '&remove=1' : ''))

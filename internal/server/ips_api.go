@@ -305,6 +305,9 @@ func (s *Server) ipsSensorSave(w http.ResponseWriter, r *http.Request) {
 		Network    string   `json:"network"`
 		DHCP       bool     `json:"dhcp"`
 		NewToken   bool     `json:"newToken"`
+		// EveryPacket copies whole connections; SniffBytes is then kept for
+		// going back.
+		EveryPacket bool `json:"everyPacket"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&body); err != nil {
 		writeJSON400OK(w)
@@ -382,7 +385,7 @@ func (s *Server) ipsSensorSave(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	sn := db.IPSSensor{RouterID: rid, Address: address, Token: sealed, Enforce: body.Enforce,
-		SniffBytes: body.SniffBytes, Protected: protected, Disk: body.Disk, Image: body.Image,
+		SniffBytes: body.SniffBytes, EveryPacket: body.EveryPacket, Protected: protected, Disk: body.Disk, Image: body.Image,
 		Network: body.Network, DHCP: body.DHCP}
 	if err := s.auditDB.SaveIPSSensor(sn); err != nil {
 		writeJSONErr(w, http.StatusInternalServerError, "the sensor could not be saved")
@@ -474,6 +477,9 @@ func (s *Server) ipsRouterPlan(sn *session.Session, rid string, remove bool) (ip
 	if cfg, ok := s.ipsSensorOf(rid); ok && !remove {
 		addr, _ = validSensorAddress(cfg.Address)
 		bytes = cfg.SniffBytes
+		if cfg.EveryPacket {
+			bytes = ips.EveryPacket
+		}
 		if cfg.DHCP {
 			// The mangle rule copies to the lease the sensor holds NOW.
 			veth, _ := sn.Exec(routeros.Cmd{Path: "/interface/veth/print",

@@ -255,6 +255,14 @@
                   <div class="ff-help">Off: decisions are recorded, nothing is listed on the router.</div>
                 </div>
                 <div class="ff">
+                  <label class="sform-label" for="ipsSensorInspect">Inspection</label>
+                  <select class="sform-input" id="ipsSensorInspect">
+                    <option value="first">The first bytes of each connection (recommended)</option>
+                    <option value="all">Every packet (heavy)</option>
+                  </select>
+                  <div class="ff-help" id="ipsSensorInspectHelp">nDPI names a connection from its first packets; the rest costs the router without naming more.</div>
+                </div>
+                <div class="ff" id="ipsSensorBytesField">
                   <label class="sform-label" for="ipsSensorBytes">Bytes copied of each connection</label>
                   <input class="sform-input" id="ipsSensorBytes" type="number" min="2000" max="1000000" placeholder="20000">
                   <div class="ff-help">More finds more, and costs the router more.</div>
