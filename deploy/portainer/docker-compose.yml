@@ -1,0 +1,37 @@
+# MikroDash for a Portainer stack deployed from this repository, with automatic
+# updates: Portainer polls the repository and, with "Re-pull image" on, pulls
+# :latest again on every poll and redeploys when it moved. :latest moves on
+# every v* tag (.github/workflows/docker-publish.yml).
+#
+# A pulled image, never `build: .`: Portainer on TrueNAS cannot build
+# ("mkdir /.docker: permission denied").
+#
+# Owner lower-cased, as registry names must be. The image's own CMD carries
+# every flag the root docker-compose.yml passes.
+name: mikrodash
+
+services:
+  mikrodash:
+    image: ghcr.io/jenubis78/mikrodash:latest
+    container_name: MikroDash
+    restart: unless-stopped
+    ports:
+      - "3081:3081"
+    volumes:
+      - data:/data
+    environment:
+      - TZ=${TZ:-Europe/Paris}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3081/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  data:
