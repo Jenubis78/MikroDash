@@ -20,11 +20,13 @@
 //
 // ── BLOCKING BY ADDRESS IS COARSE, AND SAID SO ──────────────────────────────
 //
-// `block` lists the SERVER, for every client: a rule naming clients chooses
-// which flows trigger it, not who is cut off afterwards. A service on a shared
-// CDN takes its neighbours with it. That is why the default is to watch (a rule
-// whose action is `log`), and why `quarantine` exists: it lists the CLIENT, which
-// is the precise answer to "this device is doing something it should not".
+// `block` lists the party ON THE INTERNET, for everybody: the server of a
+// connection that went out, the client of one that came in through a dst-nat.
+// A rule naming clients chooses which flows trigger it, not who is cut off
+// afterwards, and a service on a shared CDN takes its neighbours with it. That
+// is why the default is to watch (a rule whose action is `log`), and why
+// `quarantine` exists: it lists the party AT HOME, which is the precise answer
+// to "this device is doing something it should not".
 package ips
 
 import (
@@ -80,6 +82,47 @@ type Flow struct {
 	Guessed    bool     `json:"guessed"`
 	Packets    int      `json:"packets"`
 	Bytes      int64    `json:"bytes"`
+	// ClientCountry and ServerCountry are ISO codes MikroDash adds from its
+	// geo database; the sensor does not send them. Empty for a private or
+	// unknown address.
+	ClientCountry string `json:"clientCountry"`
+	ServerCountry string `json:"serverCountry"`
+}
+
+// notPublic are the ranges no country holds, beyond what netip names.
+var notPublic = []netip.Prefix{netip.MustParsePrefix("100.64.0.0/10"), netip.MustParsePrefix("0.0.0.0/8"),
+	netip.MustParsePrefix("192.0.0.0/24"), netip.MustParsePrefix("198.18.0.0/15"), netip.MustParsePrefix("240.0.0.0/4")}
+
+// Public is whether an address is on the internet: not private, loopback,
+// link-local, multicast, carrier-grade NAT or reserved.
+func Public(addr string) bool {
+	a, err := netip.ParseAddr(addr)
+	if err != nil {
+		return false
+	}
+	a = a.Unmap()
+	if a.IsPrivate() || a.IsLoopback() || a.IsLinkLocalUnicast() || a.IsMulticast() || a.IsUnspecified() {
+		return false
+	}
+	for _, p := range notPublic {
+		if p.Contains(a) {
+			return false
+		}
+	}
+	return true
+}
+
+// Remote is the flow's party on the internet: the server of a connection
+// that went out, the client of one that came in (through a dst-nat). Empty
+// for a flow between two private addresses.
+func (f Flow) Remote() (addr, country string, inbound bool) {
+	switch {
+	case Public(f.Server):
+		return f.Server, f.ServerCountry, false
+	case Public(f.Client):
+		return f.Client, f.ClientCountry, true
+	}
+	return "", "", false
 }
 
 // Stats is the sensor's own counters, every few seconds.
@@ -175,10 +218,15 @@ type Rule struct {
 	// matches "www.tiktok.com".
 	Hosts []string `json:"hosts"`
 	// Clients are the addresses or prefixes the rule applies to.
-	Clients    []string `json:"clients"`
+	Clients []string `json:"clients"`
+	// Countries are ISO codes matched against the flow's remote party (see
+	// Flow.Remote): where a connection went, or where one came from.
+	Countries  []string `json:"countries"`
 	Action     string   `json:"action"`
 	TimeoutMin int      `json:"timeoutMin"`
 }
+
+var isoCode = regexp.MustCompile(`^[A-Z]{2}$`)
 
 var ruleName = regexp.MustCompile(`^[\pL\pN][\pL\pN ._/()&+-]{0,59}$`)
 
@@ -193,7 +241,7 @@ func (r *Rule) Validate() error {
 	if !slices.Contains(Actions, r.Action) {
 		return fmt.Errorf("the action must be one of %s", strings.Join(Actions, ", "))
 	}
-	for _, list := range []*[]string{&r.Apps, &r.Categories, &r.Breeds, &r.Risks, &r.Hosts, &r.Clients} {
+	for _, list := range []*[]string{&r.Apps, &r.Categories, &r.Breeds, &r.Risks, &r.Hosts, &r.Clients, &r.Countries} {
 		*list = clean(*list)
 		if len(*list) > 200 {
 			return errors.New("a criterion takes up to 200 values")
@@ -204,10 +252,17 @@ func (r *Rule) Validate() error {
 			}
 		}
 	}
-	if len(r.Apps)+len(r.Categories)+len(r.Breeds)+len(r.Risks)+len(r.Hosts) == 0 {
+	for i, c := range r.Countries {
+		c = strings.ToUpper(c)
+		if !isoCode.MatchString(c) {
+			return fmt.Errorf("%q is not a two-letter country code", r.Countries[i])
+		}
+		r.Countries[i] = c
+	}
+	if len(r.Apps)+len(r.Categories)+len(r.Breeds)+len(r.Risks)+len(r.Hosts)+len(r.Countries) == 0 {
 		// Clients alone would match every flow those clients make, and a
 		// rule that blocks every server a LAN talks to is a mistake.
-		return errors.New("a rule needs an application, a category, a breed, a risk or a host")
+		return errors.New("a rule needs an application, a category, a breed, a risk, a host or a country")
 	}
 	for i, h := range r.Hosts {
 		h = strings.ToLower(strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(h, "*"), "."), "."))
@@ -265,7 +320,8 @@ func (r Rule) Matches(f Flow) bool {
 		anyOf(r.Breeds, func(v string) bool { return strings.EqualFold(v, f.Breed) }) &&
 		anyOf(r.Risks, func(v string) bool { return hasRisk(f, v) }) &&
 		anyOf(r.Hosts, func(v string) bool { return hostUnder(f.Host, v) }) &&
-		anyOf(r.Clients, func(v string) bool { return clientIn(f.Client, v) })
+		anyOf(r.Clients, func(v string) bool { return clientIn(f.Client, v) }) &&
+		anyOf(r.Countries, func(v string) bool { _, c, _ := f.Remote(); return c != "" && c == v })
 }
 
 func anyOf(values []string, match func(string) bool) bool {
@@ -329,11 +385,21 @@ func Decide(rules []Rule, f Flow) Decision {
 			continue
 		}
 		d := Decision{RuleID: r.ID, RuleName: r.Name, Action: r.Action, TimeoutMin: r.TimeoutMin}
+		// Block the party on the internet, quarantine the one at home: for a
+		// connection that came in through a dst-nat they are the client and
+		// the server, the other way round.
+		remote, _, inbound := f.Remote()
 		switch r.Action {
 		case ActionBlock:
 			d.Target, d.List = f.Server, BlockList
+			if remote != "" {
+				d.Target = remote
+			}
 		case ActionQuarantine:
 			d.Target, d.List = f.Client, QuarantineList
+			if inbound {
+				d.Target = f.Server
+			}
 		}
 		return d
 	}

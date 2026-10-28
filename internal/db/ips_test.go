@@ -12,7 +12,8 @@ func TestIPSRulesKeepTheirOrderAndCriteria(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, _ := d.SaveIPSRule(ips.Rule{Name: "risky", Enabled: true, Risks: []string{"*"}, Clients: []string{"192.168.88.0/24"}, Action: ips.ActionLog})
+	b, _ := d.SaveIPSRule(ips.Rule{Name: "risky", Enabled: true, Risks: []string{"*"}, Clients: []string{"192.168.88.0/24"},
+		Countries: []string{"CN"}, Action: ips.ActionLog})
 	if err := d.OrderIPSRules([]int64{b, a}); err != nil {
 		t.Fatal(err)
 	}
@@ -20,7 +21,7 @@ func TestIPSRulesKeepTheirOrderAndCriteria(t *testing.T) {
 	if err != nil || len(rules) != 2 || rules[0].ID != b || rules[1].ID != a {
 		t.Fatalf("order: %v %+v", err, rules)
 	}
-	if rules[0].Clients[0] != "192.168.88.0/24" || rules[1].Apps[0] != "BitTorrent" || rules[1].Categories == nil {
+	if rules[0].Clients[0] != "192.168.88.0/24" || rules[0].Countries[0] != "CN" || rules[1].Apps[0] != "BitTorrent" || rules[1].Categories == nil {
 		t.Errorf("criteria: %+v", rules)
 	}
 	rules[1].Enabled = false

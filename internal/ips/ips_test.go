@@ -180,3 +180,50 @@ func TestTheCatalogNamesWhatTheSensorSends(t *testing.T) {
 		t.Error("no known risk has no severity")
 	}
 }
+
+func TestCountriesMatchTheRemotePartyAndBlockListsIt(t *testing.T) {
+	out := flowOf(t, netflixLine)
+	out.ServerCountry = "US"
+	// A connection that came in through a dst-nat: the client is on the
+	// internet, the server is at home.
+	in := out
+	in.Client, in.ClientCountry, in.Server, in.ServerCountry = "203.0.113.9", "CN", "192.168.11.182", ""
+
+	if a, c, inbound := out.Remote(); a != "198.51.100.40" || c != "US" || inbound {
+		t.Errorf("outbound remote: %s %s %v", a, c, inbound)
+	}
+	if a, c, inbound := in.Remote(); a != "203.0.113.9" || c != "CN" || !inbound {
+		t.Errorf("inbound remote: %s %s %v", a, c, inbound)
+	}
+	lan := out
+	lan.Server = "192.168.11.5"
+	if a, _, _ := lan.Remote(); a != "" {
+		t.Errorf("a flow inside the LAN has no remote party: %s", a)
+	}
+
+	geo := []Rule{{ID: 7, Name: "geo", Enabled: true, Countries: []string{"CN", "RU"}, Action: ActionBlock, TimeoutMin: 60}}
+	if d := Decide(geo, out); d.RuleID != 0 {
+		t.Errorf("a US server matched CN/RU: %+v", d)
+	}
+	d := Decide(geo, in)
+	if d.RuleID != 7 || d.Target != "203.0.113.9" || d.List != BlockList {
+		t.Errorf("an inbound connection from CN blocks the client, never the server at home: %+v", d)
+	}
+	geo[0].Action = ActionQuarantine
+	if d := Decide(geo, in); d.Target != "192.168.11.182" || d.List != QuarantineList {
+		t.Errorf("quarantine on an inbound connection lists the device at home: %+v", d)
+	}
+
+	r := Rule{Name: "geo", Countries: []string{" cn ", "ru"}, Action: ActionLog}
+	if err := r.Validate(); err != nil || r.Countries[0] != "CN" || r.Countries[1] != "RU" {
+		t.Errorf("countries normalised: %v %+v", err, r.Countries)
+	}
+	if err := (&Rule{Name: "geo", Countries: []string{"France"}, Action: ActionLog}).Validate(); err == nil {
+		t.Error("a country name is not a code")
+	}
+	for addr, want := range map[string]bool{"8.8.8.8": true, "192.168.1.1": false, "100.64.1.1": false, "127.0.0.1": false, "x": false} {
+		if Public(addr) != want {
+			t.Errorf("Public(%s) != %v", addr, want)
+		}
+	}
+}

@@ -14,7 +14,7 @@
 // The rules and the sensor are for administrators (the state says `admin`);
 // everybody with the page's read grant sees the flows and the decisions.
 
-import { el, esc, pill, protoPill, renderSortHeader, sortRows, copyText, type SortState } from '../dom';
+import { el, esc, pill, protoPill, renderSortHeader, sortRows, copyText, iso2Flag, type SortState } from '../dom';
 import type { PillTone } from '../palette';
 import type { Socket } from '../socket';
 import { fmtTime } from '../timefmt';
@@ -24,7 +24,7 @@ const POLL_MS = 3000;
 interface Flow {
   ts: number; l4: string; client: string; clientPort: number; server: string; serverPort: number;
   name: string; app: string; master: string; category: string; breed: string; host: string;
-  risks: string[]; guessed: boolean; packets: number; bytes: number;
+  risks: string[]; guessed: boolean; packets: number; bytes: number; clientCountry: string; serverCountry: string;
   action: string; rule: string; result: string; severity: string;
 }
 interface RiskCount {
@@ -39,7 +39,7 @@ interface Status {
 }
 interface Rule {
   id: number; name: string; enabled: boolean; apps: string[]; categories: string[]; breeds: string[];
-  risks: string[]; hosts: string[]; clients: string[]; action: string; timeoutMin: number;
+  risks: string[]; hosts: string[]; clients: string[]; countries: string[]; action: string; timeoutMin: number;
 }
 interface Event {
   id: number; ts: number; ruleName: string; action: string; result: string; target: string;
@@ -53,11 +53,13 @@ interface Sensor {
 export interface Catalog {
   ndpi: string;
   apps: { name: string; category: string; breed: string }[];
-  categories: string[]; breeds: string[]; risks: string[];
+  categories: string[]; breeds: string[]; risks: { name: string; severity: string }[];
+  /** The geo database's countries; empty when this install has none. */
+  countries: { iso: string; name: string }[];
 }
 
 /** The four criteria picked from lists rather than typed. */
-export type PickField = 'apps' | 'categories' | 'breeds' | 'risks';
+export type PickField = 'apps' | 'categories' | 'breeds' | 'risks' | 'countries';
 
 /**
  * A pick box: the values chosen, each a chip that removes itself, then a list
@@ -66,12 +68,14 @@ export type PickField = 'apps' | 'categories' | 'breeds' | 'risks';
  * an older rule is never silently emptied.
  */
 export function pickHtml(field: PickField, chosen: string[], cat: Catalog | null): string {
-  const chips = chosen.map((v) => '<span class="chip is-on">' + esc(v === '*' ? 'Any risk' : v) +
+  const label = (v: string): string => v === '*' && field === 'risks' ? 'Any risk'
+    : field === 'countries' ? (iso2Flag(v) + ' ' + v).trim() : v;
+  const chips = chosen.map((v) => '<span class="chip is-on">' + esc(label(v)) +
     '<button class="chip-x" type="button" title="Remove" data-ipsunpick="' + esc(field) + '" data-v="' + esc(v) + '">×</button></span>').join(' ');
   const left = (list: string[]): string[] => list.filter((v) => !chosen.includes(v));
   const opt = (v: string, label = v): string => '<option value="' + esc(v) + '">' + esc(label) + '</option>';
   const prompt: Record<PickField, string> = { apps: 'Add an application', categories: 'Add a category',
-    breeds: 'Add a breed', risks: 'Add a risk' };
+    breeds: 'Add a breed', risks: 'Add a risk', countries: 'Add a country' };
   let options = '';
   if (cat) {
     if (field === 'apps') {
@@ -80,13 +84,18 @@ export function pickHtml(field: PickField, chosen: string[], cat: Catalog | null
       options = Object.keys(groups).sort().map((g) => '<optgroup label="' + esc(g) + '">' +
         groups[g]!.sort((x, y) => x.localeCompare(y)).map((v) => opt(v)).join('') + '</optgroup>').join('');
     } else if (field === 'risks') {
-      options = (chosen.includes('*') ? '' : opt('*', 'Any risk')) + left(cat.risks).map((v) => opt(v)).join('');
+      options = (chosen.includes('*') ? '' : opt('*', 'Any risk')) +
+        cat.risks.filter((r) => !chosen.includes(r.name)).map((r) => opt(r.name, r.name + ' (' + r.severity + ')')).join('');
+    } else if (field === 'countries') {
+      options = cat.countries.filter((c) => !chosen.includes(c.iso)).map((c) => opt(c.iso, c.name + ' (' + c.iso + ')')).join('');
     } else {
       options = left(field === 'categories' ? cat.categories : cat.breeds).map((v) => opt(v)).join('');
     }
   }
+  const none = field === 'countries' && cat && !cat.countries.length;
   return chips + (chips ? ' ' : '') + '<select class="sform-input sform-sm" data-ipsadd="' + esc(field) + '"' +
-    (cat ? '' : ' disabled') + '><option value="">' + (cat ? prompt[field] : 'Loading the list') + '</option>' +
+    (cat && !none ? '' : ' disabled') + '><option value="">' +
+    (!cat ? 'Loading the list' : none ? 'No geo database on this install' : prompt[field]) + '</option>' +
     options + '</select>';
 }
 
@@ -128,6 +137,11 @@ export function resultTone(r: string): PillTone {
   return r === 'failed' ? 'err' : 'muted';
 }
 
+/** An address with its country's flag before it, the code in the title. */
+export function flagged(addr: string, country: string): string {
+  return country ? '<span title="' + esc(country) + '">' + iso2Flag(country) + '</span> ' + esc(addr) : esc(addr);
+}
+
 /** One flow's identity: its start and its five-tuple. */
 export function flowKey(f: Flow): string {
   return f.ts + '|' + f.l4 + '|' + f.client + '|' + f.clientPort + '|' + f.server + '|' + f.serverPort;
@@ -162,7 +176,7 @@ export function blockRuleFor(f: Flow): Rule | null {
   if (!named && !host) return null;
   const what = named || host;
   return { id: 0, name: ('Block ' + what).slice(0, 60), enabled: true, apps: named ? [named] : [], categories: [],
-    breeds: [], risks: [], hosts: named ? [] : [host], clients: [], action: 'block', timeoutMin: 60 };
+    breeds: [], risks: [], hosts: named ? [] : [host], clients: [], countries: [], action: 'block', timeoutMin: 60 };
 }
 
 /** The sensor's state, as the header shows it. */
@@ -183,6 +197,7 @@ export function ruleSummary(r: Rule): string {
   add('risk', r.risks);
   add('host', r.hosts);
   add('from', r.clients);
+  add('country', r.countries);
   return parts.join(' · ');
 }
 
@@ -222,7 +237,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   let networksError = '';
   let catalog: Catalog | null = null;
   let catalogAsked = false;
-  const picks: Record<PickField, string[]> = { apps: [], categories: [], breeds: [], risks: [] };
+  const picks: Record<PickField, string[]> = { apps: [], categories: [], breeds: [], risks: [], countries: [] };
   let chosenNetwork = '';
   const flowSort: SortState = { col: 'ts', dir: 'desc' };
   const appSort: SortState = { col: 'flows', dir: 'desc' };
@@ -282,8 +297,8 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     setHTML('ipsFlowsRows', sorted.length ? sorted.map((x) => '<tr>' +
       '<td>' + esc(fmtTime(x.ts)) + '</td>' +
       '<td>' + protoPill(x.l4) + '</td>' +
-      '<td>' + esc(x.client) + '</td>' +
-      '<td>' + esc(x.server) + ':' + x.serverPort + '</td>' +
+      '<td>' + flagged(x.client, x.clientCountry) + '</td>' +
+      '<td>' + flagged(x.server, x.serverCountry) + ':' + x.serverPort + '</td>' +
       '<td>' + pill(x.name || 'Unknown', x.guessed ? 'muted' : 'alt') + '</td>' +
       '<td>' + riskPill(x.severity, x.risks) + '</td>' +
       '<td>' + esc(x.category || '-') + '</td>' +
@@ -580,7 +595,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
 
   // ── rules ────────────────────────────────────────────────────────────────
   const PICK_IDS: Record<PickField, string> = { apps: 'ipsRuleAppsPick', categories: 'ipsRuleCategoriesPick',
-    breeds: 'ipsRuleBreedsPick', risks: 'ipsRuleRisksPick' };
+    breeds: 'ipsRuleBreedsPick', risks: 'ipsRuleRisksPick', countries: 'ipsRuleCountriesPick' };
   function drawPicks(): void {
     for (const f of Object.keys(PICK_IDS) as PickField[]) setHTML(PICK_IDS[f], pickHtml(f, picks[f], catalog));
   }
@@ -611,7 +626,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     const form = el('ipsRuleForm');
     if (form) form.style.display = on ? '' : 'none';
     editing = on ? (r || { id: 0, name: '', enabled: true, apps: [], categories: [], breeds: [], risks: [], hosts: [],
-      clients: [], action: 'log', timeoutMin: 0 }) : null;
+      clients: [], countries: [], action: 'log', timeoutMin: 0 }) : null;
     setText('ipsRuleMsg', '');
     if (!editing) { if (state) drawRules(state); return; }
     const e = editing;
@@ -623,6 +638,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     picks.categories = [...e.categories];
     picks.breeds = [...e.breeds];
     picks.risks = [...e.risks];
+    picks.countries = [...(e.countries || [])];
     drawPicks();
     loadCatalog();
     set('ipsRuleHosts', e.hosts.join(', '));
@@ -641,7 +657,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       id: editing.id, name: q('ipsRuleName'), action: q('ipsRuleAction'),
       enabled: !!el<HTMLInputElement>('ipsRuleEnabled')?.checked,
       apps: [...picks.apps], categories: [...picks.categories],
-      breeds: [...picks.breeds], risks: [...picks.risks],
+      breeds: [...picks.breeds], risks: [...picks.risks], countries: [...picks.countries],
       hosts: splitList(q('ipsRuleHosts')), clients: splitList(q('ipsRuleClients')),
       timeoutMin: Number(q('ipsRuleTimeout')) || 0,
     };

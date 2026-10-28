@@ -27,7 +27,7 @@ const mod = require(OUT);
 
 // THE PURE HELPERS.
 assert.strictEqual(mod.ruleSummary({ apps: ['BitTorrent'], categories: [], breeds: [], risks: ['*'], hosts: [],
-  clients: ['192.168.88.0/24'] }), 'app BitTorrent · risk * · from 192.168.88.0/24');
+  clients: ['192.168.88.0/24'], countries: ['CN'] }), 'app BitTorrent · risk * · from 192.168.88.0/24 · country CN');
 assert.strictEqual(mod.ACTION_TONE.block, 'err');
 assert.strictEqual(mod.resultTone('refused: ips-protected'), 'warn');
 assert.strictEqual(mod.resultTone('listed'), 'err');
@@ -38,7 +38,9 @@ assert.ok(mod.networkLabel({ interface: 'ether1', prefix: '203.0.113.0/30', gate
   why: 'ether1 is not a bridge' }).endsWith('cannot be joined: ether1 is not a bridge'));
 const cat = { ndpi: '4.14', apps: [{ name: 'NetFlix', category: 'Video', breed: 'Fun' },
   { name: 'BitTorrent', category: 'Download', breed: 'Acceptable' }, { name: 'YouTube', category: 'Video', breed: 'Fun' }],
-categories: ['Video', 'Download'], breeds: ['Safe', 'Fun'], risks: ['Known Proto on Non Std Port', 'Self-signed Cert'] };
+categories: ['Video', 'Download'], breeds: ['Safe', 'Fun'],
+risks: [{ name: 'Known Proto on Non Std Port', severity: 'Medium' }, { name: 'Self-signed Cert', severity: 'High' }],
+countries: [{ iso: 'CN', name: 'China' }, { iso: 'FR', name: 'France' }] };
 const apps = mod.pickHtml('apps', ['NetFlix', 'old<one>'], cat);
 assert.ok(apps.includes('data-ipsunpick="apps" data-v="NetFlix"') && apps.includes('old&lt;one&gt;'),
   'the chosen values, a value the catalogue does not name among them, are chips, escaped');
@@ -47,6 +49,12 @@ assert.ok(apps.includes('<optgroup label="Video"><option value="YouTube">') && !
 const risks = mod.pickHtml('risks', [], cat);
 assert.ok(risks.includes('<option value="*">Any risk</option>'), 'any risk is offered first');
 assert.ok(mod.pickHtml('breeds', [], null).includes(' disabled'), 'with no catalogue yet the list waits, disabled');
+assert.ok(risks.includes('Self-signed Cert (High)'), 'a risk is offered with its severity');
+const countries = mod.pickHtml('countries', ['CN'], cat);
+assert.ok(countries.includes('<option value="FR">France (FR)</option>') && !countries.includes('value="CN"') &&
+  countries.includes('data-v="CN"'), 'countries by name, the chosen one a chip');
+assert.ok(mod.pickHtml('countries', [], { ...cat, countries: [] }).includes('No geo database'), 'no geo database is said');
+assert.ok(mod.flagged('203.0.113.9', 'CN').includes('🇨🇳') && mod.flagged('192.168.1.1', '') === '192.168.1.1');
 assert.strictEqual(mod.severityRank('High'), 3);
 assert.strictEqual(mod.severityTone('Severe'), 'err');
 assert.strictEqual(mod.severityTone('Medium'), 'warn');
@@ -62,7 +70,7 @@ const ids = ['ipsBadge', 'ipsTabs', 'ipsStatePill', 'ipsModePill', 'ipsStatus', 
   'ipsListedFoot', 'ipsPacketsVal', 'ipsPacketsFoot', 'ipsTopVal', 'ipsTopFoot', 'ipsFlowFilter', 'ipsFlowMatched',
   'ipsFlowRisky', 'ipsFlowPause', 'ipsRisksHead', 'ipsRisksRows', 'ipsPanel-risks', 'ipsFlowsHead', 'ipsFlowsRows', 'ipsAppsHead', 'ipsAppsRows', 'ipsEventsHead', 'ipsEventsRows', 'ipsListedLoad',
   'ipsListedHead', 'ipsListedRows', 'ipsRulesRows', 'ipsRuleForm', 'ipsRuleFormTitle', 'ipsRuleName', 'ipsRuleAction',
-  'ipsRuleAppsPick', 'ipsRuleCategoriesPick', 'ipsRuleBreedsPick', 'ipsRuleRisksPick', 'ipsRuleHosts', 'ipsRuleClients',
+  'ipsRuleAppsPick', 'ipsRuleCategoriesPick', 'ipsRuleBreedsPick', 'ipsRuleRisksPick', 'ipsRuleCountriesPick', 'ipsRuleHosts', 'ipsRuleClients',
   'ipsRuleTimeout', 'ipsRuleEnabled', 'ipsRuleCancel', 'ipsRuleMsg', 'ipsRuleAddWrap', 'ipsRuleAdd', 'ipsSetupNote',
   'ipsSensorForm', 'ipsSensorAddress', 'ipsSensorEnforce', 'ipsSensorBytes', 'ipsSensorDisk', 'ipsSensorProtected',
   'ipsSensorImage', 'ipsSensorNetwork', 'ipsSensorNetworkHelp', 'ipsSensorDhcp', 'ipsSensorAddressField', 'ipsSensorToken', 'ipsSensorDelete', 'ipsSensorMsg', 'ipsScriptShow', 'ipsScriptCopy', 'ipsScript',

@@ -26,7 +26,7 @@ func listOf(s string) []string {
 // IPSRules is every rule, in the order the first match is taken.
 func (d *DB) IPSRules() ([]ips.Rule, error) {
 	rows, err := d.sql.Query(`SELECT id, name, enabled, apps, categories, breeds, risks, hosts, clients,
-	        action, timeout_min FROM ips_rules ORDER BY position, id`)
+	        countries, action, timeout_min FROM ips_rules ORDER BY position, id`)
 	if err != nil {
 		return nil, err
 	}
@@ -34,13 +34,14 @@ func (d *DB) IPSRules() ([]ips.Rule, error) {
 	out := []ips.Rule{}
 	for rows.Next() {
 		var r ips.Rule
-		var apps, cats, breeds, risks, hosts, clients string
+		var apps, cats, breeds, risks, hosts, clients, countries string
 		if err := rows.Scan(&r.ID, &r.Name, &r.Enabled, &apps, &cats, &breeds, &risks, &hosts, &clients,
-			&r.Action, &r.TimeoutMin); err != nil {
+			&countries, &r.Action, &r.TimeoutMin); err != nil {
 			return nil, err
 		}
 		r.Apps, r.Categories, r.Breeds = listOf(apps), listOf(cats), listOf(breeds)
 		r.Risks, r.Hosts, r.Clients = listOf(risks), listOf(hosts), listOf(clients)
+		r.Countries = listOf(countries)
 		out = append(out, r)
 	}
 	return out, rows.Err()
@@ -51,19 +52,19 @@ func (d *DB) IPSRules() ([]ips.Rule, error) {
 func (d *DB) SaveIPSRule(r ips.Rule) (int64, error) {
 	if r.ID == 0 {
 		res, err := d.sql.Exec(`INSERT INTO ips_rules (position, name, enabled, apps, categories, breeds, risks,
-		        hosts, clients, action, timeout_min)
-		        VALUES ((SELECT COALESCE(MAX(position), 0) + 1 FROM ips_rules), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		        hosts, clients, countries, action, timeout_min)
+		        VALUES ((SELECT COALESCE(MAX(position), 0) + 1 FROM ips_rules), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			r.Name, r.Enabled, jsonList(r.Apps), jsonList(r.Categories), jsonList(r.Breeds), jsonList(r.Risks),
-			jsonList(r.Hosts), jsonList(r.Clients), r.Action, r.TimeoutMin)
+			jsonList(r.Hosts), jsonList(r.Clients), jsonList(r.Countries), r.Action, r.TimeoutMin)
 		if err != nil {
 			return 0, err
 		}
 		return res.LastInsertId()
 	}
 	res, err := d.sql.Exec(`UPDATE ips_rules SET name = ?, enabled = ?, apps = ?, categories = ?, breeds = ?,
-	        risks = ?, hosts = ?, clients = ?, action = ?, timeout_min = ? WHERE id = ?`,
+	        risks = ?, hosts = ?, clients = ?, countries = ?, action = ?, timeout_min = ? WHERE id = ?`,
 		r.Name, r.Enabled, jsonList(r.Apps), jsonList(r.Categories), jsonList(r.Breeds), jsonList(r.Risks),
-		jsonList(r.Hosts), jsonList(r.Clients), r.Action, r.TimeoutMin, r.ID)
+		jsonList(r.Hosts), jsonList(r.Clients), jsonList(r.Countries), r.Action, r.TimeoutMin, r.ID)
 	if err != nil {
 		return 0, err
 	}

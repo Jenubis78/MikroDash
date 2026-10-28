@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS ips_rules (
           risks       TEXT    NOT NULL DEFAULT '[]',
           hosts       TEXT    NOT NULL DEFAULT '[]',
           clients     TEXT    NOT NULL DEFAULT '[]',
+          countries   TEXT    NOT NULL DEFAULT '[]',
           action      TEXT    NOT NULL DEFAULT 'log',
           timeout_min INTEGER NOT NULL DEFAULT 0
         );

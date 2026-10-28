@@ -37,6 +37,7 @@ import (
 
 	"mikrodash/internal/audit"
 	"mikrodash/internal/db"
+	"mikrodash/internal/geo"
 	"mikrodash/internal/ips"
 	"mikrodash/internal/routeros"
 	"mikrodash/internal/safe"
@@ -676,5 +677,16 @@ func (s *Server) ipsCatalog(w http.ResponseWriter, r *http.Request) {
 	if s.ipsAdminGate(w, r) == nil {
 		return
 	}
-	writeJSON(w, ips.TheCatalog())
+	// The countries are the geo database's own: a code the rule editor offers
+	// is one a flow can carry. None when this install has no DB-IP database.
+	countries, err := []geo.Country{}, error(nil)
+	if gdb, ok := geo.Current(); ok {
+		if countries, err = gdb.Countries(); err != nil {
+			countries = []geo.Country{}
+		}
+	}
+	writeJSON(w, struct {
+		ips.Catalog
+		Countries []geo.Country `json:"countries"`
+	}{ips.TheCatalog(), countries})
 }

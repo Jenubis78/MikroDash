@@ -23,7 +23,7 @@ import (
 // Stamping anything lower would make `Open` refuse the database it had just
 // written; stamping higher than the migrations listed would claim ones that
 // never ran.
-const schemaVersion = 39
+const schemaVersion = 40
 
 // portMigrations are the schema steps this port owns, keyed by the version they
 // take a database TO.
@@ -312,6 +312,8 @@ var portMigrations = map[int][]string{
 	// 39: the IPS sensor's network and DHCP. See ips_schema.go.
 	39: {`ALTER TABLE ips_sensors ADD COLUMN network TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE ips_sensors ADD COLUMN dhcp INTEGER NOT NULL DEFAULT 0`},
+	// 40: an IPS rule's countries (geofencing). See ips_schema.go.
+	40: {`ALTER TABLE ips_rules ADD COLUMN countries TEXT NOT NULL DEFAULT '[]'`},
 }
 
 // createSchema builds a new database at `path`.

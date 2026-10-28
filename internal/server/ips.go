@@ -46,6 +46,7 @@ import (
 	"time"
 
 	"mikrodash/internal/db"
+	"mikrodash/internal/geo"
 	"mikrodash/internal/guard"
 	"mikrodash/internal/ips"
 	"mikrodash/internal/routeros"
@@ -425,6 +426,16 @@ func (r *ipsReader) sensorAddress() (string, error) {
 
 // handle decides one flow and records what was decided.
 func (r *ipsReader) handle(f ips.Flow) {
+	// The countries are MikroDash's, from the same database the Connections
+	// page reads; a private address has none.
+	if gdb, ok := geo.Current(); ok {
+		if loc, found := gdb.Lookup(f.Client); found {
+			f.ClientCountry = loc.Country
+		}
+		if loc, found := gdb.Lookup(f.Server); found {
+			f.ServerCountry = loc.Country
+		}
+	}
 	d := ips.Decide(r.e.currentRules(), f)
 	view := IPSFlowView{Flow: f, Action: d.Action, Rule: d.RuleName, Severity: ips.WorstSeverity(f.Risks)}
 	now := time.Now()
