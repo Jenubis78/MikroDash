@@ -108,11 +108,15 @@ type IPSSensor struct {
 	Protected  []string `json:"protected"`
 	Disk       string   `json:"disk"`
 	Image      string   `json:"image"`
+	// Network is the router interface the container joins; empty = by address.
+	Network string `json:"network"`
+	// DHCP leaves the address to the network's DHCP server; Address is then empty.
+	DHCP bool `json:"dhcp"`
 }
 
 // IPSSensors is every router's sensor.
 func (d *DB) IPSSensors() ([]IPSSensor, error) {
-	rows, err := d.sql.Query(`SELECT router_id, address, token, enforce, sniff_bytes, protected, disk, image
+	rows, err := d.sql.Query(`SELECT router_id, address, token, enforce, sniff_bytes, protected, disk, image, network, dhcp
 	   FROM ips_sensors ORDER BY router_id`)
 	if err != nil {
 		return nil, err
@@ -123,7 +127,7 @@ func (d *DB) IPSSensors() ([]IPSSensor, error) {
 		var s IPSSensor
 		var protected string
 		if err := rows.Scan(&s.RouterID, &s.Address, &s.Token, &s.Enforce, &s.SniffBytes, &protected,
-			&s.Disk, &s.Image); err != nil {
+			&s.Disk, &s.Image, &s.Network, &s.DHCP); err != nil {
 			return nil, err
 		}
 		s.Protected = listOf(protected)
@@ -134,12 +138,14 @@ func (d *DB) IPSSensors() ([]IPSSensor, error) {
 
 // SaveIPSSensor creates or replaces a router's sensor.
 func (d *DB) SaveIPSSensor(s IPSSensor) error {
-	_, err := d.sql.Exec(`INSERT INTO ips_sensors (router_id, address, token, enforce, sniff_bytes, protected, disk, image)
-	        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	_, err := d.sql.Exec(`INSERT INTO ips_sensors (router_id, address, token, enforce, sniff_bytes, protected, disk, image,
+	        network, dhcp)
+	        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	        ON CONFLICT (router_id) DO UPDATE SET address = excluded.address, token = excluded.token,
 	        enforce = excluded.enforce, sniff_bytes = excluded.sniff_bytes, protected = excluded.protected,
-	        disk = excluded.disk, image = excluded.image`,
-		s.RouterID, s.Address, s.Token, s.Enforce, s.SniffBytes, jsonList(s.Protected), s.Disk, s.Image)
+	        disk = excluded.disk, image = excluded.image, network = excluded.network, dhcp = excluded.dhcp`,
+		s.RouterID, s.Address, s.Token, s.Enforce, s.SniffBytes, jsonList(s.Protected), s.Disk, s.Image,
+		s.Network, s.DHCP)
 	return err
 }
 

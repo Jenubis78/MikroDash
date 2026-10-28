@@ -124,15 +124,27 @@ func TestASensorOnARouterNetworkJoinsItsBridge(t *testing.T) {
 		{"address": "192.168.20.1/24", "interface": "vlan20"},
 		{"address": "192.168.30.1/24", "interface": "vlan30"},
 		{"address": "203.0.113.2/30", "interface": "ether1"},
+		{"address": "10.9.9.1/24", "interface": "bridge", "disabled": "true"},
 	}
 	bridges := []routeros.Reply{{"name": "bridge", "vlan-filtering": "true"}, {"name": "br-old", "vlan-filtering": "false"}}
 	vlans := []routeros.Reply{{"name": "vlan20", "interface": "bridge", "vlan-id": "20"},
 		{"name": "vlan30", "interface": "br-old", "vlan-id": "30"}}
-	find := func(a string) (*LANAttach, error) {
-		return FindLAN(netip.MustParseAddr(a), addrs, bridges, vlans)
+	nets := Networks(addrs, bridges, vlans)
+	if len(nets) != 4 {
+		t.Fatalf("networks: %+v", nets)
+	}
+	if nets[1].VLAN != 20 || nets[1].Bridge != "bridge" || nets[1].Why != "" || nets[2].Why == "" || nets[3].Why == "" {
+		t.Errorf("attachability: %+v", nets)
+	}
+	find := func(a, iface string) (*LANAttach, error) {
+		var addr netip.Addr
+		if a != "" {
+			addr = netip.MustParseAddr(a)
+		}
+		return FindLAN(addr, iface, nets)
 	}
 
-	l, err := find("192.168.11.250")
+	l, err := find("192.168.11.250", "")
 	if err != nil || l == nil || l.Bridge != "bridge" || l.Gateway.String() != "192.168.11.1" || l.Bits != 24 || l.PVID != 0 {
 		t.Fatalf("the bridge's own network: %+v %v", l, err)
 	}
@@ -149,10 +161,21 @@ func TestASensorOnARouterNetworkJoinsItsBridge(t *testing.T) {
 		}
 	}
 
-	if l, err := find("192.168.20.9"); err != nil || l.Bridge != "bridge" || l.PVID != 20 {
-		t.Errorf("a VLAN on a filtering bridge: %+v %v", l, err)
-	} else if s := ContainerScript(ScriptParams{Sensor: netip.MustParseAddr("192.168.20.9"), LAN: l}); !strings.Contains(s, "interface=veth-mikrodash-dpi pvid=20 ") {
-		t.Errorf("the VLAN is the port's pvid:\n%s", s)
+	// THE VLAN CHOSEN BY NAME, AND BY DHCP: no address, the VLAN as the pvid.
+	l, err = find("", "vlan20")
+	if err != nil || l.Bridge != "bridge" || l.PVID != 20 {
+		t.Fatalf("VLAN 20 chosen, by DHCP: %+v %v", l, err)
+	}
+	s = ContainerScript(ScriptParams{LAN: l, DHCP: true})
+	if !strings.Contains(s, "/interface/veth/add name=veth-mikrodash-dpi dhcp=yes ") ||
+		!strings.Contains(s, "interface=veth-mikrodash-dpi pvid=20 ") || strings.Contains(s, "gateway=") {
+		t.Errorf("a DHCP sensor in VLAN 20:\n%s", s)
+	}
+	if _, err := find("192.168.11.250", "vlan20"); err == nil || !strings.Contains(err.Error(), "not in 192.168.20.0/24") {
+		t.Errorf("an address outside the chosen network: %v", err)
+	}
+	if _, err := find("", "ether9"); err == nil {
+		t.Error("a network the router does not have must be refused")
 	}
 	for addr, why := range map[string]string{
 		"192.168.30.9":   "does not filter VLANs",
@@ -161,11 +184,19 @@ func TestASensorOnARouterNetworkJoinsItsBridge(t *testing.T) {
 		"192.168.11.255": "not a host address",
 		"192.168.11.0":   "not a host address",
 	} {
-		if _, err := find(addr); err == nil || !strings.Contains(err.Error(), why) {
+		if _, err := find(addr, ""); err == nil || !strings.Contains(err.Error(), why) {
 			t.Errorf("%s: %v, want %q", addr, err, why)
 		}
 	}
-	if l, err := find("172.31.255.2"); l != nil || err != nil {
+	if l, err := find("172.31.255.2", ""); l != nil || err != nil {
 		t.Errorf("an address outside every network gets its own /30: %+v %v", l, err)
+	}
+}
+
+func TestTheLeaseIsReadFromTheVeth(t *testing.T) {
+	for in, want := range map[string]string{"192.168.11.57/24": "192.168.11.57", "192.168.11.57": "192.168.11.57", "": "invalid IP"} {
+		if got := LeasedAddress(routeros.Reply{"dhcp-address": in}).String(); got != want {
+			t.Errorf("%q: %s, want %s", in, got, want)
+		}
 	}
 }

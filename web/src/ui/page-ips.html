@@ -165,9 +165,21 @@
             <form id="ipsSensorForm" autocomplete="off">
               <div class="ff-grid">
                 <div class="ff">
+                  <label class="sform-label" for="ipsSensorNetwork">Network</label>
+                  <select class="sform-input" id="ipsSensorNetwork">
+                    <option value="">By the address</option>
+                  </select>
+                  <div class="ff-help" id="ipsSensorNetworkHelp">The bridge or VLAN the container joins, read from the router.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsSensorDhcp">Address by DHCP</label>
+                  <label class="ff-toggle"><span class="ff-toggle-state"></span><span class="stoggle-switch"><input type="checkbox" id="ipsSensorDhcp"><span class="stoggle-track"></span><span class="stoggle-thumb"></span></span></label>
+                  <div class="ff-help">The network's DHCP server gives the address; MikroDash reads the lease.</div>
+                </div>
+                <div class="ff" id="ipsSensorAddressField">
                   <label class="sform-label" for="ipsSensorAddress">Sensor address <span class="ff-req">*</span></label>
                   <input class="sform-input" id="ipsSensorAddress" placeholder="192.168.88.250" spellcheck="false">
-                  <div class="ff-help">An address in one of the router's networks (it joins that bridge), or the .2 of a free /30.</div>
+                  <div class="ff-help">In the chosen network, or any of the router's; else the .2 of a free /30.</div>
                 </div>
                 <div class="ff">
                   <label class="sform-label" for="ipsSensorEnforce">Enforce</label>

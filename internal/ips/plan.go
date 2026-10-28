@@ -23,6 +23,7 @@ package ips
 // through the slow path before fasttrack takes the connection.
 
 import (
+	"errors"
 	"fmt"
 	"net/netip"
 	"sort"
@@ -224,6 +225,8 @@ type ScriptParams struct {
 	Sensor netip.Addr
 	// LAN puts the sensor on one of the router's existing networks instead.
 	LAN *LANAttach
+	// DHCP leaves the address to the network's DHCP server (LAN only).
+	DHCP bool
 	// Disk is where the image is unpacked, e.g. "usb1".
 	Disk  string
 	Image string
@@ -239,59 +242,118 @@ type LANAttach struct {
 	PVID    int
 }
 
-// FindLAN says which of the router's networks holds the sensor's address, and
-// how the container joins it: nil when none does (the sensor gets a /30 of its
-// own), an error when one does but the script cannot attach to it.
+// Network is one of the router's IPv4 networks, as the Setup tab offers it.
 //
 // A network on a bridge is joined as a port of that bridge. A network on a VLAN
 // interface whose parent is a VLAN-filtering bridge is joined as a port of that
 // bridge with the VLAN as its pvid, which RouterOS turns into an untagged
 // membership on its own. Anything else (a physical port, a VLAN on a bridge that
-// does not filter) has no bridge the veth can be put on.
-func FindLAN(sensor netip.Addr, addresses, bridges, vlans []routeros.Reply) (*LANAttach, error) {
+// does not filter) has no bridge the veth can be put on: Why says so.
+type Network struct {
+	// Interface is what the router's address sits on, and the key the page
+	// stores: a bridge, or a VLAN interface.
+	Interface string `json:"interface"`
+	Prefix    string `json:"prefix"`
+	Gateway   string `json:"gateway"`
+	Bridge    string `json:"bridge"`
+	VLAN      int    `json:"vlan"`
+	Why       string `json:"why"`
+}
+
+// Attach is how the container joins this network, or why it cannot.
+func (n Network) Attach() (*LANAttach, error) {
+	if n.Why != "" {
+		return nil, errors.New(n.Why)
+	}
+	pf := netip.MustParsePrefix(n.Gateway + "/" + strings.SplitN(n.Prefix, "/", 2)[1])
+	return &LANAttach{Bridge: n.Bridge, Gateway: pf.Addr(), Bits: pf.Bits(), PVID: n.VLAN}, nil
+}
+
+// Networks is every enabled IPv4 network the router has an address on.
+func Networks(addresses, bridges, vlans []routeros.Reply) []Network {
+	out := []Network{}
 	for _, r := range addresses {
-		if r["disabled"] == "true" {
-			continue
-		}
 		pf, err := netip.ParsePrefix(strings.TrimSpace(r["address"]))
-		if err != nil || !pf.Masked().Contains(sensor) {
+		if r["disabled"] == "true" || err != nil || !pf.Addr().Is4() {
 			continue
 		}
-		if pf.Addr() == sensor {
-			return nil, fmt.Errorf("%s is the router's own address", sensor)
+		n := Network{Interface: r["interface"], Prefix: pf.Masked().String(), Gateway: pf.Addr().String()}
+		n.Bridge, n.VLAN, n.Why = attachOf(n.Interface, bridges, vlans)
+		if n.Why == "" && pf.Bits() > 30 {
+			n.Why = n.Prefix + " has no room for another host"
 		}
-		if pf.Bits() > 30 || sensor == pf.Masked().Addr() || isBroadcast(pf, sensor) {
-			return nil, fmt.Errorf("%s is not a host address of %s", sensor, pf.Masked())
+		out = append(out, n)
+	}
+	return out
+}
+
+func attachOf(iface string, bridges, vlans []routeros.Reply) (string, int, string) {
+	for _, b := range bridges {
+		if b["name"] == iface {
+			return iface, 0, ""
 		}
-		at := &LANAttach{Gateway: pf.Addr(), Bits: pf.Bits()}
-		iface := r["interface"]
+	}
+	for _, v := range vlans {
+		if v["name"] != iface {
+			continue
+		}
 		for _, b := range bridges {
-			if b["name"] == iface {
-				at.Bridge = iface
-				return at, nil
-			}
-		}
-		for _, v := range vlans {
-			if v["name"] != iface {
+			if b["name"] != v["interface"] {
 				continue
 			}
-			for _, b := range bridges {
-				if b["name"] != v["interface"] {
-					continue
-				}
-				if b["vlan-filtering"] != "true" {
-					return nil, fmt.Errorf("%s is VLAN %s on bridge %s, which does not filter VLANs: the container cannot be put in that VLAN",
-						iface, v["vlan-id"], b["name"])
-				}
-				at.Bridge = b["name"]
-				at.PVID, _ = strconv.Atoi(v["vlan-id"])
-				return at, nil
+			if b["vlan-filtering"] != "true" {
+				return "", 0, fmt.Sprintf("%s is VLAN %s on bridge %s, which does not filter VLANs: the container cannot be put in that VLAN",
+					iface, v["vlan-id"], b["name"])
 			}
-			return nil, fmt.Errorf("%s is a VLAN on %s, which is not a bridge", iface, v["interface"])
+			id, _ := strconv.Atoi(v["vlan-id"])
+			return b["name"], id, ""
 		}
-		return nil, fmt.Errorf("%s is on %s, which is not a bridge: use a bridge's network, or an address of its own", pf.Masked(), iface)
+		return "", 0, fmt.Sprintf("%s is a VLAN on %s, which is not a bridge", iface, v["interface"])
 	}
-	return nil, nil
+	return "", 0, iface + " is not a bridge: use a bridge's network, or an address of its own"
+}
+
+// NetworkOf is the network a choice names: by interface when one was chosen,
+// else the one whose prefix holds the sensor's address. ok is false when
+// neither finds one (the sensor then gets a /30 of its own).
+func NetworkOf(nets []Network, iface string, sensor netip.Addr) (Network, bool) {
+	for _, n := range nets {
+		if iface != "" && n.Interface == iface {
+			return n, true
+		}
+		if iface == "" && sensor.IsValid() && netip.MustParsePrefix(n.Prefix).Contains(sensor) {
+			return n, true
+		}
+	}
+	return Network{}, false
+}
+
+// FindLAN says how a sensor with this address (or, with DHCP, none) joins the
+// network `iface` names, or the network that holds its address when none is
+// named: nil when no network applies (a /30 of its own), an error when one
+// does but the container cannot be attached to it or the address does not fit.
+func FindLAN(sensor netip.Addr, iface string, nets []Network) (*LANAttach, error) {
+	n, ok := NetworkOf(nets, iface, sensor)
+	if !ok {
+		if iface != "" {
+			return nil, fmt.Errorf("the router has no network on %s", iface)
+		}
+		return nil, nil
+	}
+	at, err := n.Attach()
+	if err != nil || !sensor.IsValid() {
+		return at, err
+	}
+	pf := netip.MustParsePrefix(n.Prefix)
+	switch {
+	case !pf.Contains(sensor):
+		return nil, fmt.Errorf("%s is not in %s, the network on %s", sensor, n.Prefix, n.Interface)
+	case sensor == at.Gateway:
+		return nil, fmt.Errorf("%s is the router's own address", sensor)
+	case sensor == pf.Addr() || isBroadcast(pf, sensor):
+		return nil, fmt.Errorf("%s is not a host address of %s", sensor, pf)
+	}
+	return at, nil
 }
 
 func isBroadcast(pf netip.Prefix, a netip.Addr) bool {
@@ -323,7 +385,11 @@ func ContainerScript(p ScriptParams) string {
 	fmt.Fprintf(&b, "# MikroDash IPS sensor. Once, with physical access, if containers are not enabled yet:\n")
 	fmt.Fprintf(&b, "#   /system/device-mode/update container=yes   (then press the reset button or power-cycle)\n")
 	if l := p.LAN; l != nil {
-		fmt.Fprintf(&b, "/interface/veth/add name=veth-mikrodash-dpi address=%s/%d gateway=%s %s\n", p.Sensor, l.Bits, l.Gateway, c)
+		if p.DHCP {
+			fmt.Fprintf(&b, "/interface/veth/add name=veth-mikrodash-dpi dhcp=yes %s\n", c)
+		} else {
+			fmt.Fprintf(&b, "/interface/veth/add name=veth-mikrodash-dpi address=%s/%d gateway=%s %s\n", p.Sensor, l.Bits, l.Gateway, c)
+		}
 		pvid := ""
 		if l.PVID > 0 {
 			pvid = " pvid=" + strconv.Itoa(l.PVID)
@@ -341,5 +407,28 @@ func ContainerScript(p ScriptParams) string {
 	fmt.Fprintf(&b, "  cmd=\"--token %s\" logging=yes start-on-boot=yes %s\n", p.Token, c)
 	fmt.Fprintf(&b, "# Wait for status=stopped (the image is pulled), then:\n")
 	fmt.Fprintf(&b, "/container/start [find where comment=\"%s sensor\"]\n", Marker)
+	if p.DHCP {
+		fmt.Fprintf(&b, "# MikroDash reads the lease from /interface/veth (dhcp-address). Reserve it on the DHCP server\n")
+		fmt.Fprintf(&b, "# by the veth's mac-address, or press Apply again on the IPS page whenever it changes.\n")
+	}
 	return b.String()
+}
+
+// Veth is the sensor's veth on the router, as the script names it.
+const Veth = "veth-mikrodash-dpi"
+
+// LeasedAddress is the address a DHCP sensor's veth holds now, from its
+// `/interface/veth/print` row: `dhcp-address`, with or without a prefix length.
+// The zero Addr when it has no lease (the container is stopped, or the server
+// has not answered).
+func LeasedAddress(row routeros.Reply) netip.Addr {
+	v := strings.TrimSpace(row["dhcp-address"])
+	if i := strings.IndexByte(v, '/'); i >= 0 {
+		v = v[:i]
+	}
+	a, err := netip.ParseAddr(v)
+	if err != nil || !a.Is4() {
+		return netip.Addr{}
+	}
+	return a
 }

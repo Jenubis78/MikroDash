@@ -13,7 +13,9 @@ package db
 // sends (sealed with the settings envelope before it gets here, never in the
 // clear), whether its verdicts are written to the router (`enforce`) or only
 // recorded, and the operator's protected addresses. A router without a row has
-// no IPS.
+// no IPS. `network` is the router interface (a bridge, or a VLAN on one) the
+// container joins, empty to go by the address; `dhcp` leaves the address to
+// that network's DHCP server, and `address` is then empty (migration 39).
 //
 // ips_events is what the rules decided, one row per flow a rule matched with
 // any action but allow. `result` is listed, monitor (not enforcing), refused
@@ -42,7 +44,9 @@ CREATE TABLE IF NOT EXISTS ips_sensors (
           sniff_bytes INTEGER NOT NULL DEFAULT 20000,
           protected   TEXT    NOT NULL DEFAULT '[]',
           disk        TEXT    NOT NULL DEFAULT '',
-          image       TEXT    NOT NULL DEFAULT ''
+          image       TEXT    NOT NULL DEFAULT '',
+          network     TEXT    NOT NULL DEFAULT '',
+          dhcp        INTEGER NOT NULL DEFAULT 0
         );
 CREATE TABLE IF NOT EXISTS ips_events (
           id          INTEGER PRIMARY KEY,

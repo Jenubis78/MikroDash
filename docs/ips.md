@@ -35,16 +35,22 @@ MikroDash: the rules -> address lists -> raw drop rules on the router
 1. **Containers.** Install the `container` package and, once, with physical access:
    `/system/device-mode/update container=yes`, then press the reset button or
    power-cycle. An external disk (`usb1`) is recommended.
-2. **Setup tab: the sensor.** Give the container an address, the disk, and the
+2. **Setup tab: the sensor.** Choose where the container lives, the disk, and the
    addresses that must never be listed (your workstation, servers, resolvers). The
    router, MikroDash and the sensor are always protected. Leave **Enforce** off to
-   start with. The address decides where the container lives:
-   - **inside one of the router's networks** (`192.168.11.250` on a `192.168.11.1/24`
-     bridge): it becomes a port of that bridge, with the network's VLAN as its `pvid`
-     when the network is a VLAN on a VLAN-filtering bridge. Nothing else is created,
-     and MikroDash reaches it directly;
-   - **anywhere else**: it is the second address of a /30 of its own
-     (`172.31.255.2`), with a bridge and the router's address on it.
+   start with.
+   - **Network** lists the router's networks. A bridge's own network is joined as a
+     port of that bridge; a VLAN on a VLAN-filtering bridge as a port of that bridge
+     with the VLAN as its `pvid`. A network that cannot be joined (a physical port, a
+     VLAN on a bridge that does not filter) is listed, greyed, with the reason.
+   - **Address by DHCP** leaves the address to that network's DHCP server. MikroDash
+     reads the lease off the veth (`dhcp-address` in `/interface/veth/print`) before
+     every connection. Reserve it on the DHCP server by the veth's `mac-address`, or
+     press Apply again when it changes: the mangle rule copies to the address it was
+     applied with.
+   - **Or a fixed address**: one in the chosen network, or in any of the router's
+     networks when none is chosen; any other address is the second of a /30 of its
+     own (`172.31.255.2`), with a bridge and the router's address on it.
 3. **Show the commands**, and run them in the router's terminal. They create the
    veth, its bridge port (and, on a /30, the bridge and the router's address) and
    the container, with the token MikroDash will send. The image is `ghcr.io/jenubis78/mikrodash-dpi`, built

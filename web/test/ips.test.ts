@@ -32,6 +32,10 @@ assert.strictEqual(mod.ACTION_TONE.block, 'err');
 assert.strictEqual(mod.resultTone('refused: ips-protected'), 'warn');
 assert.strictEqual(mod.resultTone('listed'), 'err');
 assert.ok(mod.statePill({ state: 'connected' }).includes('sensor up'));
+assert.strictEqual(mod.networkLabel({ interface: 'vlan11', prefix: '192.168.11.0/24', gateway: '192.168.11.1', bridge: 'bridge',
+  vlan: 11, why: '' }), 'vlan11 - 192.168.11.0/24 (VLAN 11 on bridge)');
+assert.ok(mod.networkLabel({ interface: 'ether1', prefix: '203.0.113.0/30', gateway: '', bridge: '', vlan: 0,
+  why: 'x' }).endsWith('cannot be joined'));
 say('ok - the IPS helpers summarise a rule and tone its outcomes');
 
 const ids = ['ipsBadge', 'ipsTabs', 'ipsStatePill', 'ipsModePill', 'ipsStatus', 'ipsSeenVal', 'ipsListedVal',
@@ -41,7 +45,7 @@ const ids = ['ipsBadge', 'ipsTabs', 'ipsStatePill', 'ipsModePill', 'ipsStatus', 
   'ipsRuleApps', 'ipsRuleCategories', 'ipsRuleBreeds', 'ipsRuleRisks', 'ipsRuleHosts', 'ipsRuleClients',
   'ipsRuleTimeout', 'ipsRuleEnabled', 'ipsRuleCancel', 'ipsRuleMsg', 'ipsRuleAddWrap', 'ipsRuleAdd', 'ipsSetupNote',
   'ipsSensorForm', 'ipsSensorAddress', 'ipsSensorEnforce', 'ipsSensorBytes', 'ipsSensorDisk', 'ipsSensorProtected',
-  'ipsSensorImage', 'ipsSensorToken', 'ipsSensorDelete', 'ipsSensorMsg', 'ipsScriptShow', 'ipsScriptCopy', 'ipsScript',
+  'ipsSensorImage', 'ipsSensorNetwork', 'ipsSensorNetworkHelp', 'ipsSensorDhcp', 'ipsSensorAddressField', 'ipsSensorToken', 'ipsSensorDelete', 'ipsSensorMsg', 'ipsScriptShow', 'ipsScriptCopy', 'ipsScript',
   'ipsPlanShow', 'ipsApply', 'ipsRemove', 'ipsPlanMsg', 'ipsPlanWarnings', 'ipsPlanRows',
   'ipsPanel-flows', 'ipsPanel-apps', 'ipsPanel-events', 'ipsPanel-rules', 'ipsPanel-setup'];
 const doc = makeDoc(ids, { allowUnknown: ['#ipsTabs [data-ipstab]'] });

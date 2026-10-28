@@ -120,8 +120,13 @@ type ipsReader struct {
 	cfg      db.IPSSensor // Token unsealed
 	cancel   context.CancelFunc
 	writes   chan ipsWrite
+	// sn is the router's session, for a DHCP sensor's lease; nil in a test.
+	sn *session.Session
 
-	mu        sync.Mutex
+	mu sync.Mutex
+	// addr is where the sensor is read: the configured address, or a DHCP
+	// sensor's lease as last read off its veth.
+	addr      string
 	status    IPSStatus
 	flows     []IPSFlowView // newest last
 	apps      map[string]*IPSAppCount
@@ -211,8 +216,8 @@ func (e *ipsEngine) sync() {
 }
 
 func sameSensor(a, b db.IPSSensor) bool {
-	return a.Address == b.Address && a.Token == b.Token && a.Enforce == b.Enforce &&
-		strings.Join(a.Protected, ",") == strings.Join(b.Protected, ",")
+	return a.Address == b.Address && a.Token == b.Token && a.Enforce == b.Enforce && a.DHCP == b.DHCP &&
+		a.Network == b.Network && strings.Join(a.Protected, ",") == strings.Join(b.Protected, ",")
 }
 
 func (e *ipsEngine) reader(routerID string) *ipsReader {
@@ -223,10 +228,12 @@ func (e *ipsEngine) reader(routerID string) *ipsReader {
 
 func (e *ipsEngine) startReader(cfg db.IPSSensor) *ipsReader {
 	ctx, cancel := context.WithCancel(e.ctx)
-	r := &ipsReader{e: e, routerID: cfg.RouterID, cfg: cfg, cancel: cancel,
+	r := &ipsReader{e: e, routerID: cfg.RouterID, cfg: cfg, cancel: cancel, addr: cfg.Address,
 		writes: make(chan ipsWrite, ipsWriteQueue), apps: map[string]*IPSAppCount{}, listed: map[string]time.Time{},
-		status: IPSStatus{State: "connecting", Since: nowMillis(), Sensor: net.JoinHostPort(cfg.Address,
-			strconv.Itoa(ips.ReaderPort)), Enforce: cfg.Enforce}}
+		status: IPSStatus{State: "connecting", Since: nowMillis(), Enforce: cfg.Enforce}}
+	if cfg.Address != "" {
+		r.status.Sensor = net.JoinHostPort(cfg.Address, strconv.Itoa(ips.ReaderPort))
+	}
 	go r.run(ctx)
 	return r
 }
@@ -249,6 +256,9 @@ func (r *ipsReader) run(ctx context.Context) {
 		sn, err := r.e.s.sessions.Retain(r.routerID, hold)
 		if err == nil {
 			defer r.e.s.sessions.Drop(r.routerID, hold)
+			r.mu.Lock()
+			r.sn = sn
+			r.mu.Unlock()
 			go r.writer(ctx, sn)
 			break
 		}
@@ -308,8 +318,12 @@ func errMessage(err error) string {
 // whether the sensor accepted the token on it.
 func (r *ipsReader) readOnce(ctx context.Context) (connected bool, err error) {
 	r.setState("connecting", "")
+	addr, err := r.sensorAddress()
+	if err != nil {
+		return false, err
+	}
 	d := net.Dialer{Timeout: ipsDialTimeout}
-	conn, err := d.DialContext(ctx, "tcp", net.JoinHostPort(r.cfg.Address, ipsReaderPort))
+	conn, err := d.DialContext(ctx, "tcp", net.JoinHostPort(addr, ipsReaderPort))
 	if err != nil {
 		return false, err
 	}
@@ -348,6 +362,41 @@ func (r *ipsReader) readOnce(ctx context.Context) (connected bool, err error) {
 			r.handle(*line.Flow)
 		}
 	}
+}
+
+// sensorAddress is where to dial: the configured address, or a DHCP sensor's
+// lease, read off its veth before every connection. A lease that moved is
+// followed at once, and said: the mangle rule still copies to the old address
+// until Apply rewrites it.
+func (r *ipsReader) sensorAddress() (string, error) {
+	r.mu.Lock()
+	sn, was := r.sn, r.addr
+	r.mu.Unlock()
+	if !r.cfg.DHCP {
+		return was, nil
+	}
+	if sn == nil || !sn.Connected() {
+		return "", errors.New("the router is not connected, so the sensor's DHCP lease cannot be read")
+	}
+	rows, err := sn.Exec(routeros.Cmd{Path: "/interface/veth/print",
+		Args: []string{"=.proplist=dhcp-address", "?name=" + ips.Veth}, Timeout: ipsCmdTimeout})
+	if err != nil || len(rows) == 0 {
+		return "", errors.New("the router has no " + ips.Veth + ": run the container commands from Setup")
+	}
+	a := ips.LeasedAddress(rows[0])
+	if !a.IsValid() {
+		return "", errors.New("the sensor has no DHCP lease yet: is its container running?")
+	}
+	now := a.String()
+	r.mu.Lock()
+	r.addr = now
+	r.status.Sensor = net.JoinHostPort(now, ipsReaderPort)
+	if was != "" && was != now {
+		r.protAt = time.Time{} // the guard protects the new address from now on
+		log.Printf("[ips] %s: the sensor's lease moved from %s to %s; Apply rewrites the mangle rule", r.routerID, was, now)
+	}
+	r.mu.Unlock()
+	return now, nil
 }
 
 // handle decides one flow and records what was decided.
@@ -512,7 +561,10 @@ func (r *ipsReader) protectedSet(sn *session.Session) guard.IPSProtected {
 		Timeout: ipsCmdTimeout}); aerr == nil {
 		self, _ = guard.SelfAddresses(active, []string{sn.Username()})
 	}
-	p = guard.NewIPSProtected(addrs, err == nil, self, r.cfg.Address, r.cfg.Protected)
+	r.mu.Lock()
+	sensor := r.addr
+	r.mu.Unlock()
+	p = guard.NewIPSProtected(addrs, err == nil, self, sensor, r.cfg.Protected)
 	r.mu.Lock()
 	r.protected, r.protAt = p, time.Now()
 	r.mu.Unlock()

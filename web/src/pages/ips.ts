@@ -43,6 +43,15 @@ interface Event {
 }
 interface Sensor {
   address: string; enforce: boolean; sniffBytes: number; protected: string[]; disk: string; image: string;
+  network: string; dhcp: boolean;
+}
+/** One of the router's networks, as GET /api/ips/networks lists it. */
+export interface Network { interface: string; prefix: string; gateway: string; bridge: string; vlan: number; why: string }
+
+/** A network as its option reads: the interface, the subnet, and the VLAN when there is one. */
+export function networkLabel(n: Network): string {
+  return n.interface + ' - ' + n.prefix + (n.vlan ? ' (VLAN ' + n.vlan + ' on ' + n.bridge + ')' : '') +
+    (n.why ? ' - cannot be joined' : '');
 }
 interface State {
   configured: boolean; sensor: Sensor | null; status: Status; flows: Flow[]; apps: AppCount[];
@@ -121,6 +130,9 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   let matchedOnly = false;
   let editing: Rule | null = null;
   let formFilledFor = '';
+  let networks: Network[] = [];
+  let networksFor = '';
+  let chosenNetwork = '';
   const flowSort: SortState = { col: 'ts', dir: 'desc' };
   const appSort: SortState = { col: 'flows', dir: 'desc' };
   const eventSort: SortState = { col: 'ts', dir: 'desc' };
@@ -245,8 +257,42 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     set('ipsSensorProtected', (sn?.protected || []).join('\n'));
     const enf = el<HTMLInputElement>('ipsSensorEnforce');
     if (enf) enf.checked = !!sn?.enforce;
+    const dhcp = el<HTMLInputElement>('ipsSensorDhcp');
+    if (dhcp) dhcp.checked = !!sn?.dhcp;
+    chosenNetwork = sn?.network || '';
+    drawNetworks();
+    syncDhcp();
     const img = el<HTMLInputElement>('ipsSensorImage');
     if (img) img.placeholder = s.defaults.image;
+  }
+
+  function drawNetworks(): void {
+    const sel = el<HTMLSelectElement>('ipsSensorNetwork');
+    if (!sel) return;
+    const keep = chosenNetwork;
+    sel.innerHTML = '<option value="">By the address</option>' + networks.map((n) =>
+      '<option value="' + esc(n.interface) + '"' + (n.why ? ' disabled' : '') + '>' + esc(networkLabel(n)) + '</option>').join('') +
+      (keep && !networks.some((n) => n.interface === keep) ? '<option value="' + esc(keep) + '">' + esc(keep) + '</option>' : '');
+    sel.value = keep;
+    const n = networks.find((x) => x.interface === keep);
+    setText('ipsSensorNetworkHelp', n ? (n.why || 'Joins ' + n.bridge + (n.vlan ? ' with pvid ' + n.vlan : '') + '; the router is ' + n.gateway + '.')
+      : 'The bridge or VLAN the container joins, read from the router.');
+  }
+
+  function loadNetworks(): void {
+    if (!state?.admin || !routerId || networksFor === routerId) return;
+    networksFor = routerId;
+    call<{ networks: Network[] }>('/api/ips/networks' + qs())
+      .then((d) => { networks = d.networks; drawNetworks(); })
+      .catch(() => { networksFor = ''; });
+  }
+
+  // BY DHCP, the address is the server's: its field goes, and a network must
+  // be chosen, since no address says which one.
+  function syncDhcp(): void {
+    const on = !!el<HTMLInputElement>('ipsSensorDhcp')?.checked;
+    const f = el('ipsSensorAddressField');
+    if (f) f.style.display = on ? 'none' : '';
   }
 
   function drawSetup(s: State): void {
@@ -257,6 +303,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       const n = el(id);
       if (n) n.style.display = s.admin ? '' : 'none';
     }
+    if (tab === 'setup') loadNetworks();
     el('ipsSensorDelete')?.toggleAttribute('disabled', !s.configured);
     el('ipsSensorToken')?.toggleAttribute('disabled', !s.configured);
     fillSensorForm(s);
@@ -281,6 +328,8 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   function clear(): void {
     state = null;
     formFilledFor = '';
+    networks = [];
+    networksFor = '';
     editing = null;
     showEditor(false);
     for (const id of ['ipsStatePill', 'ipsModePill', 'ipsScript']) setHTML(id, '');
@@ -444,6 +493,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       address: q('ipsSensorAddress'), enforce: !!el<HTMLInputElement>('ipsSensorEnforce')?.checked,
       sniffBytes: Number(q('ipsSensorBytes')) || 0, protected: splitList(q('ipsSensorProtected')),
       disk: q('ipsSensorDisk'), image: q('ipsSensorImage'), newToken,
+      network: el<HTMLSelectElement>('ipsSensorNetwork')?.value || '', dhcp: !!el<HTMLInputElement>('ipsSensorDhcp')?.checked,
     }).then(() => {
       setText('ipsSensorMsg', newToken ? 'Saved with a new token: run the container commands again.' : 'Saved.');
       formFilledFor = '';
@@ -451,6 +501,11 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     }).catch((e: Error) => setText('ipsSensorMsg', e.message));
   }
   el('ipsSensorForm')?.addEventListener('submit', (ev) => { ev.preventDefault(); saveSensor(false); });
+  el('ipsSensorDhcp')?.addEventListener('change', syncDhcp);
+  el('ipsSensorNetwork')?.addEventListener('change', () => {
+    chosenNetwork = el<HTMLSelectElement>('ipsSensorNetwork')?.value || '';
+    drawNetworks();
+  });
   el('ipsSensorToken')?.addEventListener('click', () => {
     if (window.confirm('Make a new token? The running sensor keeps the old one until its container is recreated.')) saveSensor(true);
   });

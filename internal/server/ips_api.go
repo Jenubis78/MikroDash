@@ -10,6 +10,7 @@ package server
 //	POST   /api/ips/sensor?router=       configure the router's sensor
 //	DELETE /api/ips/sensor?router=       forget it
 //	GET    /api/ips/script?router=       the RouterOS commands that create its container
+//	GET    /api/ips/networks?router=     the router's networks the sensor can join
 //	GET    /api/ips/plan?router=         what the router needs, read-only
 //	POST   /api/ips/apply?router=        do it (`remove=1`: take everything off)
 //	POST   /api/ips/unlist?router=       take one address off a list
@@ -27,6 +28,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/netip"
 	"strconv"
@@ -52,6 +54,7 @@ func (s *Server) registerIPS(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/ips/sensor", s.ipsSensorSave)
 	mux.HandleFunc("DELETE /api/ips/sensor", s.ipsSensorDelete)
 	mux.HandleFunc("GET /api/ips/script", s.ipsScript)
+	mux.HandleFunc("GET /api/ips/networks", s.ipsNetworksGet)
 	mux.HandleFunc("GET /api/ips/plan", s.ipsPlan)
 	mux.HandleFunc("POST /api/ips/apply", s.ipsApply)
 	mux.HandleFunc("POST /api/ips/unlist", s.ipsUnlist)
@@ -288,6 +291,8 @@ func (s *Server) ipsSensorSave(w http.ResponseWriter, r *http.Request) {
 		Protected  []string `json:"protected"`
 		Disk       string   `json:"disk"`
 		Image      string   `json:"image"`
+		Network    string   `json:"network"`
+		DHCP       bool     `json:"dhcp"`
 		NewToken   bool     `json:"newToken"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&body); err != nil {
@@ -304,10 +309,26 @@ func (s *Server) ipsSensorSave(w http.ResponseWriter, r *http.Request) {
 		writeJSONErr(w, http.StatusBadRequest, "no such router")
 		return
 	}
-	addr, ok := validSensorAddress(body.Address)
-	if !ok {
-		writeJSONErr(w, http.StatusBadRequest, "the sensor's address must be one IPv4 address")
+	// BY DHCP, OR AN ADDRESS. A DHCP sensor has no address to store: the
+	// network it joins is what is chosen, and its lease is read off its veth.
+	body.Network = strings.TrimSpace(body.Network)
+	if len(body.Network) > 64 || strings.ContainsAny(body.Network, " \t\"'=\\;[]$") {
+		writeJSONErr(w, http.StatusBadRequest, "a network is a router interface name")
 		return
+	}
+	address := ""
+	if body.DHCP {
+		if body.Network == "" {
+			writeJSONErr(w, http.StatusBadRequest, "a sensor by DHCP needs the network it joins")
+			return
+		}
+	} else {
+		addr, ok := validSensorAddress(body.Address)
+		if !ok {
+			writeJSONErr(w, http.StatusBadRequest, "the sensor's address must be one IPv4 address")
+			return
+		}
+		address = addr.String()
 	}
 	if body.SniffBytes == 0 {
 		body.SniffBytes = ips.DefaultSniffBytes
@@ -349,8 +370,9 @@ func (s *Server) ipsSensorSave(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	sn := db.IPSSensor{RouterID: rid, Address: addr.String(), Token: sealed, Enforce: body.Enforce,
-		SniffBytes: body.SniffBytes, Protected: protected, Disk: body.Disk, Image: body.Image}
+	sn := db.IPSSensor{RouterID: rid, Address: address, Token: sealed, Enforce: body.Enforce,
+		SniffBytes: body.SniffBytes, Protected: protected, Disk: body.Disk, Image: body.Image,
+		Network: body.Network, DHCP: body.DHCP}
 	if err := s.auditDB.SaveIPSSensor(sn); err != nil {
 		writeJSONErr(w, http.StatusInternalServerError, "the sensor could not be saved")
 		return
@@ -361,7 +383,7 @@ func (s *Server) ipsSensorSave(w http.ResponseWriter, r *http.Request) {
 		note = "enforce"
 	}
 	s.httpRecorder(r, sess).Record(audit.Event{Action: "ips.sensor.save", RouterID: rid, TargetType: "ipsSensor",
-		TargetID: rid, TargetName: addr.String(), Note: note})
+		TargetID: rid, TargetName: firstNonEmpty(address, "DHCP on "+body.Network), Note: note})
 	writeJSON(w, map[string]any{"ok": true})
 }
 
@@ -392,20 +414,16 @@ func (s *Server) ipsScript(w http.ResponseWriter, r *http.Request) {
 	}
 	addr, _ := validSensorAddress(sn.Address)
 	// ON ONE OF THE ROUTER'S NETWORKS, OR ON A /30 OF ITS OWN. The router is
-	// read to find out which: an address inside one of its networks joins that
-	// network's bridge; any other is the second address of a new /30.
+	// read to find out which: the network chosen, or the one that holds the
+	// address, is joined as a port of its bridge; any other address is the
+	// second of a new /30.
 	rs, drop, ok := s.ipsSession(r.Context(), rid)
 	if !ok {
 		writeJSONErr(w, http.StatusBadGateway, "the router is not reachable")
 		return
 	}
 	defer drop()
-	read := func(path string, props string) []routeros.Reply {
-		rows, _ := rs.Exec(routeros.Cmd{Path: path, Args: []string{"=.proplist=" + props}, Timeout: ipsCmdTimeout})
-		return rows
-	}
-	lan, err := ips.FindLAN(addr, read("/ip/address/print", "address,interface,disabled"),
-		read("/interface/bridge/print", "name,vlan-filtering"), read("/interface/vlan/print", "name,interface,vlan-id"))
+	lan, err := ips.FindLAN(addr, sn.Network, ipsNetworks(rs))
 	if err != nil {
 		writeJSONErr(w, http.StatusBadRequest, safe.Message(err.Error()))
 		return
@@ -413,7 +431,7 @@ func (s *Server) ipsScript(w http.ResponseWriter, r *http.Request) {
 	if b := addr.As4(); lan == nil && b[3]%4 != 2 {
 		writeJSONErr(w, http.StatusBadRequest,
 			"the sensor is in none of the router's networks, so it gets a /30 of its own as its second address "+
-				"(x.x.x.2, .6, .10, ...); choose one, or an address in one of the router's networks")
+				"(x.x.x.2, .6, .10, ...); choose one, or a network in Setup")
 		return
 	}
 	tok := s.openCredSecret(sn.Token)
@@ -424,7 +442,7 @@ func (s *Server) ipsScript(w http.ResponseWriter, r *http.Request) {
 	s.httpRecorder(r, sess).Record(audit.Event{Action: "ips.script", RouterID: rid, TargetType: "ipsSensor",
 		TargetID: rid, Note: "the container script, with its token, was shown"})
 	writeJSON(w, map[string]any{"script": ips.ContainerScript(ips.ScriptParams{Token: tok, Sensor: addr,
-		LAN: lan, Disk: sn.Disk, Image: sn.Image})})
+		LAN: lan, DHCP: sn.DHCP, Disk: sn.Disk, Image: sn.Image})})
 }
 
 // ipsRouterPlan reads what the plan needs and plans. With remove, the plan
@@ -445,8 +463,46 @@ func (s *Server) ipsRouterPlan(sn *session.Session, rid string, remove bool) (ip
 	if cfg, ok := s.ipsSensorOf(rid); ok && !remove {
 		addr, _ = validSensorAddress(cfg.Address)
 		bytes = cfg.SniffBytes
+		if cfg.DHCP {
+			// The mangle rule copies to the lease the sensor holds NOW.
+			veth, _ := sn.Exec(routeros.Cmd{Path: "/interface/veth/print",
+				Args: []string{"=.proplist=dhcp-address", "?name=" + ips.Veth}, Timeout: ipsCmdTimeout})
+			if len(veth) > 0 {
+				addr = ips.LeasedAddress(veth[0])
+			}
+			if !addr.IsValid() {
+				return ips.Plan{}, errIPSNoLease
+			}
+		}
 	}
 	return ips.PlanRouter(addr, bytes, rows, filter), nil
+}
+
+// errIPSNoLease is a plan for a DHCP sensor that has no lease to copy to.
+var errIPSNoLease = errors.New("the sensor has no DHCP lease yet: start its container, then preview again")
+
+// ipsNetworks is the router's networks, as the Setup tab offers them.
+func ipsNetworks(rs *session.Session) []ips.Network {
+	read := func(path, props string) []routeros.Reply {
+		rows, _ := rs.Exec(routeros.Cmd{Path: path, Args: []string{"=.proplist=" + props}, Timeout: ipsCmdTimeout})
+		return rows
+	}
+	return ips.Networks(read("/ip/address/print", "address,interface,disabled"),
+		read("/interface/bridge/print", "name,vlan-filtering"), read("/interface/vlan/print", "name,interface,vlan-id"))
+}
+
+func (s *Server) ipsNetworksGet(w http.ResponseWriter, r *http.Request) {
+	sess, rid := s.ipsAdminRouterGate(w, r)
+	if sess == nil {
+		return
+	}
+	rs, drop, ok := s.ipsSession(r.Context(), rid)
+	if !ok {
+		writeJSONErr(w, http.StatusBadGateway, "the router is not reachable")
+		return
+	}
+	defer drop()
+	writeJSON(w, map[string]any{"networks": ipsNetworks(rs)})
 }
 
 func (s *Server) ipsPlan(w http.ResponseWriter, r *http.Request) {
@@ -462,6 +518,10 @@ func (s *Server) ipsPlan(w http.ResponseWriter, r *http.Request) {
 	defer drop()
 	plan, err := s.ipsRouterPlan(sn, rid, r.URL.Query().Get("remove") == "1")
 	if err != nil {
+		if errors.Is(err, errIPSNoLease) {
+			writeJSONErr(w, http.StatusConflict, safe.Message(errIPSNoLease.Error()))
+			return
+		}
 		writeJSONErr(w, http.StatusBadGateway, "the firewall could not be read")
 		return
 	}
@@ -492,6 +552,10 @@ func (s *Server) ipsApply(w http.ResponseWriter, r *http.Request) {
 	defer drop()
 	plan, err := s.ipsRouterPlan(sn, rid, remove)
 	if err != nil {
+		if errors.Is(err, errIPSNoLease) {
+			writeJSONErr(w, http.StatusConflict, safe.Message(errIPSNoLease.Error()))
+			return
+		}
 		writeJSONErr(w, http.StatusBadGateway, "the firewall could not be read")
 		return
 	}
