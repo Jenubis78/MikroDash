@@ -21,7 +21,8 @@ func testReader(enforce bool, rules []ips.Rule) *ipsReader {
 	e := &ipsEngine{s: &Server{}, rules: rules, readers: map[string]*ipsReader{}}
 	e.ctx, e.cancel = context.WithCancel(context.Background())
 	return &ipsReader{e: e, routerID: "r1", cfg: db.IPSSensor{RouterID: "r1", Enforce: enforce, Token: "0123456789abcdef"},
-		writes: make(chan ipsWrite, 2), apps: map[string]*IPSAppCount{}, listed: map[string]time.Time{}}
+		writes: make(chan ipsWrite, 2), apps: map[string]*IPSAppCount{}, risks: map[string]*IPSRiskCount{},
+		listed: map[string]time.Time{}}
 }
 
 func flowFrom(t *testing.T, line string) ips.Flow {
@@ -157,5 +158,29 @@ func TestARefusedTokenIsTold(t *testing.T) {
 	var refused errRefused
 	if connected || !errors.As(err, &refused) || !strings.Contains(err.Error(), "bad token") {
 		t.Fatalf("connected=%v err=%v", connected, err)
+	}
+}
+
+func TestRisksAreCountedWorstFirstAndTheFlowCarriesItsSeverity(t *testing.T) {
+	r := testReader(false, nil)
+	risky := strings.Replace(ipsTestFlow, `"risks":[]`, `"risks":["Known Proto on Non Std Port","Unidirectional Traffic"]`, 1)
+	r.handle(flowFrom(t, risky))
+	r.handle(flowFrom(t, strings.Replace(risky, "192.168.88.20", "192.168.88.21", 1)))
+	r.handle(flowFrom(t, strings.Replace(ipsTestFlow, `"risks":[]`, `"risks":["Unidirectional Traffic"]`, 1)))
+	risks := r.riskSnapshot()
+	if len(risks) != 2 {
+		t.Fatalf("risks: %+v", risks)
+	}
+	top := risks[0]
+	if top.Name != "Known Proto on Non Std Port" || top.Severity != "Medium" || top.Flows != 2 || top.Clients != 2 ||
+		len(top.Apps) != 1 || top.Apps[0] != "BitTorrent" || top.LastClient != "192.168.88.21" {
+		t.Errorf("the Medium risk first, counted: %+v", top)
+	}
+	if risks[1].Severity != "Low" || risks[1].Flows != 3 {
+		t.Errorf("then the Low one, on every flow: %+v", risks[1])
+	}
+	_, flows, _ := r.snapshot()
+	if flows[0].Severity != "Low" || flows[1].Severity != "Medium" {
+		t.Errorf("each flow carries its worst risk: %q %q", flows[0].Severity, flows[1].Severity)
 	}
 }

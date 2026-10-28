@@ -25,7 +25,11 @@ interface Flow {
   ts: number; l4: string; client: string; clientPort: number; server: string; serverPort: number;
   name: string; app: string; master: string; category: string; breed: string; host: string;
   risks: string[]; guessed: boolean; packets: number; bytes: number;
-  action: string; rule: string; result: string;
+  action: string; rule: string; result: string; severity: string;
+}
+interface RiskCount {
+  name: string; severity: string; flows: number; clients: number; apps: string[];
+  lastTs: number; lastClient: string; lastServer: string;
 }
 interface AppCount { name: string; category: string; flows: number; bytes: number }
 interface Stats { packets: number; bytes: number; flows: number; active: number; droppedEvents: number }
@@ -97,7 +101,7 @@ export function networkLabel(n: Network): string {
     (n.why ? ' - cannot be joined: ' + n.why : '');
 }
 interface State {
-  configured: boolean; sensor: Sensor | null; status: Status; flows: Flow[]; apps: AppCount[];
+  configured: boolean; sensor: Sensor | null; status: Status; flows: Flow[]; apps: AppCount[]; risks: RiskCount[];
   events: Event[]; rules: Rule[]; admin: boolean; defaults: { sniffBytes: number; image: string; timeoutMin: number };
 }
 interface Step { op: string; menu: string; what: string; error?: string }
@@ -122,6 +126,43 @@ export function resultTone(r: string): PillTone {
   if (r === 'monitor' || r === 'logged' || r === 'already' || r === 'queued') return 'muted';
   if (r === 'limited' || r.indexOf('refused') === 0) return 'warn';
   return r === 'failed' ? 'err' : 'muted';
+}
+
+/** One flow's identity: its start and its five-tuple. */
+export function flowKey(f: Flow): string {
+  return f.ts + '|' + f.l4 + '|' + f.client + '|' + f.clientPort + '|' + f.server + '|' + f.serverPort;
+}
+
+/** nDPI's severities, least first: a rank to sort by, 0 for none. */
+export function severityRank(s: string): number {
+  return ['Low', 'Medium', 'High', 'Severe', 'Critical', 'Emergency'].indexOf(s) + 1;
+}
+
+/** The tone of a severity: blue for low, amber for medium, red from high up. */
+export function severityTone(s: string): PillTone {
+  const r = severityRank(s);
+  return r >= 3 ? 'err' : r === 2 ? 'warn' : r === 1 ? 'rx' : 'muted';
+}
+
+/** A flow's risks as one pill: its worst severity, and how many, every name in the title. */
+export function riskPill(severity: string, risks: string[]): string {
+  if (!risks.length) return '-';
+  const n = risks.length > 1 ? ' · ' + risks.length : '';
+  return '<span title="' + esc(risks.join(', ')) + '">' + pill((severity || 'Risk') + n, severityTone(severity)) + '</span>';
+}
+
+/**
+ * The rule the Block button on a flow proposes: block its application when
+ * nDPI named one, else its host. Null when the flow carries neither, since a
+ * rule on clients alone is refused.
+ */
+export function blockRuleFor(f: Flow): Rule | null {
+  const named = f.app && f.app !== 'Unknown' ? f.app : '';
+  const host = f.host ? f.host.replace(/^www\./, '') : '';
+  if (!named && !host) return null;
+  const what = named || host;
+  return { id: 0, name: ('Block ' + what).slice(0, 60), enabled: true, apps: named ? [named] : [], categories: [],
+    breeds: [], risks: [], hosts: named ? [] : [host], clients: [], action: 'block', timeoutMin: 60 };
 }
 
 /** The sensor's state, as the header shows it. */
@@ -171,6 +212,9 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   let tab = 'flows';
   let flowFilter = '';
   let matchedOnly = false;
+  let riskyOnly = false;
+  // PAUSED, the Flows table keeps the window it had; flows still arrive.
+  let frozen: Flow[] | null = null;
   let editing: Rule | null = null;
   let formFilledFor = '';
   let networks: Network[] = [];
@@ -183,6 +227,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   const flowSort: SortState = { col: 'ts', dir: 'desc' };
   const appSort: SortState = { col: 'flows', dir: 'desc' };
   const eventSort: SortState = { col: 'ts', dir: 'desc' };
+  const riskSort: SortState = { col: 'rank', dir: 'desc' };
   const listedSort: SortState = { col: 'address', dir: 'asc' };
 
   const setText = (id: string, t: string): void => { const n = el(id); if (n) n.textContent = t; };
@@ -221,26 +266,60 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
 
   function drawFlows(s: State): void {
     const f = flowFilter.toLowerCase();
-    const rows = s.flows.filter((x) => (!matchedOnly || x.action) && (!f ||
-      [x.client, x.server, x.name, x.host, x.category].some((v) => v.toLowerCase().indexOf(f) !== -1)));
+    const shown = frozen || s.flows;
+    const rows = shown.filter((x) => (!matchedOnly || x.action) && (!riskyOnly || x.risks.length) && (!f ||
+      [x.client, x.server, x.name, x.host, x.category].some((v) => v.toLowerCase().indexOf(f) !== -1)))
+      .map((x) => ({ ...x, rank: severityRank(x.severity) }));
     renderSortHeader('ipsFlowsHead', [
       { key: 'ts', label: 'Time' }, { key: 'l4', label: 'Proto' }, { key: 'client', label: 'Client' },
-      { key: 'server', label: 'Server' }, { key: 'name', label: 'Application' }, { key: 'category', label: 'Category' },
-      { key: 'host', label: 'Host' }, { key: 'action', label: 'Decision' },
+      { key: 'server', label: 'Server' }, { key: 'name', label: 'Application' }, { key: 'rank', label: 'Risk' },
+      { key: 'category', label: 'Category' }, { key: 'host', label: 'Host' }, { key: 'action', label: 'Decision' },
+      { label: '' },
     ], flowSort, () => drawFlows(s));
     const sorted = sortRows(rows, flowSort.col, flowSort.dir);
+    // The row's index in `shown` is what the Block button names: a sort or a
+    // filter moves the row, never what it points at.
     setHTML('ipsFlowsRows', sorted.length ? sorted.map((x) => '<tr>' +
       '<td>' + esc(fmtTime(x.ts)) + '</td>' +
       '<td>' + protoPill(x.l4) + '</td>' +
       '<td>' + esc(x.client) + '</td>' +
       '<td>' + esc(x.server) + ':' + x.serverPort + '</td>' +
-      '<td>' + pill(x.name || 'Unknown', x.guessed ? 'muted' : 'alt') +
-        (x.risks.length ? ' ' + '<span title="' + esc(x.risks.join(', ')) + '">' + pill(x.risks.length + ' risk' + (x.risks.length > 1 ? 's' : ''), 'warn') + '</span>' : '') + '</td>' +
+      '<td>' + pill(x.name || 'Unknown', x.guessed ? 'muted' : 'alt') + '</td>' +
+      '<td>' + riskPill(x.severity, x.risks) + '</td>' +
       '<td>' + esc(x.category || '-') + '</td>' +
       '<td>' + esc(x.host || '-') + '</td>' +
       '<td>' + (x.action ? pill(x.action, ACTION_TONE[x.action] || 'muted') + ' ' + pill(x.result, resultTone(x.result)) : '-') + '</td>' +
+      '<td class="text-end">' + (s.admin && blockRuleFor(x) ? '<button class="sbtn sbtn-danger" type="button" data-ipsblock="' +
+        shown.findIndex((y) => flowKey(y) === flowKey(x)) +
+        '" title="A rule that blocks this flow\'s application or host">Block</button>' : '') + '</td>' +
       '</tr>').join('')
-      : '<tr><td colspan="8" class="empty-state">' + (s.flows.length ? 'No flow matches' : 'No flows yet') + '</td></tr>');
+      : '<tr><td colspan="10" class="empty-state">' + (shown.length ? 'No flow matches' : 'No flows yet') + '</td></tr>');
+    const pause = el('ipsFlowPause');
+    if (pause) {
+      // BY IDENTITY, NOT BY TIME: a flow's ts is when it STARTED, and the
+      // sensor reports it when nDPI is done, so a later report can carry an
+      // earlier time.
+      const seen = new Set((frozen || []).map(flowKey));
+      const fresh = frozen ? s.flows.filter((x) => !seen.has(flowKey(x))).length : 0;
+      pause.classList.toggle('is-on', !!frozen);
+      pause.textContent = frozen ? 'Paused' + (fresh ? ' · ' + fresh + ' new' : '') : 'Pause';
+    }
+  }
+
+  function drawRisks(s: State): void {
+    renderSortHeader('ipsRisksHead', [
+      { key: 'rank', label: 'Severity' }, { key: 'name', label: 'Risk' }, { key: 'flows', label: 'Flows' },
+      { key: 'clients', label: 'Clients' }, { label: 'Applications' }, { key: 'lastTs', label: 'Last seen' },
+      { label: 'Last flow' },
+    ], riskSort, () => drawRisks(s));
+    const sorted = sortRows(s.risks.map((r) => ({ ...r, rank: severityRank(r.severity) })), riskSort.col, riskSort.dir);
+    setHTML('ipsRisksRows', sorted.length ? sorted.map((r) => '<tr>' +
+      '<td>' + pill(r.severity || 'Unrated', severityTone(r.severity)) + '</td>' +
+      '<td>' + esc(r.name) + '</td><td>' + r.flows + '</td><td>' + r.clients + '</td>' +
+      '<td>' + (r.apps.length ? r.apps.map((a) => pill(a, 'alt', true)).join(' ') : '-') + '</td>' +
+      '<td>' + esc(fmtTime(r.lastTs)) + '</td>' +
+      '<td>' + esc(r.lastClient) + ' → ' + esc(r.lastServer) + '</td></tr>').join('')
+      : '<tr><td colspan="7" class="empty-state">No risk raised yet</td></tr>');
   }
 
   function drawApps(s: State): void {
@@ -377,6 +456,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       badge.className = 'card-badge' + (s.flows.length ? ' active-blue' : '');
     }
     if (tab === 'flows') drawFlows(s);
+    if (tab === 'risks') drawRisks(s);
     if (tab === 'apps') drawApps(s);
     if (tab === 'events') drawEvents(s);
     drawRules(s);
@@ -386,6 +466,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   function clear(): void {
     state = null;
     formFilledFor = '';
+    frozen = null;
     networks = [];
     networksFor = '';
     editing = null;
@@ -421,7 +502,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   function showTab(key: string): void {
     if (key === 'setup' && tab !== 'setup' && networksError) networksFor = ''; // read again on return
     tab = key;
-    for (const k of ['flows', 'apps', 'events', 'rules', 'setup']) {
+    for (const k of ['flows', 'apps', 'risks', 'events', 'rules', 'setup']) {
       const p = el('ipsPanel-' + k);
       if (p) p.style.display = k === key ? '' : 'none';
     }
@@ -441,6 +522,25 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     flowFilter = q('ipsFlowFilter');
     el('ipsFlowFilter')?.classList.toggle('active', !!flowFilter);
     if (state) drawFlows(state);
+  });
+  el('ipsFlowRisky')?.addEventListener('click', () => {
+    riskyOnly = !riskyOnly;
+    el('ipsFlowRisky')?.classList.toggle('is-on', riskyOnly);
+    if (state) drawFlows(state);
+  });
+  el('ipsFlowPause')?.addEventListener('click', () => {
+    frozen = frozen ? null : [...(state?.flows || [])];
+    if (state) drawFlows(state);
+  });
+  el('ipsFlowsRows')?.addEventListener('click', (ev) => {
+    const b = (ev.target as HTMLElement | null)?.closest?.('[data-ipsblock]');
+    if (!b) return;
+    const x = (frozen || state?.flows || [])[Number(b.getAttribute('data-ipsblock'))];
+    const r = x && blockRuleFor(x);
+    if (!r) return;
+    showTab('rules');
+    showEditor(true, r);
+    el('ipsRuleForm')?.scrollIntoView({ block: 'start' });
   });
   el('ipsFlowMatched')?.addEventListener('click', () => {
     matchedOnly = !matchedOnly;

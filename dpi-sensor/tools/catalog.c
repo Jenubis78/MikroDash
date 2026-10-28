@@ -73,10 +73,14 @@ int main(void) {
   first = 1;
   for (int r = 1; r < NDPI_MAX_RISK; r++) {
     const char *name = ndpi_risk2str((ndpi_risk_enum)r);
-    if (!name || !*name) continue;
-    printf(first ? "\n    " : ",\n    ");
+    ndpi_risk_info *info = ndpi_risk2severity((ndpi_risk_enum)r);
+    if (!name || !*name || !info) continue;
+    printf(first ? "\n    {\"name\": " : ",\n    {\"name\": ");
     first = 0;
     str(name);
+    printf(", \"severity\": ");
+    str(ndpi_severity2str(info->severity));
+    printf("}");
   }
   printf("\n  ]\n}\n");
   ndpi_exit_detection_module(m);

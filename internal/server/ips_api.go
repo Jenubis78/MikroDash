@@ -131,6 +131,7 @@ type IPSStatePayload struct {
 	Status     IPSStatus         `json:"status"`
 	Flows      []IPSFlowView     `json:"flows"`
 	Apps       []IPSAppCount     `json:"apps"`
+	Risks      []IPSRiskCount    `json:"risks"`
 	Events     []db.IPSEvent     `json:"events"`
 	Rules      []ips.Rule        `json:"rules"`
 	Admin      bool              `json:"admin"`
@@ -145,7 +146,7 @@ func (s *Server) ipsState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p := IPSStatePayload{Status: IPSStatus{State: "off"}, Flows: []IPSFlowView{}, Apps: []IPSAppCount{},
-		Rules: s.ips.currentRules(), Admin: s.isGlobalAdmin(sess), Actions: ips.Actions,
+		Risks: []IPSRiskCount{}, Rules: s.ips.currentRules(), Admin: s.isGlobalAdmin(sess), Actions: ips.Actions,
 		Lists:    map[string]string{"block": ips.BlockList, "quarantine": ips.QuarantineList},
 		Defaults: map[string]any{"sniffBytes": ips.DefaultSniffBytes, "image": ips.DefaultImage, "timeoutMin": ips.DefaultTimeout}}
 	if p.Rules == nil {
@@ -157,6 +158,7 @@ func (s *Server) ipsState(w http.ResponseWriter, r *http.Request) {
 	}
 	if rd := s.ips.reader(rid); rd != nil {
 		p.Status, p.Flows, p.Apps = rd.snapshot()
+		p.Risks = rd.riskSnapshot()
 	}
 	ev, err := s.auditDB.IPSEvents(rid, 200)
 	if err != nil {

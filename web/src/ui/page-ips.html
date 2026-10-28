@@ -13,6 +13,7 @@
             <span id="ipsTabs" class="stab-bar rttab-bar" role="tablist">
               <button class="stab active" type="button" role="tab" aria-selected="true" data-ipstab="flows">Flows</button>
               <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="apps">Applications</button>
+              <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="risks">Risks</button>
               <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="events">Decisions</button>
               <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="rules">Rules</button>
               <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="setup">Setup</button>
@@ -44,11 +45,15 @@
               <input class="sform-input sform-sm" id="ipsFlowFilter" style="max-width:22rem" type="search" placeholder="Filter: address, application, host"
                 autocomplete="off" spellcheck="false">
               <button class="chip" type="button" id="ipsFlowMatched">Matched by a rule</button>
+              <button class="chip chip-warn" type="button" id="ipsFlowRisky">With a risk</button>
+              <!-- PAUSE FREEZES THE TABLE, not the engine: flows go on being
+                   decided and counted, and the chip says how many arrived. -->
+              <button class="chip" type="button" id="ipsFlowPause">Pause</button>
             </div>
             <div class="data-scroll">
               <table class="table table-vcenter mb-0">
                 <thead><tr id="ipsFlowsHead"></tr></thead>
-                <tbody id="ipsFlowsRows"><tr><td colspan="8" class="empty-state">No flows yet</td></tr></tbody>
+                <tbody id="ipsFlowsRows"><tr><td colspan="10" class="empty-state">No flows yet</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -58,6 +63,16 @@
               <table class="table table-vcenter mb-0">
                 <thead><tr id="ipsAppsHead"></tr></thead>
                 <tbody id="ipsAppsRows"><tr><td colspan="4" class="empty-state">No flows yet</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ips-panel" id="ipsPanel-risks" style="display:none">
+            <div class="muted-note mb-2">Every risk nDPI raised since the sensor connected, worst first. The severity is nDPI's own.</div>
+            <div class="data-scroll">
+              <table class="table table-vcenter mb-0">
+                <thead><tr id="ipsRisksHead"></tr></thead>
+                <tbody id="ipsRisksRows"><tr><td colspan="7" class="empty-state">No risk raised yet</td></tr></tbody>
               </table>
             </div>
           </div>

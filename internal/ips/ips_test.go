@@ -161,7 +161,22 @@ func TestTheCatalogNamesWhatTheSensorSends(t *testing.T) {
 			t.Errorf("the catalogue has no app %q", v)
 		}
 	}
-	if !has(c.Categories, f.Category) || !has(c.Breeds, f.Breed) || !has(c.Risks, "Known Proto on Non Std Port") {
-		t.Errorf("category %q, breed %q or a known risk is missing", f.Category, f.Breed)
+	if !has(c.Categories, f.Category) || !has(c.Breeds, f.Breed) {
+		t.Errorf("category %q or breed %q is missing", f.Category, f.Breed)
+	}
+	for _, r := range c.Risks {
+		if SeverityRank(r.Severity) == 0 {
+			t.Errorf("risk %q has a severity outside nDPI's: %q", r.Name, r.Severity)
+		}
+	}
+	// Both risks the BitTorrent replay raised, with their severities.
+	if s := RiskSeverity("Known Proto on Non Std Port"); s == "" {
+		t.Error("a risk the sensor sent has no severity")
+	}
+	if w := WorstSeverity([]string{"Known Proto on Non Std Port", "Unidirectional Traffic", "not a risk"}); SeverityRank(w) == 0 {
+		t.Errorf("worst of two known risks: %q", w)
+	}
+	if WorstSeverity(nil) != "" || WorstSeverity([]string{"not a risk"}) != "" {
+		t.Error("no known risk has no severity")
 	}
 }

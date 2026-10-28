@@ -38,6 +38,7 @@ import (
 	"log"
 	"net"
 	"net/netip"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -53,6 +54,8 @@ import (
 )
 
 const (
+	ipsRiskClients     = 1000
+	ipsRiskApps        = 8
 	ipsFlowWindow      = 300
 	ipsListPerMinute   = 60
 	ipsEventsPerMinute = 240
@@ -76,6 +79,26 @@ type IPSFlowView struct {
 	Action string `json:"action"`
 	Rule   string `json:"rule"`
 	Result string `json:"result"`
+	// Severity is the worst of the flow's risks, as nDPI ranks them; "" with none.
+	Severity string `json:"severity"`
+}
+
+// IPSRiskCount is one risk's share of the flows since the reader started:
+// the Risks tab.
+type IPSRiskCount struct {
+	Name     string `json:"name"`
+	Severity string `json:"severity"`
+	Flows    int    `json:"flows"`
+	// Clients is how many distinct clients raised it, up to ipsRiskClients.
+	Clients int `json:"clients"`
+	// Apps are the applications it was seen on, the first ipsRiskApps.
+	Apps   []string `json:"apps"`
+	LastTS int64    `json:"lastTs"`
+	// LastClient and LastServer are the flow that raised it last.
+	LastClient string `json:"lastClient"`
+	LastServer string `json:"lastServer"`
+
+	clients map[string]bool
 }
 
 // IPSAppCount is one application's share of the flows since the reader started.
@@ -130,6 +153,7 @@ type ipsReader struct {
 	status    IPSStatus
 	flows     []IPSFlowView // newest last
 	apps      map[string]*IPSAppCount
+	risks     map[string]*IPSRiskCount
 	listed    map[string]time.Time // list|address -> when the entry times out
 	minute    int64
 	listedMin int
@@ -229,8 +253,8 @@ func (e *ipsEngine) reader(routerID string) *ipsReader {
 func (e *ipsEngine) startReader(cfg db.IPSSensor) *ipsReader {
 	ctx, cancel := context.WithCancel(e.ctx)
 	r := &ipsReader{e: e, routerID: cfg.RouterID, cfg: cfg, cancel: cancel, addr: cfg.Address,
-		writes: make(chan ipsWrite, ipsWriteQueue), apps: map[string]*IPSAppCount{}, listed: map[string]time.Time{},
-		status: IPSStatus{State: "connecting", Since: nowMillis(), Enforce: cfg.Enforce}}
+		writes: make(chan ipsWrite, ipsWriteQueue), apps: map[string]*IPSAppCount{}, risks: map[string]*IPSRiskCount{},
+		listed: map[string]time.Time{}, status: IPSStatus{State: "connecting", Since: nowMillis(), Enforce: cfg.Enforce}}
 	if cfg.Address != "" {
 		r.status.Sensor = net.JoinHostPort(cfg.Address, strconv.Itoa(ips.ReaderPort))
 	}
@@ -402,7 +426,7 @@ func (r *ipsReader) sensorAddress() (string, error) {
 // handle decides one flow and records what was decided.
 func (r *ipsReader) handle(f ips.Flow) {
 	d := ips.Decide(r.e.currentRules(), f)
-	view := IPSFlowView{Flow: f, Action: d.Action, Rule: d.RuleName}
+	view := IPSFlowView{Flow: f, Action: d.Action, Rule: d.RuleName, Severity: ips.WorstSeverity(f.Risks)}
 	now := time.Now()
 	record := false
 
@@ -417,6 +441,21 @@ func (r *ipsReader) handle(f ips.Flow) {
 	}
 	a.Flows++
 	a.Bytes += f.Bytes
+	for _, risk := range f.Risks {
+		rc := r.risks[risk]
+		if rc == nil {
+			rc = &IPSRiskCount{Name: risk, Severity: ips.RiskSeverity(risk), Apps: []string{}, clients: map[string]bool{}}
+			r.risks[risk] = rc
+		}
+		rc.Flows++
+		if len(rc.clients) < ipsRiskClients {
+			rc.clients[f.Client] = true
+		}
+		if len(rc.Apps) < ipsRiskApps && !slices.Contains(rc.Apps, name) {
+			rc.Apps = append(rc.Apps, name)
+		}
+		rc.LastTS, rc.LastClient, rc.LastServer = f.TS, f.Client, f.Server
+	}
 	switch d.Action {
 	case ips.ActionLog:
 		view.Result, record = "logged", true
@@ -569,6 +608,31 @@ func (r *ipsReader) protectedSet(sn *session.Session) guard.IPSProtected {
 	r.protected, r.protAt = p, time.Now()
 	r.mu.Unlock()
 	return p
+}
+
+// riskSnapshot is the Risks tab: worst severity first, then the most flows.
+func (r *ipsReader) riskSnapshot() []IPSRiskCount {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make([]IPSRiskCount, 0, len(r.risks))
+	for _, rc := range r.risks {
+		c := *rc
+		c.Clients = len(rc.clients)
+		c.Apps = append([]string{}, rc.Apps...)
+		c.clients = nil
+		out = append(out, c)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		a, b := ips.SeverityRank(out[i].Severity), ips.SeverityRank(out[j].Severity)
+		if a != b {
+			return a > b
+		}
+		if out[i].Flows != out[j].Flows {
+			return out[i].Flows > out[j].Flows
+		}
+		return out[i].Name < out[j].Name
+	})
+	return out
 }
 
 // snapshot is the reader's state for the page.

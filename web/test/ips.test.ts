@@ -47,11 +47,20 @@ assert.ok(apps.includes('<optgroup label="Video"><option value="YouTube">') && !
 const risks = mod.pickHtml('risks', [], cat);
 assert.ok(risks.includes('<option value="*">Any risk</option>'), 'any risk is offered first');
 assert.ok(mod.pickHtml('breeds', [], null).includes(' disabled'), 'with no catalogue yet the list waits, disabled');
+assert.strictEqual(mod.severityRank('High'), 3);
+assert.strictEqual(mod.severityTone('Severe'), 'err');
+assert.strictEqual(mod.severityTone('Medium'), 'warn');
+assert.ok(mod.riskPill('Medium', ['a', '<b>']).includes('Medium · 2') && mod.riskPill('Medium', ['a', '<b>']).includes('&lt;b&gt;'));
+assert.strictEqual(mod.riskPill('', []), '-');
+const flow = { app: 'BitTorrent', host: '', name: 'BitTorrent' };
+assert.deepStrictEqual([mod.blockRuleFor(flow).apps, mod.blockRuleFor(flow).action], [['BitTorrent'], 'block']);
+assert.deepStrictEqual(mod.blockRuleFor({ app: 'Unknown', host: 'www.example.com' }).hosts, ['example.com']);
+assert.strictEqual(mod.blockRuleFor({ app: 'Unknown', host: '' }), null);
 say('ok - the IPS helpers summarise a rule and tone its outcomes');
 
 const ids = ['ipsBadge', 'ipsTabs', 'ipsStatePill', 'ipsModePill', 'ipsStatus', 'ipsSeenVal', 'ipsListedVal',
   'ipsListedFoot', 'ipsPacketsVal', 'ipsPacketsFoot', 'ipsTopVal', 'ipsTopFoot', 'ipsFlowFilter', 'ipsFlowMatched',
-  'ipsFlowsHead', 'ipsFlowsRows', 'ipsAppsHead', 'ipsAppsRows', 'ipsEventsHead', 'ipsEventsRows', 'ipsListedLoad',
+  'ipsFlowRisky', 'ipsFlowPause', 'ipsRisksHead', 'ipsRisksRows', 'ipsPanel-risks', 'ipsFlowsHead', 'ipsFlowsRows', 'ipsAppsHead', 'ipsAppsRows', 'ipsEventsHead', 'ipsEventsRows', 'ipsListedLoad',
   'ipsListedHead', 'ipsListedRows', 'ipsRulesRows', 'ipsRuleForm', 'ipsRuleFormTitle', 'ipsRuleName', 'ipsRuleAction',
   'ipsRuleAppsPick', 'ipsRuleCategoriesPick', 'ipsRuleBreedsPick', 'ipsRuleRisksPick', 'ipsRuleHosts', 'ipsRuleClients',
   'ipsRuleTimeout', 'ipsRuleEnabled', 'ipsRuleCancel', 'ipsRuleMsg', 'ipsRuleAddWrap', 'ipsRuleAdd', 'ipsSetupNote',
@@ -73,12 +82,15 @@ const state = {
   flows: [
     { ts: 2, l4: 'tcp', client: '192.168.88.20', clientPort: 5, server: '203.0.113.7', serverPort: 6881,
       name: 'BitTorrent', app: 'BitTorrent', master: 'Unknown', category: 'Download', breed: 'Acceptable',
-      host: '<img src=x>', risks: [], guessed: false, packets: 3, bytes: 400, action: 'block', rule: 'p2p', result: 'monitor' },
+      host: '<img src=x>', risks: ['Known Proto on Non Std Port'], guessed: false, packets: 3, bytes: 400, action: 'block',
+      rule: 'p2p', result: 'monitor', severity: 'Medium' },
     { ts: 1, l4: 'udp', client: '192.168.88.21', clientPort: 6, server: '198.51.100.1', serverPort: 53,
       name: 'DNS', app: 'DNS', master: 'Unknown', category: 'Network', breed: 'Acceptable', host: 'example.com',
-      risks: [], guessed: false, packets: 2, bytes: 120, action: '', rule: '', result: '' },
+      risks: [], guessed: false, packets: 2, bytes: 120, action: '', rule: '', result: '', severity: '' },
   ],
   apps: [{ name: 'BitTorrent', category: 'Download', flows: 1, bytes: 400 }],
+  risks: [{ name: 'Known Proto on Non Std Port', severity: 'Medium', flows: 1, clients: 1, apps: ['BitTorrent'],
+    lastTs: 2, lastClient: '192.168.88.20', lastServer: '203.0.113.7' }],
   events: [], rules: [], actions: [], lists: {}, defaults: { sniffBytes: 20000, image: 'img', timeoutMin: 60 },
 };
 global.fetch = (url: string) => {
@@ -101,7 +113,19 @@ const n = doc.nodes;
   const rows = n.ipsFlowsRows.innerHTML;
   assert.ok(rows.includes('BitTorrent') && rows.includes('monitor'), 'the flows table lacks the decided flow');
   assert.ok(!rows.includes('<img') && rows.includes('&lt;img'), 'a host name reached the page unescaped');
+  assert.ok(rows.includes('Medium'), 'the flow shows its risk severity');
+
   say('ok - the IPS page draws the state it is given, escaped');
+
+  // PAUSE keeps the window it had while new flows arrive, and counts them.
+  n.ipsFlowPause.fire('click');
+  state.flows = [{ ...state.flows[1], ts: 9, client: '192.168.88.99', severity: '' }, ...state.flows];
+  await new Promise((r) => setTimeout(r, 3300));
+  assert.ok(!n.ipsFlowsRows.innerHTML.includes('192.168.88.99'), 'a paused table took a new flow');
+  assert.strictEqual(n.ipsFlowPause.textContent, 'Paused · 1 new');
+  n.ipsFlowPause.fire('click');
+  assert.ok(n.ipsFlowsRows.innerHTML.includes('192.168.88.99'), 'resuming shows the flows that arrived');
+  say('ok - pausing freezes the flows table and says what arrived');
 
   // LEAVING stops the poll: nothing is asked once another page is shown.
   doc.dispatchEvent({ type: 'mikrodash:pagechange', detail: 'dashboard' });
