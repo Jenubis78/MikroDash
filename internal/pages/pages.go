@@ -111,6 +111,10 @@ var All = []Page{
 	// router (dpi-sensor/), read by internal/server/ips.go whether or not the
 	// page is open, and the page asks for them over HTTP.
 	{Key: "ips", Title: "IPS"},
+	// Traffic Analysis (2026-10-28). NO COLLECTOR: its volumes are the routers'
+	// IPFIX, taken by internal/server/traffic.go on a UDP port whether or not
+	// the page is open, and the page asks for them over HTTP.
+	{Key: "traffic-analysis", Title: "Traffic Analysis"},
 	{Key: "wifi-networks", Title: "Wifi Networks", Collector: "wifi"},
 	{Key: "capsman", Title: "CAPsMAN", Collector: "capsman"},
 	{Key: "interfaces", Title: "Interfaces", Collector: "ifStatus"},

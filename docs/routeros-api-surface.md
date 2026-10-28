@@ -521,6 +521,30 @@ tab, one write per prefix, in sequence.
 | `/ip/firewall/filter/print` | whole rows | Apply, Remove |
 | `/ip/firewall/filter/add`, `/set`, `/remove` | `chain=forward`/`input`, `action=drop`, `connection-state=new`, `src-address-list` or `dst-address-list=mikrodash-ips-geo`, commented `MikroDash IPS: geo, …`, `place-before` the first static foreign rule | Apply, Remove |
 
+## Traffic Analysis (internal/server/traffic.go, traffic_api.go)
+
+Added by hand on 2026-10-28 and kept out of the counts above. Paths and
+properties checked against the RouterOS docs (rosetta): `/ip/traffic-flow`
+(`enabled`, `interfaces`, `active-flow-timeout` default 30m,
+`inactive-flow-timeout` default 15s), its `target` (`dst-address`, `port`,
+`version` = `1 | 5 | 9 | IPFIX`) and `ipfix` (one yes/no per field). The docs
+state that FastTrack packets bypass traffic-flow. Nothing is measured on
+hardware yet.
+
+The collector itself reads one thing on its own, every five minutes per router
+set up: the router's addresses, to know which datagrams are its IPFIX.
+Everything else runs only when an administrator presses a button.
+
+| Command | Proplist or arguments | Used by |
+|---|---|---|
+| `/ip/address/print` | `=.proplist=address` | the collector: which source addresses are the router's |
+| `/user/active/print` | `=.proplist=name,address` | Preview, Apply: where the router sees MikroDash, the IPFIX target |
+| `/ip/traffic-flow/print`, `/ip/traffic-flow/target/print`, `/ip/traffic-flow/ipfix/print` | whole rows | Preview, Apply, Remove |
+| `/ip/firewall/filter/print` | `=.proplist=.id,action,disabled` | Preview's FastTrack warning |
+| `/ip/traffic-flow/set` | only the properties that differ: `enabled`, `interfaces`, `active-flow-timeout=1m`, `inactive-flow-timeout=15s` | Apply; `enabled=no` on Remove when no other target is left |
+| `/ip/traffic-flow/target/add`, `/set`, `/remove` | `dst-address=<MikroDash>`, `port`, `version=IPFIX` | Apply, Remove |
+| `/ip/traffic-flow/ipfix/set` | the fields the join reads, each `yes` | Apply |
+
 ## Proplists
 
 A proplist is the only thing keeping a credential out of a payload - see

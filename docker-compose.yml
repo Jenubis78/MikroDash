@@ -23,6 +23,10 @@ services:
     container_name: MikroDash
     ports:
       - "3081:3081"
+      # TRAFFIC ANALYSIS'S IPFIX. Nothing listens until a router's Traffic Flow
+      # is applied from the page; the routers send to it, so it must be
+      # reachable from them (the LAN, not the internet).
+      - "2055:2055/udp"
       # ZERO-TOUCH PROVISIONING'S WIREGUARD. Nothing listens until it is switched
       # on (Settings, Provisioning), and it is userspace, so the container needs
       # no NET_ADMIN and no /dev/net/tun. Remote routers dial it, so it must be

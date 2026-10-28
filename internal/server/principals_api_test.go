@@ -204,9 +204,12 @@ func TestThePageCatalogueIsComplete(t *testing.T) {
 	// a toggle that looked as if it switched the IPS off while it went on
 	// listing addresses would be a lie. Who may see it is the permission matrix;
 	// whether it runs is whether the router has a sensor.
-	if noToggle != 13 {
-		t.Errorf("%d hand-built pages have no settings toggle, want 13 (dashboard, reports, "+
-			"settings, ai-agent, security-scan, ips, config-management, terminal, tools-ping, "+
+	//
+	// FOURTEEN SINCE TRAFFIC ANALYSIS (2026-10-28), for the IPS's reason: its
+	// collector takes the routers' IPFIX whether or not the page is open.
+	if noToggle != 14 {
+		t.Errorf("%d hand-built pages have no settings toggle, want 14 (dashboard, reports, "+
+			"settings, ai-agent, security-scan, ips, traffic-analysis, config-management, terminal, tools-ping, "+
 			"tools-traceroute, tools-torch, tools-btest, tools-sniffer)", noToggle)
 	}
 	// And every page the projection can grant WRITE on must be in the catalogue.

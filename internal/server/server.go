@@ -166,6 +166,8 @@ type Server struct {
 	features *featureLoop
 	// ips is the IPS page's readers, one per router with a sensor. See ips.go.
 	ips *ipsEngine
+	// traffic is the Traffic page's IPFIX collector and its backend. See traffic.go.
+	traffic *trafficEngine
 	// aiLimit bounds questions to the model, per user per router (#98).
 	//
 	// EVERY ASK IS AN OUTBOUND REQUEST to an endpoint the operator named, which
@@ -553,6 +555,7 @@ func New(st *store.Store, opts Options) (*Server, error) {
 	// `-history` instead (#59); the comment on the builder has the split.
 	srv.pruneSched = srv.buildPruneScheduler(opts.Retention, opts.History)
 	srv.features = srv.buildFeatureLoop()
+	srv.traffic = srv.buildTraffic()
 	srv.ips = srv.buildIPS()
 	// The traffic and ping recorder, off the session's emit seam. CONNECTIVITY
 	// is no longer part of it — that is the tracker's, attached at the top of
@@ -657,6 +660,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerDNSFleetSync(mux)
 	s.registerDNSLists(mux)
 	s.registerIPS(mux)
+	s.registerTraffic(mux)
 	s.registerClientFeatures(mux)
 	s.registerCapVersions(mux)
 	s.registerTopologyFleet(mux)
@@ -890,6 +894,9 @@ func (s *Server) Shutdown() {
 	}
 	if s.ips != nil {
 		s.ips.Stop()
+	}
+	if s.traffic != nil {
+		s.traffic.Stop()
 	}
 	// AND THE RECONCILER, for that same reason: its loop holds a ticker and
 	// would outlive every Server a test builds.

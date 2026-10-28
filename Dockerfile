@@ -151,6 +151,9 @@ EXPOSE 3081
 # Zero-touch provisioning's WireGuard, userspace, so no NET_ADMIN. Nothing
 # listens here until it is switched on in Settings, Provisioning.
 EXPOSE 13231/udp
+# Traffic Analysis's IPFIX from the routers. Nothing listens until a router's
+# Traffic Flow is applied from the page.
+EXPOSE 2055/udp
 ENTRYPOINT ["/usr/local/bin/mikrodash"]
 # Every one of these is overridable by giving the container its own arguments.
 CMD ["-listen", ":3081", "-data", "/data", \

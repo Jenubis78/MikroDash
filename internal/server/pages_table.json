@@ -267,6 +267,11 @@
       "settingsKey": null
     },
     {
+      "key": "traffic-analysis",
+      "title": "Traffic Analysis",
+      "settingsKey": null
+    },
+    {
       "key": "users",
       "title": "Users",
       "settingsKey": "pageRosusers"

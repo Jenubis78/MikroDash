@@ -97,6 +97,11 @@
       "settingsKey": null
     },
     {
+      "key": "traffic-analysis",
+      "title": "Traffic Analysis",
+      "settingsKey": null
+    },
+    {
       "key": "users",
       "title": "Device Users",
       "settingsKey": "pageRosusers"
@@ -198,6 +203,7 @@
     "bandwidth",
     "firewall",
     "ips",
+    "traffic-analysis",
     "logs",
     "packages",
     "queues",
@@ -224,6 +230,7 @@
     "bandwidth",
     "queues",
     "connections",
+    "traffic-analysis",
     "security-scan",
     "firewall",
     "ips",

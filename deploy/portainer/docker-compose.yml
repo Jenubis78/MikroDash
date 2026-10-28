@@ -17,6 +17,8 @@ services:
     restart: unless-stopped
     ports:
       - "3081:3081"
+      # Traffic Analysis: the routers' IPFIX (nothing listens until it is set up).
+      - "2055:2055/udp"
     volumes:
       - data:/data
     environment:

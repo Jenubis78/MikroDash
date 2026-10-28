@@ -455,6 +455,8 @@ func (r *ipsReader) handle(f ips.Flow) {
 			f.ServerCountry = loc.Country
 		}
 	}
+	// The Traffic page names the router's IPFIX records with what the sensor saw.
+	r.e.s.traffic.classify(r.routerID, f)
 	d := ips.Decide(r.e.currentRules(), f)
 	view := IPSFlowView{Flow: f, Action: d.Action, Rule: d.RuleName, Severity: ips.WorstSeverity(f.Risks)}
 	now := time.Now()

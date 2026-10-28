@@ -1,0 +1,197 @@
+  <!-- The Traffic Analysis page: the routers' IPFIX, named by the IPS sensor's
+       nDPI, by application, category, host and country. Rendered by
+       web/src/pages/traffic-analysis.ts from /api/traffic/* (internal/server/
+       traffic_api.go). The collector runs whether or not the page is open. -->
+  <div class="page-view" id="page-traffic-analysis">
+    <div class="container-fluid px-0" style="width:100%">
+      <div class="card" id="taCard">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <h3 class="card-title mb-0">Traffic Analysis</h3>
+            <span id="taBadge" class="card-badge" title="Applications in the last minute">0</span>
+            <span id="taTabs" class="stab-bar rttab-bar" role="tablist">
+              <button class="stab active" type="button" role="tab" aria-selected="true" data-tatab="live">Live</button>
+              <button class="stab" type="button" role="tab" aria-selected="false" data-tatab="history">History</button>
+              <button class="stab" type="button" role="tab" aria-selected="false" data-tatab="flows">Flows</button>
+              <button class="stab" type="button" role="tab" aria-selected="false" data-tatab="setup">Setup</button>
+            </span>
+          </div>
+          <div class="hdr-actions d-flex align-items-center gap-2">
+            <span id="taStatePill"></span>
+            <span id="taBackendPill"></span>
+          </div>
+        </div>
+        <div class="card-body" id="taBody">
+          <div class="muted-note mb-2" id="taStatus"></div>
+          <div class="tool-cards">
+            <div class="tool-card"><div class="tool-card-label">Download</div>
+              <div class="tool-card-value"><span id="taRxVal" style="color:var(--accent-rx)">-</span></div>
+              <div class="tool-card-foot">last minute</div></div>
+            <div class="tool-card"><div class="tool-card-label">Upload</div>
+              <div class="tool-card-value"><span id="taTxVal" style="color:var(--accent-tx)">-</span></div>
+              <div class="tool-card-foot">last minute</div></div>
+            <div class="tool-card"><div class="tool-card-label">Named by nDPI</div>
+              <div class="tool-card-value"><span id="taCoverageVal">-</span></div>
+              <div class="tool-card-foot" id="taCoverageFoot"></div></div>
+            <div class="tool-card"><div class="tool-card-label">IPFIX records</div>
+              <div class="tool-card-value"><span id="taRecordsVal">-</span></div>
+              <div class="tool-card-foot" id="taRecordsFoot"></div></div>
+          </div>
+
+          <div class="ta-panel" id="taPanel-live">
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap" id="taLiveDims">
+              <button class="chip is-on" type="button" data-tadim="app">Applications</button>
+              <button class="chip" type="button" data-tadim="category">Categories</button>
+              <button class="chip" type="button" data-tadim="host">Hosts</button>
+              <button class="chip" type="button" data-tadim="country">Countries</button>
+              <span class="muted-note" id="taLiveAt"></span>
+            </div>
+            <div class="data-scroll">
+              <table class="table table-vcenter mb-0">
+                <thead id="taLiveHead"></thead>
+                <tbody id="taLiveRows"><tr><td colspan="5" class="empty-state">Nothing counted yet</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ta-panel" id="taPanel-history" style="display:none">
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+              <select class="sform-input sform-sm" id="taHistDim" style="width:auto">
+                <option value="app">By application</option>
+                <option value="category">By category</option>
+                <option value="host">By host</option>
+                <option value="country">By country</option>
+              </select>
+              <select class="sform-input sform-sm" id="taHistRange" style="width:auto">
+                <option value="1h">Last hour</option>
+                <option value="6h">6 hours</option>
+                <option value="24h" selected>24 hours</option>
+                <option value="7d">7 days</option>
+                <option value="30d">30 days</option>
+                <option value="90d">90 days</option>
+                <option value="365d">1 year</option>
+              </select>
+              <span id="taHistFilters"></span>
+              <span class="muted-note" id="taHistMsg"></span>
+            </div>
+            <div style="position:relative;height:260px"><canvas id="taHistChart"></canvas></div>
+            <div class="data-scroll mt-2">
+              <table class="table table-vcenter mb-0">
+                <thead id="taHistHead"></thead>
+                <tbody id="taHistRows"><tr><td colspan="5" class="empty-state">Not read yet</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ta-panel" id="taPanel-flows" style="display:none">
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+              <input class="sform-input sform-sm" id="taFlowHost" placeholder="Host" spellcheck="false" style="width:9rem">
+              <input class="sform-input sform-sm" id="taFlowRemote" placeholder="Remote" spellcheck="false" style="width:9rem">
+              <input class="sform-input sform-sm" id="taFlowApp" placeholder="Application" spellcheck="false" style="width:9rem">
+              <input class="sform-input sform-sm" id="taFlowCountry" placeholder="Country (FR)" spellcheck="false" style="width:7rem">
+              <select class="sform-input sform-sm" id="taFlowRange" style="width:auto">
+                <option value="1h" selected>Last hour</option>
+                <option value="24h">24 hours</option>
+                <option value="7d">7 days</option>
+                <option value="30d">30 days</option>
+                <option value="90d">90 days</option>
+              </select>
+              <button class="sbtn sbtn-primary is-sm" type="button" id="taFlowSearch">Search</button>
+              <span class="muted-note" id="taFlowMsg"></span>
+            </div>
+            <div class="data-scroll">
+              <table class="table table-vcenter mb-0">
+                <thead id="taFlowsHead"></thead>
+                <tbody id="taFlowsRows"><tr><td colspan="8" class="empty-state">Not searched yet</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ta-panel" id="taPanel-setup" style="display:none">
+            <div class="muted-note mb-2" id="taSetupNote"></div>
+            <div class="sec-card-title mb-2">Storage</div>
+            <form id="taSettingsForm" autocomplete="off">
+              <div class="ff-grid">
+                <div class="ff">
+                  <label class="sform-label" for="taBackend">Backend</label>
+                  <select class="sform-input" id="taBackend">
+                    <option value="sqlite">SQLite (in /data, no setup)</option>
+                    <option value="clickhouse">ClickHouse (every flow, searchable)</option>
+                  </select>
+                  <div class="ff-help">SQLite keeps the per-minute totals: 48 hours by minute, 90 days by hour, a year by day. ClickHouse keeps them a year and every flow too.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="taPort">IPFIX port (UDP)</label>
+                  <input class="sform-input" id="taPort" type="number" min="1024" max="65535" placeholder="2055">
+                  <div class="ff-help">Publish it on the container: 2055:2055/udp.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="taCollector">Collector address</label>
+                  <input class="sform-input" id="taCollector" placeholder="automatic" spellcheck="false">
+                  <div class="ff-help">Where the router sends IPFIX. Empty: the address the router sees MikroDash connect from.</div>
+                </div>
+                <div class="ff ta-ch">
+                  <label class="sform-label" for="taChUrl">ClickHouse URL</label>
+                  <input class="sform-input" id="taChUrl" placeholder="http://192.168.11.20:8123" spellcheck="false">
+                  <div class="ff-help">Its HTTP interface.</div>
+                </div>
+                <div class="ff ta-ch">
+                  <label class="sform-label" for="taChUser">User</label>
+                  <input class="sform-input" id="taChUser" placeholder="default" spellcheck="false">
+                  <div class="ff-help"></div>
+                </div>
+                <div class="ff ta-ch">
+                  <label class="sform-label" for="taChPassword">Password</label>
+                  <input class="sform-input" id="taChPassword" type="password" autocomplete="new-password">
+                  <div class="ff-help" id="taChPasswordHelp">Stored encrypted.</div>
+                </div>
+                <div class="ff ta-ch">
+                  <label class="sform-label" for="taChDatabase">Database</label>
+                  <input class="sform-input" id="taChDatabase" placeholder="mikrodash" spellcheck="false">
+                  <div class="ff-help">Created if missing.</div>
+                </div>
+                <div class="ff ta-ch">
+                  <label class="sform-label" for="taFlowDays">Keep flows, days</label>
+                  <input class="sform-input" id="taFlowDays" type="number" min="1" max="3650" placeholder="90">
+                  <div class="ff-help"></div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                <button class="sbtn sbtn-primary" type="submit">Save storage</button>
+                <span class="muted-note" id="taSettingsMsg"></span>
+              </div>
+            </form>
+
+            <div class="sec-card-title mt-4 mb-2">This router's Traffic Flow</div>
+            <form id="taRouterForm" autocomplete="off">
+              <div class="ff-grid">
+                <div class="ff">
+                  <label class="sform-label" for="taInterfaces">Interfaces counted</label>
+                  <input class="sform-input" id="taInterfaces" placeholder="all" spellcheck="false">
+                  <div class="ff-help">all, or names separated by commas (the WAN alone counts internet traffic only).</div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                <button class="sbtn sbtn-outline" type="submit">Save interfaces</button>
+                <span class="muted-note" id="taRouterMsg"></span>
+              </div>
+            </form>
+            <div class="muted-note mt-3 mb-2">Traffic Flow on, one export a minute, a target to MikroDash. Nothing else on the router is changed.</div>
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+              <button class="sbtn sbtn-outline is-sm" type="button" id="taPlanShow">Preview</button>
+              <button class="sbtn sbtn-primary is-sm" type="button" id="taApply">Apply to the router</button>
+              <button class="sbtn sbtn-danger is-sm" type="button" id="taRemove">Remove from the router</button>
+              <span class="muted-note" id="taPlanMsg"></span>
+            </div>
+            <div id="taPlanWarnings"></div>
+            <div class="data-scroll">
+              <table class="table table-vcenter mb-0">
+                <thead><tr><th>Step</th><th>Menu</th><th>What</th><th>Result</th></tr></thead>
+                <tbody id="taPlanRows"><tr><td colspan="4" class="empty-state">Not previewed yet</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

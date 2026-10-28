@@ -55,6 +55,7 @@ import { initBackupsPage } from './pages/backups';
 import { initToolsPage } from './pages/tools';
 import { initSecurityScanPage } from './pages/security-scan';
 import { initIpsPage } from './pages/ips';
+import { initTrafficAnalysisPage } from './pages/traffic-analysis';
 import { initTerminalPage } from './pages/terminal';
 import { initConfigManagementPage } from './pages/config-management';
 import { mountRouters, renderRoutersStats } from './pages/routers';
@@ -675,6 +676,7 @@ async function main(): Promise<void> {
   initToolsPage(socket, pageVisible, () => activeRouterId);
   initSecurityScanPage(socket, pageVisible);
   initIpsPage(socket, pageVisible);
+  initTrafficAnalysisPage(socket, pageVisible);
   initTerminalPage(socket, pageVisible);
   initConfigManagementPage(socket, pageVisible);
 
