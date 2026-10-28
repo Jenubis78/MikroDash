@@ -136,6 +136,9 @@ type ipsEngine struct {
 	mu      sync.Mutex
 	readers map[string]*ipsReader
 	rules   []ips.Rule
+	// geoJobs is each router's geofencing apply, running or last run; see
+	// ips_geo.go.
+	geoJobs map[string]*IPSGeoJob
 }
 
 type ipsReader struct {

@@ -74,7 +74,7 @@ const ids = ['ipsBadge', 'ipsTabs', 'ipsStatePill', 'ipsModePill', 'ipsStatus', 
   'ipsRuleTimeout', 'ipsRuleEnabled', 'ipsRuleCancel', 'ipsRuleMsg', 'ipsRuleAddWrap', 'ipsRuleAdd', 'ipsSetupNote',
   'ipsSensorForm', 'ipsSensorAddress', 'ipsSensorEnforce', 'ipsSensorBytes', 'ipsSensorDisk', 'ipsSensorProtected',
   'ipsSensorImage', 'ipsSensorNetwork', 'ipsSensorNetworkHelp', 'ipsSensorDhcp', 'ipsSensorAddressField', 'ipsSensorToken', 'ipsSensorDelete', 'ipsSensorMsg', 'ipsScriptShow', 'ipsScriptCopy', 'ipsScript',
-  'ipsPlanShow', 'ipsApply', 'ipsRemove', 'ipsPlanMsg', 'ipsPlanWarnings', 'ipsPlanRows',
+  'ipsPlanShow', 'ipsApply', 'ipsRemove', 'ipsGeoForm', 'ipsGeoApply', 'ipsGeoRemove', 'ipsPlanMsg', 'ipsPlanWarnings', 'ipsPlanRows',
   'ipsPanel-flows', 'ipsPanel-apps', 'ipsPanel-events', 'ipsPanel-rules', 'ipsPanel-setup'];
 const doc = makeDoc(ids, { allowUnknown: ['#ipsTabs [data-ipstab]'] });
 global.document = doc;
@@ -134,6 +134,15 @@ const n = doc.nodes;
   n.ipsFlowPause.fire('click');
   assert.ok(n.ipsFlowsRows.innerHTML.includes('192.168.88.99'), 'resuming shows the flows that arrived');
   say('ok - pausing freezes the flows table and says what arrived');
+
+  // GEOFENCING: a running apply says how far it is, a refused one names what
+  // it would have cut off, a finished one says nothing here.
+  const job = { running: true, remove: false, phase: 'adding entries', done: 120, total: 3000, error: '', conflicts: [] as string[] };
+  assert.strictEqual(mod.geoJobLine(job), 'Applying: adding entries 120 / 3000…');
+  assert.strictEqual(mod.geoJobLine({ ...job, running: false, error: 'these countries hold addresses the router is reached from',
+    conflicts: ['198.51.100.7 (FR)'] }), 'Stopped: these countries hold addresses the router is reached from (198.51.100.7 (FR))');
+  assert.strictEqual(mod.geoJobLine({ ...job, running: false }), '');
+  say('ok - a geofencing apply reads as its progress or why it stopped');
 
   // LEAVING stops the poll: nothing is asked once another page is shown.
   doc.dispatchEvent({ type: 'mikrodash:pagechange', detail: 'dashboard' });

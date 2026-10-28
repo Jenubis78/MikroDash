@@ -123,59 +123,8 @@ func PlanRouter(sensor netip.Addr, sniffBytes int, rows map[string][]routeros.Re
 	if sensor.IsValid() {
 		want = Want(sensor, sniffBytes)
 	}
-	menus := []string{"/ip/firewall/mangle", "/ip/firewall/raw"}
-	for _, menu := range menus {
-		mine := map[string]routeros.Reply{}
-		var extra []routeros.Reply
-		firstForeign := ""
-		for _, r := range rows[menu] {
-			if !Owned(r) {
-				if firstForeign == "" {
-					firstForeign = r[".id"]
-				}
-				continue
-			}
-			if _, twice := mine[r["comment"]]; twice {
-				extra = append(extra, r)
-				continue
-			}
-			mine[r["comment"]] = r
-		}
-		wanted := map[string]bool{}
-		for _, w := range want {
-			if w.Menu != menu {
-				continue
-			}
-			wanted[w.Comment()] = true
-			have, ok := mine[w.Comment()]
-			if !ok {
-				args := map[string]string{}
-				for k, v := range w.Props {
-					args[k] = v
-				}
-				// Above every rule the operator has: a raw accept above a
-				// drop would let a blocked address through, and a mangle rule
-				// that stops processing above the copy would hide the flow.
-				if firstForeign != "" {
-					args["place-before"] = firstForeign
-				}
-				p.Steps = append(p.Steps, Step{Op: "add", Menu: menu, Args: args, What: "add " + w.Comment()})
-				continue
-			}
-			if diff := differs(w.Props, have); len(diff) > 0 {
-				p.Steps = append(p.Steps, Step{Op: "set", Menu: menu, ID: have[".id"], Args: diff,
-					What: "correct " + w.Comment()})
-			}
-		}
-		for comment, r := range mine {
-			if !wanted[comment] {
-				extra = append(extra, r)
-			}
-		}
-		sort.Slice(extra, func(i, j int) bool { return extra[i][".id"] < extra[j][".id"] })
-		for _, r := range extra {
-			p.Steps = append(p.Steps, Step{Op: "remove", Menu: menu, ID: r[".id"], What: "remove " + r["comment"]})
-		}
+	for _, menu := range []string{"/ip/firewall/mangle", "/ip/firewall/raw"} {
+		p.Steps = append(p.Steps, planMenu(menu, want, rows[menu], Owned)...)
 	}
 	if sensor.IsValid() {
 		for _, r := range filter {
@@ -190,6 +139,62 @@ func PlanRouter(sensor netip.Addr, sniffBytes int, rows map[string][]routeros.Re
 		}
 	}
 	return p
+}
+
+// planMenu brings one menu's owned rows in line with what is wanted there:
+// a missing row added above every foreign one (a raw accept or a filter accept
+// above a drop would let a listed address through), a wrong one corrected, an
+// owned row no longer wanted removed. Rows are matched by comment.
+func planMenu(menu string, want []RouterRow, rows []routeros.Reply, owned func(routeros.Reply) bool) []Step {
+	steps := []Step{}
+	mine := map[string]routeros.Reply{}
+	var extra []routeros.Reply
+	firstForeign := ""
+	for _, r := range rows {
+		if !owned(r) {
+			if firstForeign == "" && r["dynamic"] != "true" {
+				firstForeign = r[".id"]
+			}
+			continue
+		}
+		if _, twice := mine[r["comment"]]; twice {
+			extra = append(extra, r)
+			continue
+		}
+		mine[r["comment"]] = r
+	}
+	wanted := map[string]bool{}
+	for _, w := range want {
+		if w.Menu != menu {
+			continue
+		}
+		wanted[w.Comment()] = true
+		have, ok := mine[w.Comment()]
+		if !ok {
+			args := map[string]string{}
+			for k, v := range w.Props {
+				args[k] = v
+			}
+			if firstForeign != "" {
+				args["place-before"] = firstForeign
+			}
+			steps = append(steps, Step{Op: "add", Menu: menu, Args: args, What: "add " + w.Comment()})
+			continue
+		}
+		if diff := differs(w.Props, have); len(diff) > 0 {
+			steps = append(steps, Step{Op: "set", Menu: menu, ID: have[".id"], Args: diff, What: "correct " + w.Comment()})
+		}
+	}
+	for comment, r := range mine {
+		if !wanted[comment] {
+			extra = append(extra, r)
+		}
+	}
+	sort.Slice(extra, func(i, j int) bool { return extra[i][".id"] < extra[j][".id"] })
+	for _, r := range extra {
+		steps = append(steps, Step{Op: "remove", Menu: menu, ID: r[".id"], What: "remove " + r["comment"]})
+	}
+	return steps
 }
 
 // differs is the properties the router's row has wrong. A property the router

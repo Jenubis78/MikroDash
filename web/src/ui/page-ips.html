@@ -16,6 +16,7 @@
               <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="risks">Risks</button>
               <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="events">Decisions</button>
               <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="rules">Rules</button>
+              <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="geo">Geo</button>
               <button class="stab" type="button" role="tab" aria-selected="false" data-ipstab="setup">Setup</button>
             </span>
           </div>
@@ -178,6 +179,40 @@
             <div class="mt-2" id="ipsRuleAddWrap">
               <button class="sbtn sbtn-primary is-sm" type="button" id="ipsRuleAdd">Add rule</button>
             </div>
+          </div>
+
+          <div class="ips-panel" id="ipsPanel-geo" style="display:none">
+            <div class="muted-note mb-2" id="ipsGeoNote"></div>
+            <form id="ipsGeoForm" autocomplete="off">
+              <div class="ff-grid">
+                <div class="ff ff-full">
+                  <label class="sform-label">Countries</label>
+                  <div class="ff-box ips-pick" id="ipsGeoCountriesPick"></div>
+                  <div class="ff-help">Every IPv4 network the geo database places in them, merged, in one address list on the router.</div>
+                </div>
+                <div class="ff">
+                  <label class="sform-label" for="ipsGeoDirection">Direction</label>
+                  <select class="sform-input" id="ipsGeoDirection">
+                    <option value="both">Both ways</option>
+                    <option value="in">Inbound: connections from them</option>
+                    <option value="out">Outbound: connections to them</option>
+                  </select>
+                  <div class="ff-help">Only new connections are dropped, in the filter chain; replies are left alone.</div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                <button class="sbtn sbtn-primary" type="submit">Save countries</button>
+                <span class="muted-note" id="ipsGeoMsg"></span>
+              </div>
+            </form>
+            <div class="sec-card-title mt-4 mb-2">On the router</div>
+            <div class="muted-note mb-2" id="ipsGeoListNote"></div>
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap" id="ipsGeoActions">
+              <button class="sbtn sbtn-primary is-sm" type="button" id="ipsGeoApply">Apply to the router</button>
+              <button class="sbtn sbtn-danger is-sm" type="button" id="ipsGeoRemove">Remove from the router</button>
+            </div>
+            <div class="muted-note" id="ipsGeoJob"></div>
+            <div class="muted-note" id="ipsGeoLast"></div>
           </div>
 
           <div class="ips-panel" id="ipsPanel-setup" style="display:none">

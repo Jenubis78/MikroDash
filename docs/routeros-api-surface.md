@@ -506,6 +506,21 @@ administrator presses a button on the page.
 | `/ip/firewall/mangle/add`, `/set`, `/remove` | the one `action=sniff-tzsp` rule, `place-before` the first foreign rule | Apply, Remove |
 | `/ip/firewall/raw/add`, `/set`, `/remove` | the three `action=drop` rules on the two lists, `place-before` the first foreign rule | Apply, Remove |
 
+Geofencing (internal/server/ips_geo.go, added 2026-10-28): one address list of
+country networks and the filter rules that drop new connections on it, checked
+against the CLI reference (`connection-state=new`, `src-address-list`,
+`dst-address-list` on `/ip/firewall/filter`). Only on Apply and Remove in the Geo
+tab, one write per prefix, in sequence.
+
+| Command | Proplist or arguments | Used by |
+|---|---|---|
+| `/ip/address/print`, `/user/active/print` | `=.proplist=address` | Apply: the public addresses an inbound drop would cut off |
+| `/ip/firewall/address-list/print` | `=.proplist=.id,address` `?list=mikrodash-ips-geo` | Apply, Remove: what the list holds |
+| `/ip/firewall/address-list/add` | `=list=mikrodash-ips-geo`, `=address=<prefix>`, `=comment=MikroDash IPS geo <CC>` | Apply, per missing prefix |
+| `/ip/firewall/address-list/remove` | `=.id=<id>` | Apply (prefixes no longer chosen), Remove |
+| `/ip/firewall/filter/print` | whole rows | Apply, Remove |
+| `/ip/firewall/filter/add`, `/set`, `/remove` | `chain=forward`/`input`, `action=drop`, `connection-state=new`, `src-address-list` or `dst-address-list=mikrodash-ips-geo`, commented `MikroDash IPS: geo, …`, `place-before` the first static foreign rule | Apply, Remove |
+
 ## Proplists
 
 A proplist is the only thing keeping a credential out of a payload - see

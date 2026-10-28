@@ -114,6 +114,19 @@ interface State {
   events: Event[]; rules: Rule[]; admin: boolean; defaults: { sniffBytes: number; image: string; timeoutMin: number };
 }
 interface Step { op: string; menu: string; what: string; error?: string }
+/** GET /api/ips/geo: the router's country lists, and the apply writing them. */
+export interface GeoJob { running: boolean; remove: boolean; phase: string; done: number; total: number; error: string; conflicts: string[] }
+export interface GeoState {
+  geo: { countries: string[]; direction: string; appliedAt: number; result: string; entries: number };
+  job: GeoJob; available: boolean; list: string; maxEntries: number;
+}
+
+/** A geofencing apply as its line reads: the phase, how far, and how it ended. */
+export function geoJobLine(j: GeoJob): string {
+  if (j.running) return (j.remove ? 'Removing: ' : 'Applying: ') + j.phase + (j.total ? ' ' + j.done + ' / ' + j.total : '') + '…';
+  if (j.error) return 'Stopped: ' + j.error + (j.conflicts.length ? ' (' + j.conflicts.join(', ') + ')' : '');
+  return '';
+}
 interface Listed { id: string; list: string; address: string; timeout: string; comment: string }
 
 function call<T>(url: string, init?: RequestInit): Promise<T> {
@@ -239,6 +252,9 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   let catalogAsked = false;
   const picks: Record<PickField, string[]> = { apps: [], categories: [], breeds: [], risks: [], countries: [] };
   let chosenNetwork = '';
+  let geo: GeoState | null = null;
+  let geoFor = '';
+  let geoPicks: string[] = [];
   const flowSort: SortState = { col: 'ts', dir: 'desc' };
   const appSort: SortState = { col: 'flows', dir: 'desc' };
   const eventSort: SortState = { col: 'ts', dir: 'desc' };
@@ -474,6 +490,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     if (tab === 'risks') drawRisks(s);
     if (tab === 'apps') drawApps(s);
     if (tab === 'events') drawEvents(s);
+    if (tab === 'geo' && geo?.job.running) loadGeo();
     drawRules(s);
     drawSetup(s);
   }
@@ -492,6 +509,9 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
     setHTML('ipsListedRows', '<tr><td colspan="5" class="empty-state">Not read yet</td></tr>');
     setHTML('ipsPlanRows', '<tr><td colspan="4" class="empty-state">Not previewed yet</td></tr>');
     setHTML('ipsPlanWarnings', '');
+    geo = null;
+    geoFor = '';
+    if (tab === 'geo') loadGeo();
     const scr = el('ipsScript');
     if (scr) scr.style.display = 'none';
   }
@@ -517,7 +537,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   function showTab(key: string): void {
     if (key === 'setup' && tab !== 'setup' && networksError) networksFor = ''; // read again on return
     tab = key;
-    for (const k of ['flows', 'apps', 'risks', 'events', 'rules', 'setup']) {
+    for (const k of ['flows', 'apps', 'risks', 'events', 'rules', 'geo', 'setup']) {
       const p = el('ipsPanel-' + k);
       if (p) p.style.display = k === key ? '' : 'none';
     }
@@ -526,6 +546,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       b.classList.toggle('active', on);
       b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
+    if (key === 'geo') loadGeo();
     draw();
   }
   el('ipsTabs')?.addEventListener('click', (e) => {
@@ -604,7 +625,7 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   function loadCatalog(): void {
     if (catalogAsked) return;
     catalogAsked = true;
-    call<Catalog>('/api/ips/catalog').then((c) => { catalog = c; drawPicks(); })
+    call<Catalog>('/api/ips/catalog').then((c) => { catalog = c; drawPicks(); drawGeoPick(); })
       .catch(() => { catalogAsked = false; });
   }
   el('ipsRuleForm')?.addEventListener('change', (ev) => {
@@ -761,4 +782,86 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   }
   el('ipsApply')?.addEventListener('click', () => apply(false));
   el('ipsRemove')?.addEventListener('click', () => apply(true));
+
+  // ── geofencing ───────────────────────────────────────────────────────────
+  // The choice is saved, then applied: an apply is a job on the server, and
+  // its progress rides the page's poll while it runs.
+  function drawGeoPick(): void {
+    setHTML('ipsGeoCountriesPick', pickHtml('countries', geoPicks, catalog));
+  }
+  function drawGeo(): void {
+    const admin = !!state?.admin;
+    const g = geo;
+    for (const id of ['ipsGeoForm', 'ipsGeoActions']) {
+      const n = el(id);
+      if (n) n.style.display = admin ? '' : 'none';
+    }
+    if (!g) { setText('ipsGeoNote', 'Reading…'); return; }
+    setText('ipsGeoNote', !g.available ? 'Geofencing needs the DB-IP geo database, which this install does not have.'
+      : admin ? 'Drop new connections to or from whole countries, on the router itself: no sensor needed.'
+        : 'Geofencing is configured by administrators.');
+    setText('ipsGeoListNote', 'The list ' + g.list + ', at most ' + g.maxEntries + ' networks, and two or three filter rules ' +
+      'commented "MikroDash IPS: geo". Apply again after a geo database update: only the difference is written.');
+    const running = g.job.running;
+    for (const id of ['ipsGeoApply', 'ipsGeoRemove']) el(id)?.toggleAttribute('disabled', running || !g.available);
+    setText('ipsGeoJob', geoJobLine(g.job));
+    setText('ipsGeoLast', g.geo.appliedAt ? 'Last: ' + g.geo.result + ', ' + g.geo.entries + ' networks listed, ' +
+      fmtTime(g.geo.appliedAt) + '.' : 'Never applied to this router.');
+  }
+  function loadGeo(): void {
+    if (!routerId) return;
+    const asked = routerId;
+    loadCatalog();
+    call<GeoState>('/api/ips/geo' + qs()).then((g) => {
+      if (asked !== routerId) return;
+      geo = g;
+      if (geoFor !== asked) {
+        geoFor = asked;
+        geoPicks = [...g.geo.countries];
+        const d = el<HTMLSelectElement>('ipsGeoDirection');
+        if (d) d.value = g.geo.direction;
+        drawGeoPick();
+      }
+      drawGeo();
+    }).catch((e: Error) => setText('ipsGeoNote', e.message));
+  }
+  el('ipsGeoForm')?.addEventListener('change', (ev) => {
+    const sel = (ev.target as HTMLElement | null)?.closest?.('[data-ipsadd]') as HTMLSelectElement | null;
+    if (!sel || !sel.value) return;
+    if (!geoPicks.includes(sel.value)) geoPicks.push(sel.value);
+    drawGeoPick();
+  });
+  el('ipsGeoForm')?.addEventListener('click', (ev) => {
+    const b = (ev.target as HTMLElement | null)?.closest?.('[data-ipsunpick]');
+    if (!b) return;
+    geoPicks = geoPicks.filter((v) => v !== b.getAttribute('data-v'));
+    drawGeoPick();
+  });
+  function saveGeo(): Promise<void> {
+    return post<{ countries: string[] }>('/api/ips/geo' + qs(), { countries: geoPicks,
+      direction: el<HTMLSelectElement>('ipsGeoDirection')?.value || 'both' })
+      .then((r) => { geoPicks = r.countries; drawGeoPick(); });
+  }
+  el('ipsGeoForm')?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    setText('ipsGeoMsg', 'Saving…');
+    saveGeo().then(() => { setText('ipsGeoMsg', 'Saved. Apply it to the router to take effect.'); loadGeo(); })
+      .catch((e: Error) => setText('ipsGeoMsg', e.message));
+  });
+  // APPLY SAVES FIRST: what is written is what the form shows.
+  function applyGeo(remove: boolean): void {
+    const n = geoPicks.length;
+    const dir = el<HTMLSelectElement>('ipsGeoDirection')?.value || 'both';
+    const ask = remove || !n
+      ? 'Remove the geofencing rules from the router, and empty the list ' + (geo?.list || '') + '?'
+      : 'Write ' + n + ' countr' + (n === 1 ? 'y' : 'ies') + ' to the router, and drop new connections ' +
+        ({ in: 'from', out: 'to', both: 'to and from' } as Record<string, string>)[dir] + ' them?';
+    if (!window.confirm(ask)) return;
+    (remove ? Promise.resolve() : saveGeo())
+      .then(() => post('/api/ips/geo/apply' + qs() + (remove ? '&remove=1' : '')))
+      .then(loadGeo)
+      .catch((e: Error) => setText('ipsGeoJob', e.message));
+  }
+  el('ipsGeoApply')?.addEventListener('click', () => applyGeo(false));
+  el('ipsGeoRemove')?.addEventListener('click', () => applyGeo(true));
 }

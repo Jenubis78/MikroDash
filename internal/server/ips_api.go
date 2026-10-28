@@ -15,6 +15,9 @@ package server
 //	GET    /api/ips/plan?router=         what the router needs, read-only
 //	POST   /api/ips/apply?router=        do it (`remove=1`: take everything off)
 //	POST   /api/ips/unlist?router=       take one address off a list
+//	GET    /api/ips/geo?router=          the router's geofencing and its apply's progress
+//	POST   /api/ips/geo?router=          choose its countries and direction
+//	POST   /api/ips/geo/apply?router=    write them to the router (`remove=1`: take them off)
 //
 // ── WHO MAY DO WHAT ─────────────────────────────────────────────────────────
 //
@@ -61,6 +64,9 @@ func (s *Server) registerIPS(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/ips/plan", s.ipsPlan)
 	mux.HandleFunc("POST /api/ips/apply", s.ipsApply)
 	mux.HandleFunc("POST /api/ips/unlist", s.ipsUnlist)
+	mux.HandleFunc("GET /api/ips/geo", s.ipsGeoGet)
+	mux.HandleFunc("POST /api/ips/geo", s.ipsGeoSave)
+	mux.HandleFunc("POST /api/ips/geo/apply", s.ipsGeoApply)
 }
 
 // ipsReadGate: signed in, a valid router, the page's read grant on it.

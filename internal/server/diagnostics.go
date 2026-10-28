@@ -72,6 +72,7 @@ var commandSources = map[string]string{
 	"dnslists_api.go":     "Domain lists",
 	"ips.go":              "IPS",
 	"ips_api.go":          "IPS",
+	"ips_geo.go":          "IPS",
 	"capversions_api.go":  "Pages",
 	"topofleet_api.go":    "Pages",
 	"packages.go":         "Packages",

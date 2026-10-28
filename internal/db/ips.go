@@ -208,3 +208,44 @@ func (d *DB) IPSEvents(routerID string, limit int) ([]IPSEvent, error) {
 	}
 	return out, rows.Err()
 }
+
+// IPSGeo is one router's geofencing: what it should hold, and what the last
+// apply did.
+type IPSGeo struct {
+	RouterID  string   `json:"routerId"`
+	Countries []string `json:"countries"`
+	Direction string   `json:"direction"`
+	AppliedAt int64    `json:"appliedAt"`
+	Result    string   `json:"result"`
+	Entries   int      `json:"entries"`
+}
+
+// IPSGeoOf is a router's geofencing; a router without a row has none chosen.
+func (d *DB) IPSGeoOf(routerID string) (IPSGeo, error) {
+	g := IPSGeo{RouterID: routerID, Countries: []string{}, Direction: ips.GeoBoth}
+	var countries string
+	err := d.sql.QueryRow(`SELECT countries, direction, applied_at, result, entries FROM ips_geo WHERE router_id = ?`,
+		routerID).Scan(&countries, &g.Direction, &g.AppliedAt, &g.Result, &g.Entries)
+	if err == sql.ErrNoRows {
+		return g, nil
+	}
+	g.Countries = listOf(countries)
+	return g, err
+}
+
+// SaveIPSGeo stores a router's choice of countries and direction, keeping what
+// the last apply recorded.
+func (d *DB) SaveIPSGeo(routerID string, countries []string, direction string) error {
+	_, err := d.sql.Exec(`INSERT INTO ips_geo (router_id, countries, direction) VALUES (?, ?, ?)
+	        ON CONFLICT (router_id) DO UPDATE SET countries = excluded.countries, direction = excluded.direction`,
+		routerID, jsonList(countries), direction)
+	return err
+}
+
+// RecordIPSGeo stores what an apply (or a removal) did.
+func (d *DB) RecordIPSGeo(routerID string, at int64, result string, entries int) error {
+	_, err := d.sql.Exec(`INSERT INTO ips_geo (router_id, applied_at, result, entries) VALUES (?, ?, ?, ?)
+	        ON CONFLICT (router_id) DO UPDATE SET applied_at = excluded.applied_at, result = excluded.result,
+	        entries = excluded.entries`, routerID, at, result, entries)
+	return err
+}

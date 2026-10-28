@@ -21,6 +21,11 @@ package db
 // any action but allow. `result` is listed, monitor (not enforcing), refused
 // (the guard said no; the code follows), already, limited (the per-minute cap)
 // or failed. Pruned by age with the history.
+//
+// ips_geo is a router's geofencing (migration 41): the countries whose networks
+// its address list holds, the direction its filter rules drop (in, out, both),
+// and what the last apply did - when, its outcome, and how many entries the
+// list held after it. The list itself lives on the router.
 const ipsDDL = `
 CREATE TABLE IF NOT EXISTS ips_rules (
           id          INTEGER PRIMARY KEY,
@@ -68,4 +73,12 @@ CREATE TABLE IF NOT EXISTS ips_events (
           risks       TEXT    NOT NULL DEFAULT '[]'
         );
 CREATE INDEX IF NOT EXISTS idx_ips_events_router_ts ON ips_events (router_id, ts);
+CREATE TABLE IF NOT EXISTS ips_geo (
+          router_id   TEXT    PRIMARY KEY,
+          countries   TEXT    NOT NULL DEFAULT '[]',
+          direction   TEXT    NOT NULL DEFAULT 'both',
+          applied_at  INTEGER NOT NULL DEFAULT 0,
+          result      TEXT    NOT NULL DEFAULT '',
+          entries     INTEGER NOT NULL DEFAULT 0
+        );
 `

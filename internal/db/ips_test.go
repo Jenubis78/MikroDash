@@ -73,3 +73,23 @@ func TestIPSSensorsAndEventsRoundTrip(t *testing.T) {
 		t.Errorf("after delete: %+v", got)
 	}
 }
+
+func TestIPSGeoKeepsTheChoiceAndTheLastApplySeparately(t *testing.T) {
+	d := openTestDB(t)
+	if g, err := d.IPSGeoOf("r1"); err != nil || len(g.Countries) != 0 || g.Direction != ips.GeoBoth {
+		t.Fatalf("none chosen: %v %+v", err, g)
+	}
+	if err := d.SaveIPSGeo("r1", []string{"CN", "RU"}, ips.GeoIn); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.RecordIPSGeo("r1", 42, "applied", 1234); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.SaveIPSGeo("r1", []string{"KP"}, ips.GeoOut); err != nil {
+		t.Fatal(err)
+	}
+	g, err := d.IPSGeoOf("r1")
+	if err != nil || g.Countries[0] != "KP" || g.Direction != ips.GeoOut || g.AppliedAt != 42 || g.Entries != 1234 {
+		t.Errorf("%v %+v", err, g)
+	}
+}
