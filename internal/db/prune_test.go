@@ -330,7 +330,7 @@ func openTestDB(t *testing.T) *DB {
 	}
 	// AND THE REAL `monitorRunsDDL`, the constant itself rather than a retyped
 	// copy, for the same reason as the line above.
-	if _, err := h.Exec(historyDDL + monitorRunsDDL + clientWatchDDL + ipsDDL); err != nil {
+	if _, err := h.Exec(historyDDL + monitorRunsDDL + clientWatchDDL + ipsDDL + trafficDDL); err != nil {
 		t.Fatal(err)
 	}
 	_ = h.Close()

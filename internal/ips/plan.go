@@ -93,7 +93,10 @@ func (s Step) Cmd() routeros.Cmd {
 	var args []string
 	switch s.Op {
 	case "set", "remove":
-		args = append(args, "=.id="+s.ID)
+		// A menu of one row (/ip/traffic-flow) is set without an id.
+		if s.ID != "" {
+			args = append(args, "=.id="+s.ID)
+		}
 	}
 	keys := make([]string, 0, len(s.Args))
 	for k := range s.Args {

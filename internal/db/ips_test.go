@@ -109,3 +109,27 @@ func TestIPSGeoKeepsTheChoiceAndTheLastApplySeparately(t *testing.T) {
 		t.Errorf("%v %+v", err, g)
 	}
 }
+
+func TestTrafficSettingsAndRoutersRoundTrip(t *testing.T) {
+	d := openTestDB(t)
+	if s, err := d.TrafficSettingsGet(); err != nil || s != DefaultTrafficSettings {
+		t.Fatalf("defaults: %v %+v", err, s)
+	}
+	want := TrafficSettings{Backend: "clickhouse", CHURL: "http://ch:8123", CHUser: "md", CHPassword: `{"sealed":"x"}`,
+		CHDatabase: "mikrodash", FlowDays: 30, Port: 2056, Collector: "192.168.11.5"}
+	if err := d.SaveTrafficSettings(want); err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := d.TrafficSettingsGet(); s != want {
+		t.Errorf("%+v", s)
+	}
+	r := TrafficRouter{RouterID: "r1", Enabled: true, Interfaces: "ether1", AppliedAt: 5, Result: "applied"}
+	if err := d.SaveTrafficRouter(r); err != nil {
+		t.Fatal(err)
+	}
+	r.Enabled = false
+	_ = d.SaveTrafficRouter(r)
+	if got, _ := d.TrafficRouters(); len(got) != 1 || got[0] != r {
+		t.Errorf("%+v", got)
+	}
+}
