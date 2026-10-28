@@ -120,11 +120,13 @@ type IPSAppCount struct {
 // IPSStatus is one router's reader, as the page shows it.
 type IPSStatus struct {
 	// State is off (no sensor), connecting, connected, unreachable or refused.
-	State   string     `json:"state"`
-	Message string     `json:"message"`
-	Since   int64      `json:"since"`
-	Sensor  string     `json:"sensor"`
-	NDPI    string     `json:"ndpi"`
+	State   string `json:"state"`
+	Message string `json:"message"`
+	Since   int64  `json:"since"`
+	Sensor  string `json:"sensor"`
+	NDPI    string `json:"ndpi"`
+	// Build is the sensor's release, from its hello; empty before version 2.
+	Build   string     `json:"build"`
 	Enforce bool       `json:"enforce"`
 	Stats   *ips.Stats `json:"stats"`
 	// Counters since the reader started.
@@ -146,6 +148,10 @@ type ipsEngine struct {
 	// geoJobs is each router's geofencing apply, running or last run; see
 	// ips_geo.go.
 	geoJobs map[string]*IPSGeoJob
+	// updates is each router's sensor update, and releases the registry's
+	// newest release per image; see ips_update.go.
+	updates  map[string]*IPSUpdateJob
+	releases map[string]*ipsRelease
 }
 
 type ipsReader struct {
@@ -396,7 +402,7 @@ func (r *ipsReader) readOnce(ctx context.Context) (connected bool, err error) {
 			return connected, errRefused{"the sensor refused MikroDash: " + line.Error}
 		case line.Hello != nil:
 			r.mu.Lock()
-			r.status.NDPI = line.Hello.NDPI
+			r.status.NDPI, r.status.Build = line.Hello.NDPI, ips.ReleaseOf(*line.Hello)
 			r.mu.Unlock()
 			connected = true
 			r.setState("connected", "")

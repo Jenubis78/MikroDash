@@ -21,6 +21,7 @@
             </span>
           </div>
           <div class="hdr-actions d-flex align-items-center gap-2">
+            <span id="ipsUpdatePill"></span>
             <span id="ipsStatePill"></span>
             <span id="ipsModePill"></span>
           </div>
@@ -300,6 +301,14 @@
               <button class="sbtn sbtn-outline is-sm" type="button" id="ipsScriptCopy" disabled>Copy</button>
             </div>
             <pre class="ztp-script" id="ipsScript" style="display:none"></pre>
+
+            <div class="sec-card-title mt-4 mb-2">Sensor release</div>
+            <div class="muted-note mb-2" id="ipsUpdateNote">Not checked yet.</div>
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap" id="ipsUpdateActions">
+              <button class="sbtn sbtn-primary is-sm" type="button" id="ipsUpdateBtn" style="display:none">Update the sensor</button>
+              <button class="sbtn sbtn-outline is-sm" type="button" id="ipsUpdateCheck">Check now</button>
+              <span class="muted-note" id="ipsUpdateJob"></span>
+            </div>
 
             <div class="sec-card-title mt-4 mb-2">2. Copy traffic to it, and drop what it lists</div>
             <div class="muted-note mb-2">One mangle rule and three raw rules, each commented "MikroDash IPS". Nothing else on the

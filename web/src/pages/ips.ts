@@ -147,6 +147,29 @@ export const INSPECT_ALL_WARNING = 'Warning: every packet of every connection is
   '(a CCR or an RB5009 with CPU to spare, a fast link to the sensor). Watch its CPU after applying and go back to the ' +
   'first bytes if it climbs. A fasttrack rule must be disabled, or fasttracked connections stop being inspected.';
 
+/** GET /api/ips/sensor/update: the sensor's release, the registry's newest, the update job. */
+export interface SensorUpdate {
+  image: string; running: string; newest: string; available: boolean; checkedAt: number; checkError: string;
+  job: { running: boolean; phase: string; error: string; from: string; to: string; at: number };
+}
+
+/** The Setup tab's line about the sensor's release. */
+export function updateNote(u: SensorUpdate): string {
+  const running = u.running ? 'The sensor runs ' + u.running + '.' : 'The sensor does not report its release (before 0.2.0).';
+  if (u.checkError) return running + ' The registry could not be read: ' + u.checkError;
+  if (!u.newest) return running + (u.checkedAt ? ' The registry has no release yet.' : ' Checking the registry…');
+  return running + (u.available ? ' ' + u.newest + ' is available.' : ' It is the newest (' + u.newest + ').');
+}
+
+/** The update job, as its line reads. */
+export function updateJobLine(u: SensorUpdate): string {
+  const j = u.job;
+  if (j.running) return 'Updating to ' + j.to + ': ' + j.phase + '…';
+  if (j.error) return 'The update to ' + j.to + ' stopped: ' + j.error;
+  if (j.at && j.phase === 'done') return 'Updated to ' + j.to + '.';
+  return '';
+}
+
 /** A geofencing apply as its line reads: the phase, how far, and how it ended. */
 export function geoJobLine(j: GeoJob): string {
   if (j.running) return (j.remove ? 'Removing: ' : 'Applying: ') + j.phase + (j.total ? ' ' + j.done + ' / ' + j.total : '') + '…';
@@ -279,6 +302,8 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   const picks: Record<PickField, string[]> = { apps: [], categories: [], breeds: [], risks: [], countries: [] };
   let chosenNetwork = '';
   let geo: GeoState | null = null;
+  let upd: SensorUpdate | null = null;
+  let updAsked = 0;
   let geoFor = '';
   // The whitelist and the blacklist as the form holds them.
   const geoPicks: Record<'allow' | 'block', string[]> = { allow: [], block: [] };
@@ -293,8 +318,36 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
   const q = (id: string): string => (el<HTMLInputElement>(id)?.value || '').trim();
   const qs = (): string => '?router=' + encodeURIComponent(routerId);
 
+  // The release is asked every 30 s, or at every poll while an update runs
+  // or the Setup tab is open; the server answers from its cache.
+  function loadUpdate(check = false): void {
+    if (!routerId) return;
+    const asked = routerId;
+    updAsked = Date.now();
+    call<SensorUpdate>('/api/ips/sensor/update' + qs() + (check ? '&check=1' : ''))
+      .then((u) => { if (asked === routerId) { upd = u; drawUpdate(); } })
+      .catch(() => { /* the page goes on without it */ });
+  }
+  function drawUpdate(): void {
+    const u = upd;
+    const admin = !!state?.admin;
+    setHTML('ipsUpdatePill', u && u.available ? pill('update ' + u.newest, 'warn') : '');
+    if (!u || !u.job) return;
+    setText('ipsUpdateNote', updateNote(u));
+    setText('ipsUpdateJob', updateJobLine(u));
+    const b = el('ipsUpdateBtn');
+    if (b) {
+      b.style.display = admin && (u.available || u.job.running) ? '' : 'none';
+      b.textContent = 'Update the sensor to ' + u.newest;
+      b.toggleAttribute('disabled', u.job.running);
+    }
+    const c = el('ipsUpdateCheck');
+    if (c) c.style.display = admin ? '' : 'none';
+  }
+
   function load(): void {
     if (!routerId || !isVisible('ips')) return;
+    if (upd?.job?.running || tab === 'setup' || Date.now() - updAsked > 30000) loadUpdate();
     const asked = routerId;
     call<State>('/api/ips/state' + qs())
       .then((s) => { if (asked === routerId) { state = s; draw(); } })
@@ -826,6 +879,14 @@ export function initIpsPage(socket: Socket, isVisible: (page: string) => boolean
       })
       .catch((e: Error) => setText('ipsPlanMsg', e.message));
   }
+  el('ipsUpdatePill')?.addEventListener('click', () => showTab('setup'));
+  el('ipsUpdateCheck')?.addEventListener('click', () => loadUpdate(true));
+  el('ipsUpdateBtn')?.addEventListener('click', () => {
+    if (!upd) return;
+    if (!window.confirm('Update the sensor to ' + upd.newest + '? The router re-pulls ' + upd.image +
+      ' and restarts the container: nothing is inspected for a minute or two.')) return;
+    post('/api/ips/sensor/update' + qs()).then(() => loadUpdate()).catch((e: Error) => setText('ipsUpdateJob', e.message));
+  });
   el('ipsApply')?.addEventListener('click', () => apply(false));
   el('ipsRemove')?.addEventListener('click', () => apply(true));
 

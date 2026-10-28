@@ -73,6 +73,7 @@ var commandSources = map[string]string{
 	"ips.go":              "IPS",
 	"ips_api.go":          "IPS",
 	"ips_geo.go":          "IPS",
+	"ips_update.go":       "IPS",
 	"traffic.go":          "Traffic",
 	"traffic_api.go":      "Traffic",
 	"capversions_api.go":  "Pages",

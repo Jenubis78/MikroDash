@@ -13,6 +13,9 @@
 
 FROM alpine:3.24 AS build
 ARG NDPI_REF=4.14
+# The release this image is, from the dpi-v* tag: the sensor tells MikroDash,
+# which offers an update when the registry holds a newer one.
+ARG SENSOR_BUILD=dev
 RUN apk add --no-cache build-base autoconf automake libtool pkgconf git linux-headers
 RUN git clone --depth 1 --branch "$NDPI_REF" https://github.com/ntop/nDPI.git /ndpi
 WORKDIR /ndpi
@@ -20,7 +23,7 @@ RUN ./autogen.sh --with-only-libndpi >/dev/null \
  && ./configure --with-only-libndpi --disable-shared >/dev/null \
  && make -j"$(nproc)" -C src/lib
 COPY mikrodash-dpi.c /src/
-RUN cc -O2 -Wall -Wextra -static -I/ndpi/src/include -o /mikrodash-dpi /src/mikrodash-dpi.c \
+RUN cc -O2 -Wall -Wextra -static -DSENSOR_BUILD="\"$SENSOR_BUILD\"" -I/ndpi/src/include -o /mikrodash-dpi /src/mikrodash-dpi.c \
       /ndpi/src/lib/libndpi.a -lm \
  && strip /mikrodash-dpi \
  && /mikrodash-dpi --version

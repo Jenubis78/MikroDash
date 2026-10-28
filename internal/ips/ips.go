@@ -170,8 +170,11 @@ func LiveBytesRequest(seconds int) string { return fmt.Sprintf("BYTES %d\n", sec
 
 // Hello is the sensor's greeting once the token was accepted.
 type Hello struct {
-	Version string `json:"version"`
-	NDPI    string `json:"ndpi"`
+	Version string `json:"version"` // the protocol
+	// Build is the release the image is (its dpi-v* tag), from version 2;
+	// empty before.
+	Build string `json:"build"`
+	NDPI  string `json:"ndpi"`
 }
 
 // connBytesOf reads one [l4, client, clientPort, server, serverPort, tx, rx].

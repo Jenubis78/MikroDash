@@ -59,7 +59,10 @@
 
 #include "ndpi_api.h"
 
-#define SENSOR_VERSION "2"
+#define SENSOR_VERSION "2" /* the protocol MikroDash reads */
+#ifndef SENSOR_BUILD
+#define SENSOR_BUILD "dev" /* the release, from the image's dpi-v* tag (Dockerfile) */
+#endif
 #define DPI_MAX_PACKETS 32
 #define HASH_BUCKETS (1u << 16)
 #define OUT_CAP (1u << 20)
@@ -557,9 +560,9 @@ static void read_pending(void) {
     in_len = left;
     in[in_len] = 0;
   }
-  char hello[160];
-  int n = snprintf(hello, sizeof(hello), "{\"type\":\"hello\",\"version\":\"%s\",\"ndpi\":\"%s\"}", SENSOR_VERSION,
-                   ndpi_revision());
+  char hello[200];
+  int n = snprintf(hello, sizeof(hello), "{\"type\":\"hello\",\"version\":\"%s\",\"build\":\"%s\",\"ndpi\":\"%s\"}",
+                   SENSOR_VERSION, SENSOR_BUILD, ndpi_revision());
   emit(hello, (size_t)n);
   logf_("a reader connected");
   reader_lines();
@@ -707,7 +710,7 @@ static void configure(int argc, char **argv) {
     else if (!strcmp(argv[i], "--max-flows")) cfg_max_flows = (unsigned)int_opt(argv[++i], 1024, 1 << 22, "--max-flows");
     else if (!strcmp(argv[i], "--idle")) cfg_idle_ms = (unsigned)int_opt(argv[++i], 10, 3600, "--idle") * 1000;
     else if (!strcmp(argv[i], "--version")) {
-      printf("mikrodash-dpi %s (nDPI %s)\n", SENSOR_VERSION, ndpi_revision());
+      printf("mikrodash-dpi %s, protocol %s (nDPI %s)\n", SENSOR_BUILD, SENSOR_VERSION, ndpi_revision());
       exit(0);
     } else {
       logf_("unknown argument %s", argv[i]);

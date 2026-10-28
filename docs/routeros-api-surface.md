@@ -521,6 +521,17 @@ tab, one write per prefix, in sequence.
 | `/ip/firewall/filter/print` | whole rows | Apply, Remove |
 | `/ip/firewall/filter/add`, `/set`, `/remove` | `chain=forward`/`input`, `action=drop`, `connection-state=new`, `src-address-list` or `dst-address-list` = `mikrodash-ips-geo` (blacklist) or `!mikrodash-ips-geo-allow` (whitelist only; the CLI reference types the matcher `! , address-list`), commented `MikroDash IPS: geo, …`, `place-before` the first static foreign rule | Apply, Remove |
 
+Updating the sensor (internal/server/ips_update.go, 2026-10-28): `repull`
+appeared in 7.20, and from 7.22 it stops and starts the container itself
+(rosetta: the command tree and the 7.22 changelog). Only on the Update button.
+
+| Command | Proplist or arguments | Used by |
+|---|---|---|
+| `/system/resource/print` | `=.proplist=version` | which way the router updates a container |
+| `/container/print` | whole rows; the sensor's is the one commented `MikroDash IPS sensor`, its state `status` (or the running/stopped flags) | Update, polled while it runs |
+| `/container/set` | `=.id=`, `=remote-image=<image>:<newest>` | Update, an image pinned to an older release |
+| `/container/stop`, `/container/repull`, `/container/start` | `=.id=` | Update (stop and start only before 7.22) |
+
 ## Traffic Analysis (internal/server/traffic.go, traffic_api.go)
 
 Added by hand on 2026-10-28 and kept out of the counts above. Paths and

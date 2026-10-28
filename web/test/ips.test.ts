@@ -66,7 +66,7 @@ assert.deepStrictEqual(mod.blockRuleFor({ app: 'Unknown', host: 'www.example.com
 assert.strictEqual(mod.blockRuleFor({ app: 'Unknown', host: '' }), null);
 say('ok - the IPS helpers summarise a rule and tone its outcomes');
 
-const ids = ['ipsBadge', 'ipsTabs', 'ipsStatePill', 'ipsModePill', 'ipsStatus', 'ipsSeenVal', 'ipsListedVal',
+const ids = ['ipsUpdatePill', 'ipsUpdateNote', 'ipsUpdateBtn', 'ipsUpdateCheck', 'ipsUpdateJob', 'ipsBadge', 'ipsTabs', 'ipsStatePill', 'ipsModePill', 'ipsStatus', 'ipsSeenVal', 'ipsListedVal',
   'ipsListedFoot', 'ipsPacketsVal', 'ipsPacketsFoot', 'ipsTopVal', 'ipsTopFoot', 'ipsFlowFilter', 'ipsFlowMatched',
   'ipsFlowRisky', 'ipsFlowPause', 'ipsRisksHead', 'ipsRisksRows', 'ipsPanel-risks', 'ipsFlowsHead', 'ipsFlowsRows', 'ipsAppsHead', 'ipsAppsRows', 'ipsEventsHead', 'ipsEventsRows', 'ipsListedLoad',
   'ipsListedHead', 'ipsListedRows', 'ipsRulesRows', 'ipsRuleForm', 'ipsRuleFormTitle', 'ipsRuleName', 'ipsRuleAction',
@@ -115,7 +115,9 @@ const n = doc.nodes;
   handlers['router:switched']!({ activeId: 'r1' });
   doc.dispatchEvent({ type: 'mikrodash:pagechange', detail: 'ips' });
   await new Promise((r) => setTimeout(r, 20));
-  assert.ok(asked.length >= 1 && asked.every((u) => u === '/api/ips/state?router=r1'), 'asked: ' + asked.join(', '));
+  // The state, and the sensor's release (asked every 30 s, answered from the server's cache).
+  assert.ok(asked.length >= 1 && asked.every((u) => u === '/api/ips/state?router=r1' || u === '/api/ips/sensor/update?router=r1'),
+    'asked: ' + asked.join(', '));
   assert.strictEqual(n.ipsBadge.textContent, '2', 'the count pill counts the flows in the window');
   assert.strictEqual(n.ipsTopVal.textContent, 'BitTorrent');
   const rows = n.ipsFlowsRows.innerHTML;
@@ -152,6 +154,19 @@ const n = doc.nodes;
   assert.ok(mod.geoApplyQuestion(false, 'block', 'in', ['FR'], ['FR']).startsWith('Remove'),
     'a blacklist the whitelist empties is a removal');
   say('ok - geofencing asks about what it will drop, never the whitelist');
+
+  // THE SENSOR'S RELEASE: what runs, what is newest, how an update goes.
+  const u = { image: 'ghcr.io/x/dpi:latest', running: '0.2.0', newest: '0.3.0', available: true, checkedAt: 1, checkError: '',
+    job: { running: false, phase: '', error: '', from: '', to: '', at: 0 } };
+  assert.strictEqual(mod.updateNote(u), 'The sensor runs 0.2.0. 0.3.0 is available.');
+  assert.strictEqual(mod.updateNote({ ...u, running: '', available: true }),
+    'The sensor does not report its release (before 0.2.0). 0.3.0 is available.');
+  assert.strictEqual(mod.updateNote({ ...u, running: '0.3.0', available: false }), 'The sensor runs 0.3.0. It is the newest (0.3.0).');
+  assert.strictEqual(mod.updateJobLine({ ...u, job: { ...u.job, running: true, phase: 're-pulling the image', to: '0.3.0' } }),
+    'Updating to 0.3.0: re-pulling the image…');
+  assert.strictEqual(mod.updateJobLine({ ...u, job: { ...u.job, error: 'the sensor did not stop', to: '0.3.0' } }),
+    'The update to 0.3.0 stopped: the sensor did not stop');
+  say("ok - the sensor's release and its update read as they should");
 
   // LEAVING stops the poll: nothing is asked once another page is shown.
   doc.dispatchEvent({ type: 'mikrodash:pagechange', detail: 'dashboard' });

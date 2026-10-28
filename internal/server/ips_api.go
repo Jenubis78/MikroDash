@@ -18,6 +18,8 @@ package server
 //	GET    /api/ips/geo?router=          the router's geofencing and its apply's progress
 //	POST   /api/ips/geo?router=          choose its countries and direction
 //	POST   /api/ips/geo/apply?router=    write them to the router (`remove=1`: take them off)
+//	GET    /api/ips/sensor/update?router= the sensor's release and the newest (`check=1`: ask the registry now)
+//	POST   /api/ips/sensor/update?router= update the sensor's container to the newest
 //
 // ── WHO MAY DO WHAT ─────────────────────────────────────────────────────────
 //
@@ -67,6 +69,8 @@ func (s *Server) registerIPS(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/ips/geo", s.ipsGeoGet)
 	mux.HandleFunc("POST /api/ips/geo", s.ipsGeoSave)
 	mux.HandleFunc("POST /api/ips/geo/apply", s.ipsGeoApply)
+	mux.HandleFunc("GET /api/ips/sensor/update", s.ipsUpdateGet)
+	mux.HandleFunc("POST /api/ips/sensor/update", s.ipsUpdatePost)
 }
 
 // ipsReadGate: signed in, a valid router, the page's read grant on it.

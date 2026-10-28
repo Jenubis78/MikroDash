@@ -103,6 +103,19 @@ that would cut off the router's own public address or an address someone is logg
 in to it from now - MikroDash included: a blacklist holding it, or a whitelist
 leaving it out.
 
+## Updating the sensor
+
+The sensor reports its release (from 0.2.0; a sensor that does not is 0.1.0).
+MikroDash reads its image's tags from the registry every six hours (Setup ›
+Sensor release › *Check now* for at once) and, when a newer release exists,
+shows an `update x.y.z` pill and an **Update the sensor** button. The update runs
+on the router: RouterOS 7.22 and later `repull` the container, which stops,
+re-pulls and starts it; 7.20 and 7.21 get the stop and the start around the
+repull; before 7.20 there is no repull, and the page says to recreate the
+container from *Show the commands*. An image pinned to an older release is moved
+to the newest first; one on `latest` stays on it. The job ends when the sensor
+says hello with the new release.
+
 ## Safety
 
 - Every listing is judged by `guard.CheckIPSTarget`, which refuses the router's own
