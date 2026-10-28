@@ -123,6 +123,7 @@ func TestTrafficSettingsAndRoutersRoundTrip(t *testing.T) {
 	if err := d.SaveTrafficSettings(want); err != nil {
 		t.Fatal(err)
 	}
+	want.Saved = true
 	if s, _ := d.TrafficSettingsGet(); s != want {
 		t.Errorf("%+v", s)
 	}

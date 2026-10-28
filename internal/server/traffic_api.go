@@ -249,6 +249,8 @@ func (s *Server) trafficFlows(w http.ResponseWriter, r *http.Request) {
 type TrafficSettingsView struct {
 	db.TrafficSettings
 	CHPasswordSet bool `json:"chPasswordSet"`
+	// Stack is the stack's ClickHouse URL; empty when the stack has none.
+	Stack string `json:"stack"`
 }
 
 func (s *Server) trafficSettingsGet(w http.ResponseWriter, r *http.Request) {
@@ -256,7 +258,7 @@ func (s *Server) trafficSettingsGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	set := s.traffic.currentSettings()
-	writeJSON(w, TrafficSettingsView{TrafficSettings: set, CHPasswordSet: set.CHPassword != ""})
+	writeJSON(w, TrafficSettingsView{TrafficSettings: set, CHPasswordSet: set.CHPassword != "", Stack: s.chStack.URL})
 }
 
 func (s *Server) trafficSettingsSave(w http.ResponseWriter, r *http.Request) {
@@ -282,8 +284,12 @@ func (s *Server) trafficSettingsSave(w http.ResponseWriter, r *http.Request) {
 	set := db.TrafficSettings{Backend: body.Backend, CHURL: strings.TrimSpace(body.CHURL), CHUser: strings.TrimSpace(body.CHUser),
 		CHPassword: was.CHPassword, CHDatabase: strings.TrimSpace(body.CHDatabase), FlowDays: body.FlowDays, Port: body.Port,
 		Collector: strings.TrimSpace(body.Collector)}
-	if set.Backend != "sqlite" && set.Backend != "clickhouse" {
-		writeJSONErr(w, http.StatusBadRequest, "the backend is sqlite or clickhouse")
+	if set.Backend != "sqlite" && set.Backend != "clickhouse" && set.Backend != trafficBackendStack {
+		writeJSONErr(w, http.StatusBadRequest, "the backend is sqlite, clickhouse or stack")
+		return
+	}
+	if set.Backend == trafficBackendStack && s.chStack.URL == "" {
+		writeJSONErr(w, http.StatusBadRequest, "this stack has no ClickHouse: add it to the compose file, or give a ClickHouse URL")
 		return
 	}
 	if set.Port < 1024 || set.Port > 65535 {
@@ -304,13 +310,17 @@ func (s *Server) trafficSettingsSave(w http.ResponseWriter, r *http.Request) {
 		}
 		set.CHPassword = sealed
 	}
-	if set.Backend == "clickhouse" {
-		cfg := traffic.ClickHouseConfig{URL: set.CHURL, User: set.CHUser, Database: set.CHDatabase, FlowDays: set.FlowDays}
-		if err := cfg.Validate(); err != nil {
-			writeJSONErr(w, http.StatusBadRequest, safe.Message(err.Error()))
-			return
+	if set.Backend == "clickhouse" || set.Backend == trafficBackendStack {
+		if set.Backend == "clickhouse" {
+			cfg := traffic.ClickHouseConfig{URL: set.CHURL, User: set.CHUser, Database: set.CHDatabase, FlowDays: set.FlowDays}
+			if err := cfg.Validate(); err != nil {
+				writeJSONErr(w, http.StatusBadRequest, safe.Message(err.Error()))
+				return
+			}
+			set.CHUser, set.CHDatabase, set.FlowDays = cfg.User, cfg.Database, cfg.FlowDays
+		} else if set.FlowDays <= 0 {
+			set.FlowDays = traffic.DefaultFlowDays
 		}
-		set.CHUser, set.CHDatabase, set.FlowDays = cfg.User, cfg.Database, cfg.FlowDays
 		// Opened before it is kept: a backend that does not answer is refused
 		// with ClickHouse's own reason, and the one in use stays.
 		st, err := s.traffic.openStore(set)

@@ -44,6 +44,8 @@ interface Flow {
 interface Settings {
   backend: string; chUrl: string; chUser: string; chDatabase: string; flowDays: number; port: number;
   collector: string; chPasswordSet: boolean;
+  /** The stack's ClickHouse URL; empty when the stack has none. */
+  stack: string;
 }
 interface Step { op: string; menu: string; what: string; error?: string }
 
@@ -168,7 +170,7 @@ export function initTrafficAnalysisPage(socket: Socket, isVisible: (page: string
       (st.unknown ? ', ' + st.unknown + ' before their template' : ''));
     const handed = s.router.result === 'handed to the sensor';
     setHTML('taStatePill', statePill(st, handed));
-    setHTML('taBackendPill', pill(st.backend === 'clickhouse' ? 'ClickHouse' : 'SQLite', st.storeError ? 'err' : 'alt'));
+    setHTML('taBackendPill', pill(st.backend === 'stack' ? 'ClickHouse (stack)' : st.backend === 'clickhouse' ? 'ClickHouse' : 'SQLite', st.storeError && st.storeError !== 'opening' ? 'err' : 'alt'));
     const notes: string[] = [];
     if (!st.enabled && handed) {
       notes.push('Volumes interrupted: the IPS sensor no longer counts every packet, and Traffic Flow, handed to it, ' +
@@ -179,7 +181,8 @@ export function initTrafficAnalysisPage(socket: Socket, isVisible: (page: string
         ' seconds, refreshed every five.' + (st.ignored ? ' ' + st.ignored + ' IPFIX records were ignored: remove Traffic Flow in Setup.' : ''));
     } else if (!st.listening) notes.push('Not listening on udp/' + st.port + ': ' + st.listen);
     else if (!st.lastAt) notes.push('Listening on udp/' + st.port + '; no IPFIX from this router yet (' + st.addresses + ' of its addresses known).');
-    if (st.storeError) notes.push('Storage: ' + st.storeError);
+    if (st.storeError === 'opening') notes.push('Storage: opening the backend (a ClickHouse starting with the stack takes a minute); the minutes wait in memory.');
+    else if (st.storeError) notes.push('Storage: ' + st.storeError + ' (tried again every minute; the minutes wait in memory).');
     if (st.strays) notes.push(st.strays + ' datagrams from no known router were dropped.');
     setText('taStatus', notes.join(' '));
     const badge = el('taBadge');
@@ -423,9 +426,14 @@ export function initTrafficAnalysisPage(socket: Socket, isVisible: (page: string
   el('taFlowSearch')?.addEventListener('click', searchFlows);
 
   // ── setup ────────────────────────────────────────────────────────────────
+  // The connection fields are for a ClickHouse elsewhere; the stack's needs
+  // none, and keep-flows days alone.
   function syncBackend(): void {
-    const ch = el<HTMLSelectElement>('taBackend')?.value === 'clickhouse';
-    document.querySelectorAll('.ta-ch').forEach((n) => { (n as HTMLElement).style.display = ch ? '' : 'none'; });
+    const b = el<HTMLSelectElement>('taBackend')?.value;
+    document.querySelectorAll('.ta-ch').forEach((n) => { (n as HTMLElement).style.display = b === 'clickhouse' ? '' : 'none'; });
+    document.querySelectorAll('.ta-days').forEach((n) => {
+      (n as HTMLElement).style.display = b === 'clickhouse' || b === 'stack' ? '' : 'none';
+    });
   }
 
   function drawSetup(s: State): void {
@@ -443,6 +451,11 @@ export function initTrafficAnalysisPage(socket: Socket, isVisible: (page: string
     if (iface) iface.value = s.router.interfaces;
     call<Settings>('/api/traffic/settings').then((st) => {
       const set = (id: string, v: string): void => { const n = el<HTMLInputElement>(id); if (n) n.value = v; };
+      const opt = document.querySelector('#taBackend option[value="stack"]');
+      if (opt) {
+        opt.toggleAttribute('disabled', !st.stack);
+        opt.textContent = st.stack ? 'ClickHouse in this stack (' + st.stack + ', automatic)' : 'ClickHouse in this stack (not in the compose file)';
+      }
       set('taBackend', st.backend);
       set('taPort', String(st.port));
       set('taCollector', st.collector);

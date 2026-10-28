@@ -116,7 +116,8 @@
                   <label class="sform-label" for="taBackend">Backend</label>
                   <select class="sform-input" id="taBackend">
                     <option value="sqlite">SQLite (in /data, no setup)</option>
-                    <option value="clickhouse">ClickHouse (every flow, searchable)</option>
+                    <option value="stack" disabled>ClickHouse in this stack (automatic)</option>
+                    <option value="clickhouse">ClickHouse elsewhere (every flow, searchable)</option>
                   </select>
                   <div class="ff-help">SQLite keeps the per-minute totals: 48 hours by minute, 90 days by hour, a year by day. ClickHouse keeps them a year and every flow too.</div>
                 </div>
@@ -150,7 +151,7 @@
                   <input class="sform-input" id="taChDatabase" placeholder="mikrodash" spellcheck="false">
                   <div class="ff-help">Created if missing.</div>
                 </div>
-                <div class="ff ta-ch">
+                <div class="ff ta-days">
                   <label class="sform-label" for="taFlowDays">Keep flows, days</label>
                   <input class="sform-input" id="taFlowDays" type="number" min="1" max="3650" placeholder="90">
                   <div class="ff-help"></div>

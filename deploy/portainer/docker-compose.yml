@@ -21,8 +21,13 @@ services:
       - "2055:2055/udp"
     volumes:
       - data:/data
+      - clickhouse-secret:/clickhouse-secret
     environment:
       - TZ=${TZ:-Europe/Paris}
+      # The stack's ClickHouse, below: where it is, and the password file
+      # MikroDash makes for it in the volume they share.
+      - MIKRODASH_CLICKHOUSE_STACK=http://clickhouse:8123
+      - MIKRODASH_CLICKHOUSE_SECRET=/clickhouse-secret/password
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3081/healthz"]
       interval: 30s
@@ -35,5 +40,46 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # TRAFFIC ANALYSIS'S CLICKHOUSE: a year of per-minute totals and every flow,
+  # searchable. MikroDash finds it by itself (MIKRODASH_CLICKHOUSE_STACK above)
+  # and, on an install that never chose a backend, uses it; Setup in Traffic
+  # Analysis offers it otherwise. The password is nobody's to type: MikroDash
+  # writes a random one into the clickhouse-secret volume before this starts,
+  # and ClickHouse reads it from there. No port is published - only MikroDash,
+  # on the stack's network, reaches it. Idle, it holds a few hundred MB of RAM.
+  # To do without it, delete this service and the two lines naming it above.
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8
+    container_name: MikroDash-ClickHouse
+    restart: unless-stopped
+    depends_on:
+      mikrodash:
+        condition: service_healthy
+    environment:
+      - CLICKHOUSE_DB=mikrodash
+      - CLICKHOUSE_USER=mikrodash
+      - CLICKHOUSE_PASSWORD_FILE=/clickhouse-secret/password
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=0
+    volumes:
+      - clickhouse:/var/lib/clickhouse
+      - clickhouse-secret:/clickhouse-secret:ro
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8123/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   data:
+  clickhouse:
+  clickhouse-secret:

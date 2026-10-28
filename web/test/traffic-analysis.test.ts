@@ -62,7 +62,7 @@ const ids = ['taBadge', 'taTabs', 'taRxFoot', 'taTxFoot', 'taRecordsLabel', 'taS
   'taChUser', 'taChPassword', 'taChPasswordHelp', 'taChDatabase', 'taFlowDays', 'taSettingsMsg', 'taRouterForm',
   'taInterfaces', 'taRouterMsg', 'taPlanShow', 'taApply', 'taRemove', 'taPlanMsg', 'taPlanWarnings', 'taPlanRows',
   'taPanel-live', 'taPanel-history', 'taPanel-flows', 'taPanel-setup'];
-const doc = makeDoc(ids, { allowUnknown: ['#taTabs [data-tatab]', '#taLiveDims [data-tadim]', '.ta-ch'] });
+const doc = makeDoc(ids, { allowUnknown: ['#taTabs [data-tatab]', '#taLiveDims [data-tadim]', '.ta-ch', '.ta-days', '#taBackend option[value="stack"]'] });
 global.document = doc;
 global.window = { addEventListener: () => {}, setTimeout, clearTimeout, confirm: () => false, alert: () => {} };
 

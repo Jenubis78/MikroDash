@@ -127,6 +127,11 @@ type Options struct {
 	// deployment fact rather than a setting, so an admin session cannot widen it.
 	// See internal/trustedproxy and issue #111.
 	TrustedProxies []netip.Prefix
+	// ClickHouseStack and ClickHouseSecret are the stack's ClickHouse, from
+	// -clickhouse-stack / -clickhouse-secret: see clickhouse_stack.go. An empty
+	// URL is a stack without one.
+	ClickHouseStack  string
+	ClickHouseSecret string
 	// AuditDB is the shared SQLite trail. Nil disables audit recording.
 	AuditDB *db.DB
 
@@ -168,6 +173,8 @@ type Server struct {
 	ips *ipsEngine
 	// traffic is the Traffic page's IPFIX collector and its backend. See traffic.go.
 	traffic *trafficEngine
+	// chStack is the stack's ClickHouse, when the stack has one.
+	chStack clickHouseStack
 	// aiLimit bounds questions to the model, per user per router (#98).
 	//
 	// EVERY ASK IS AN OUTBOUND REQUEST to an endpoint the operator named, which
@@ -555,6 +562,7 @@ func New(st *store.Store, opts Options) (*Server, error) {
 	// `-history` instead (#59); the comment on the builder has the split.
 	srv.pruneSched = srv.buildPruneScheduler(opts.Retention, opts.History)
 	srv.features = srv.buildFeatureLoop()
+	srv.chStack = clickHouseStack{URL: opts.ClickHouseStack, SecretFile: opts.ClickHouseSecret}
 	srv.traffic = srv.buildTraffic()
 	srv.ips = srv.buildIPS()
 	// The traffic and ping recorder, off the session's emit seam. CONNECTIVITY

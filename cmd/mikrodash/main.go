@@ -111,6 +111,14 @@ func main() {
 			"comma-separated IPs or CIDR ranges of reverse proxies whose X-Forwarded-For "+
 				"is believed (e.g. 172.18.0.0/16). Empty trusts none. Also read from "+
 				"MIKRODASH_TRUSTED_PROXIES")
+		// THE STACK'S CLICKHOUSE (Traffic Analysis), a deployment fact as the
+		// two above are: the compose files set both when they run ClickHouse
+		// beside MikroDash. See internal/server/clickhouse_stack.go.
+		chStack = flag.String("clickhouse-stack", os.Getenv("MIKRODASH_CLICKHOUSE_STACK"),
+			"the stack's ClickHouse HTTP URL (e.g. http://clickhouse:8123); empty: none. "+
+				"Also read from MIKRODASH_CLICKHOUSE_STACK")
+		chSecret = flag.String("clickhouse-secret", firstEnv("MIKRODASH_CLICKHOUSE_SECRET", "/clickhouse-secret/password"),
+			"the file holding the stack's ClickHouse password, made if missing. Also read from MIKRODASH_CLICKHOUSE_SECRET")
 		geoDir = flag.String("geo", "/app/geo",
 			"geoip-lite's data directory, read for country lookups")
 	)
@@ -262,17 +270,19 @@ func main() {
 	}
 
 	srv, err := server.New(st, server.Options{
-		WebDir:          *webDir,
-		StaticDir:       *staticDir,
-		GeoDir:          *geoDir,
-		AuditDB:         adb,
-		NoPool:          *noPool,
-		AlertDispatch:   *alertDispatch,
-		BackupScheduler: *backupSched,
-		Retention:       *pruneOn,
-		History:         *historyOn,
-		OriginPatterns:  splitOrigins(*origins),
-		TrustedProxies:  trustedProxies,
+		WebDir:           *webDir,
+		StaticDir:        *staticDir,
+		GeoDir:           *geoDir,
+		AuditDB:          adb,
+		NoPool:           *noPool,
+		AlertDispatch:    *alertDispatch,
+		BackupScheduler:  *backupSched,
+		Retention:        *pruneOn,
+		History:          *historyOn,
+		OriginPatterns:   splitOrigins(*origins),
+		TrustedProxies:   trustedProxies,
+		ClickHouseStack:  *chStack,
+		ClickHouseSecret: *chSecret,
 		// A restore has the ROUTER fetch from us, so the URL it is handed must
 		// name this process's port.
 		ListenAddr: *listen,
@@ -374,6 +384,14 @@ func main() {
 // the HTTP server's own 5s budget — this one bounds BOTH halves, so it must be
 // longer than the half it contains or it would fire during a normal shutdown.
 const forcedShutdownAfter = 10 * time.Second
+
+// firstEnv is an environment variable, or a default when it is unset.
+func firstEnv(name, def string) string {
+	if v := os.Getenv(name); v != "" {
+		return v
+	}
+	return def
+}
 
 // splitOrigins turns the flag's comma list into patterns.
 //

@@ -53,6 +53,31 @@ saved: a URL or password it refuses is refused with its reason, and the backend
 in use stays. The password is stored encrypted. While a backend is down, up to
 two hours of rows wait in memory and Live keeps working.
 
+### ClickHouse in MikroDash's own stack
+
+`docker-compose.yml` (and the Portainer one) carries a `clickhouse` service.
+Nothing is typed:
+
+- MikroDash makes a random password, once, into the shared `clickhouse-secret`
+  volume (mode 0600, kept across restarts); ClickHouse reads it through
+  `CLICKHOUSE_PASSWORD_FILE`. It never enters the app's database or a log.
+- ClickHouse starts once MikroDash is healthy, so the password exists by then.
+  It publishes no port: only MikroDash reaches it, as `http://clickhouse:8123`.
+- MikroDash is told about it by `MIKRODASH_CLICKHOUSE_STACK` (and
+  `MIKRODASH_CLICKHOUSE_SECRET`, the password file). Then **ClickHouse in this
+  stack** is offered in Setup › Storage, and an install that has never saved a
+  storage choice takes it by itself. A choice saved on purpose is kept.
+- The backend opens in the background and is retried every minute until
+  ClickHouse answers; Live keeps working meanwhile.
+- The SQLite history is copied in once, the first time it opens - without
+  counting a byte twice, at the finest grain SQLite still holds - and
+  `traffic.db` is then renamed `traffic.db.imported-<time>`, kept, not deleted.
+
+To leave it out, remove the `clickhouse` service and the two environment
+variables: SQLite stays the default.
+
+### ClickHouse elsewhere
+
 A ClickHouse server with Docker, beside MikroDash:
 
 ```bash

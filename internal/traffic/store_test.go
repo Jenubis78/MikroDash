@@ -145,3 +145,74 @@ func TestClickHouseAnswersAsTheRowsInMemoryDo(t *testing.T) {
 		t.Errorf("flows: %v\n got %+v\nwant %+v", err, got, flows[:1])
 	}
 }
+
+// A hundred days of an hourly row, rolled up and aged as the backend does,
+// exports to exactly what was written: no byte twice, none lost.
+func TestSQLiteExportsItsHistoryOnce(t *testing.T) {
+	ctx := context.Background()
+	s, err := OpenSQLite(filepath.Join(t.TempDir(), "traffic.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	now := time.Now().Truncate(time.Hour)
+	var written uint64
+	var rows []Agg
+	for h := 100 * 24; h > 0; h-- {
+		ts := now.Add(-time.Duration(h)*time.Hour + 7*time.Minute)
+		rows = append(rows, Agg{TS: ts, Host: "a", App: "YouTube", Country: "US", Rx: uint64(h), Tx: 1, Flows: 1})
+		written += uint64(h) + 1
+	}
+	_ = s.Write(ctx, "r1", rows, nil)
+	_ = s.Write(ctx, "r2", rows[len(rows)-3:], nil)
+	if err := s.Maintain(ctx, now.Add(10*time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	// And the minutes since, not rolled up yet: they are in the minutes alone.
+	recent := []Agg{{TS: now.Add(2 * time.Minute), Host: "a", App: "YouTube", Rx: 1000, Tx: 10, Flows: 1},
+		{TS: now.Add(9 * time.Minute), Host: "b", App: "NetFlix", Rx: 2000, Tx: 20, Flows: 1}}
+	_ = s.Write(ctx, "r1", recent, nil)
+	written += 3030
+	got := map[string]uint64{}
+	coarse := 0
+	if err := s.Export(ctx, func(rid string, b []Agg) error {
+		for _, a := range b {
+			got[rid] += a.Rx + a.Tx
+			// The minutes still held go across as minutes, not as their hour
+			// (r2's first hour excepted: its first minute may be mid-hour, and
+			// then only the hour holds that hour whole).
+			if rid == "r1" && a.TS.After(now.Add(-24*time.Hour)) && a.TS.Minute() == 0 {
+				coarse++
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	var tail uint64
+	for _, r := range rows[len(rows)-3:] {
+		tail += r.Rx + r.Tx
+	}
+	if got["r1"] != written || got["r2"] != tail {
+		t.Errorf("exported %v, want r1 %d r2 %d", got, written, tail)
+	}
+	if coarse > 0 {
+		t.Errorf("%d rows of the last day exported by the hour, though their minutes are held", coarse)
+	}
+
+	// A database never rolled up at all (MikroDash stopped within its first
+	// hour): everything is in the minutes.
+	fresh, _ := OpenSQLite(filepath.Join(t.TempDir(), "fresh.db"))
+	defer fresh.Close()
+	_ = fresh.Write(ctx, "r1", recent, nil)
+	var n uint64
+	_ = fresh.Export(ctx, func(_ string, b []Agg) error {
+		for _, a := range b {
+			n += a.Rx + a.Tx
+		}
+		return nil
+	})
+	if n != 3030 {
+		t.Errorf("unrolled minutes exported %d, want 3030", n)
+	}
+}

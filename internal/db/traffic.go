@@ -14,6 +14,9 @@ type TrafficSettings struct {
 	FlowDays   int    `json:"flowDays"`
 	Port       int    `json:"port"`
 	Collector  string `json:"collector"`
+	// Saved is whether a row exists: an install that never chose a backend
+	// takes the stack's ClickHouse when there is one.
+	Saved bool `json:"-"`
 }
 
 // DefaultTrafficSettings is what an install that never saved any uses.
@@ -28,6 +31,7 @@ func (d *DB) TrafficSettingsGet() (TrafficSettings, error) {
 	if err == sql.ErrNoRows {
 		return DefaultTrafficSettings, nil
 	}
+	s.Saved = err == nil
 	return s, err
 }
 

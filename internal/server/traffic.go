@@ -41,6 +41,7 @@ import (
 	"log"
 	"net"
 	"net/netip"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -79,6 +80,7 @@ type trafficEngine struct {
 	port     int
 	listen   string // why the port is not open, when it is not
 	strays   uint64 // datagrams from no router's address
+	opening  bool   // a reopen is under way
 }
 
 type trafficRouter struct {
@@ -114,6 +116,19 @@ func (s *Server) buildTraffic() *trafficEngine {
 		log.Printf("[traffic] reading the settings: %v", err)
 		set = db.DefaultTrafficSettings
 	}
+	// THE STACK'S CLICKHOUSE, WHEN THERE IS ONE: its password is made here,
+	// before ClickHouse starts (it waits for MikroDash to be healthy), and an
+	// install that never chose a backend takes it.
+	if s.chStack.URL != "" {
+		if err := s.chStack.ensureSecret(); err != nil {
+			log.Printf("[traffic] the stack's ClickHouse password: %v", err)
+		} else if !set.Saved {
+			set.Backend = trafficBackendStack
+			if err := s.auditDB.SaveTrafficSettings(set); err == nil {
+				log.Printf("[traffic] the stack has ClickHouse at %s: Traffic Analysis keeps its history there", s.chStack.URL)
+			}
+		}
+	}
 	e.applySettings(set)
 	e.sync()
 	go e.minutes()
@@ -142,38 +157,121 @@ func (e *trafficEngine) Stop() {
 
 // openStore opens the backend the settings name.
 func (e *trafficEngine) openStore(set db.TrafficSettings) (traffic.Store, error) {
-	if set.Backend == "clickhouse" {
+	switch set.Backend {
+	case "clickhouse", trafficBackendStack:
+		cfg := traffic.ClickHouseConfig{URL: set.CHURL, User: set.CHUser, Password: e.s.openCredSecret(set.CHPassword),
+			Database: set.CHDatabase, FlowDays: set.FlowDays}
+		if set.Backend == trafficBackendStack {
+			var err error
+			if cfg, err = e.s.chStack.config(set.FlowDays); err != nil {
+				return nil, err
+			}
+		}
 		ctx, cancel := context.WithTimeout(e.ctx, trafficWriteWait)
 		defer cancel()
-		return traffic.OpenClickHouse(ctx, traffic.ClickHouseConfig{URL: set.CHURL, User: set.CHUser,
-			Password: e.s.openCredSecret(set.CHPassword), Database: set.CHDatabase, FlowDays: set.FlowDays}, nil)
+		return traffic.OpenClickHouse(ctx, cfg, nil)
 	}
 	if e.s.store == nil {
 		return nil, errors.New("no data directory")
 	}
-	return traffic.OpenSQLite(filepath.Join(e.s.store.Dir, "traffic.db"))
+	return traffic.OpenSQLite(e.sqlitePath())
 }
 
-// applySettings switches to new settings: the backend reopened, the port
-// moved. A backend that does not open leaves the engine with none, which the
-// page shows; the rows wait in the backlog.
+func (e *trafficEngine) sqlitePath() string { return filepath.Join(e.s.store.Dir, "traffic.db") }
+
+// applySettings switches to new settings: the port moved at once, the
+// backend reopened in the background, since a ClickHouse can take its time to
+// answer, or not be up yet (the stack's starts after MikroDash). Until it
+// opens the rows wait in the backlog, and a backend that does not open is
+// tried again every minute (flush).
 func (e *trafficEngine) applySettings(set db.TrafficSettings) {
-	st, err := e.openStore(set)
 	e.mu.Lock()
-	defer e.mu.Unlock()
 	if e.store != nil {
 		e.store.Close()
 	}
-	e.settings, e.store, e.storeErr = set, st, ""
-	if err != nil {
-		e.store, e.storeErr = nil, err.Error()
-		log.Printf("[traffic] opening the %s backend: %v", set.Backend, err)
-	}
+	e.settings, e.store, e.storeErr = set, nil, "opening"
 	if e.conn != nil && e.port != set.Port {
 		e.conn.Close()
 		e.conn = nil
 	}
 	e.listenLocked()
+	e.mu.Unlock()
+	go e.reopen()
+}
+
+// reopen opens the backend the settings name, unless one is open or being
+// opened; then, for ClickHouse, imports what SQLite still holds.
+func (e *trafficEngine) reopen() {
+	e.mu.Lock()
+	if e.store != nil || e.opening {
+		e.mu.Unlock()
+		return
+	}
+	e.opening = true
+	set := e.settings
+	e.mu.Unlock()
+	st, err := e.openStore(set)
+	e.mu.Lock()
+	e.opening = false
+	if e.settings != set {
+		// Changed while opening: the newer settings' own reopen wins.
+		e.mu.Unlock()
+		if st != nil {
+			st.Close()
+		}
+		go e.reopen()
+		return
+	}
+	if err != nil {
+		e.storeErr = err.Error()
+		e.mu.Unlock()
+		log.Printf("[traffic] opening the %s backend: %v", set.Backend, err)
+		return
+	}
+	e.store, e.storeErr = st, ""
+	e.mu.Unlock()
+	if st.Backend() == "clickhouse" {
+		e.importSQLite(st)
+	}
+}
+
+// importSQLite moves the SQLite history into ClickHouse once, when the
+// backend becomes ClickHouse with traffic.db still there; the file is then
+// renamed, so its rows are never imported twice and stay on disk.
+func (e *trafficEngine) importSQLite(st traffic.Store) {
+	if e.s.store == nil {
+		return
+	}
+	path := e.sqlitePath()
+	if _, err := os.Stat(path); err != nil {
+		return
+	}
+	src, err := traffic.OpenSQLite(path)
+	if err != nil {
+		log.Printf("[traffic] importing the SQLite history: %v", err)
+		return
+	}
+	n := 0
+	err = src.Export(e.ctx, func(rid string, rows []traffic.Agg) error {
+		ctx, cancel := context.WithTimeout(e.ctx, 2*trafficWriteWait)
+		defer cancel()
+		n += len(rows)
+		return st.Write(ctx, rid, rows, nil)
+	})
+	src.Close()
+	if err != nil {
+		log.Printf("[traffic] importing the SQLite history (%d rows sent): %v; it is tried again at the next open", n, err)
+		return
+	}
+	done := path + ".imported-" + time.Now().UTC().Format("20060102-150405")
+	for _, suffix := range []string{"", "-wal", "-shm"} {
+		if _, err := os.Stat(path + suffix); err == nil {
+			if err := os.Rename(path+suffix, done+suffix); err != nil {
+				log.Printf("[traffic] renaming %s: %v", path+suffix, err)
+			}
+		}
+	}
+	log.Printf("[traffic] imported %d rows of SQLite history into ClickHouse; the file is kept as %s", n, done)
 }
 
 // sync starts and stops routers to match the routers table.
@@ -429,6 +527,9 @@ func (e *trafficEngine) minutes() {
 
 func (e *trafficEngine) flush(now time.Time) {
 	e.mu.Lock()
+	if e.store == nil && !e.opening {
+		go e.reopen() // a backend that did not open is tried again every minute
+	}
 	st := e.store
 	routers := make([]*trafficRouter, 0, len(e.routers))
 	for _, r := range e.routers {

@@ -266,3 +266,93 @@ func (s *SQLite) Series(ctx context.Context, q Query, step time.Duration, keys [
 func (s *SQLite) Flows(context.Context, FlowQuery) ([]RouterFlow, error) {
 	return nil, ErrNoFlowHistory
 }
+
+// Export hands every router's history to fn, a batch at a time, without
+// counting anything twice or leaving anything out. The three tables overlap: a
+// rolled-up hour stays in the minutes for 48 hours, a day in the hours for 90
+// days, and the minutes not rolled up yet are in the minutes alone. So each
+// table gives what the finer one no longer holds whole: the minutes from the
+// first whole hour they hold, or from where the hours were rolled up to,
+// whichever comes first; the hours before that, likewise from the days; the
+// days before that.
+func (s *SQLite) Export(ctx context.Context, fn func(routerID string, rows []Agg) error) error {
+	rs, err := s.db.QueryContext(ctx, `SELECT DISTINCT router_id FROM traffic_min UNION
+	        SELECT DISTINCT router_id FROM traffic_hour UNION SELECT DISTINCT router_id FROM traffic_day`)
+	if err != nil {
+		return err
+	}
+	var routers []string
+	for rs.Next() {
+		var id string
+		if err := rs.Scan(&id); err != nil {
+			rs.Close()
+			return err
+		}
+		routers = append(routers, id)
+	}
+	rs.Close()
+	const never = int64(1) << 62
+	ceil := func(ts, size int64) int64 { return (ts + size - 1) / size * size }
+	rolled := func(table string) int64 { // every bucket before this is in `table`
+		var v int64
+		if err := s.db.QueryRowContext(ctx, `SELECT value FROM traffic_meta WHERE key = ?`, "rolled_"+table).Scan(&v); err != nil {
+			return 0
+		}
+		return v
+	}
+	hoursUpTo, daysUpTo := rolled("traffic_hour"), rolled("traffic_day")
+	for _, rid := range routers {
+		first := func(table string) int64 {
+			var v sql.NullInt64
+			_ = s.db.QueryRowContext(ctx, `SELECT MIN(ts) FROM `+table+` WHERE router_id = ?`, rid).Scan(&v)
+			if !v.Valid {
+				return never
+			}
+			return v.Int64
+		}
+		cutHour := hoursUpTo
+		if m := first("traffic_min"); m != never && ceil(m, 3600) < cutHour {
+			cutHour = ceil(m, 3600)
+		}
+		cutDay := daysUpTo
+		if h := first("traffic_hour"); h != never && ceil(h, 86400) < cutDay {
+			cutDay = ceil(h, 86400)
+		}
+		cutDay = min(cutDay, cutHour)
+		for _, part := range []struct {
+			table    string
+			from, to int64
+		}{{"traffic_day", 0, cutDay}, {"traffic_hour", cutDay, cutHour}, {"traffic_min", cutHour, never}} {
+			rows, err := s.db.QueryContext(ctx, `SELECT ts, host, app, category, country, rx, tx, flows FROM `+part.table+
+				` WHERE router_id = ? AND ts >= ? AND ts < ? ORDER BY ts`, rid, part.from, part.to)
+			if err != nil {
+				return err
+			}
+			batch := []Agg{}
+			for rows.Next() {
+				var a Agg
+				var ts, rx, tx, fl int64
+				if err := rows.Scan(&ts, &a.Host, &a.App, &a.Category, &a.Country, &rx, &tx, &fl); err != nil {
+					rows.Close()
+					return err
+				}
+				a.TS, a.Rx, a.Tx, a.Flows = time.Unix(ts, 0).UTC(), uint64(rx), uint64(tx), uint64(fl)
+				batch = append(batch, a)
+				if len(batch) == 5000 {
+					if err := fn(rid, batch); err != nil {
+						rows.Close()
+						return err
+					}
+					batch = []Agg{}
+				}
+			}
+			rows.Close()
+			if len(batch) > 0 {
+				if err := fn(rid, batch); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
